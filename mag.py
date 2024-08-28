@@ -10,6 +10,10 @@ from tqdm import tqdm
 def main():
 
     pd.set_option('display.max_columns', 20)
+
+    root_directory = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
+    paths = PathsFromDates()
+
     data = Load_Messenger(
         [
             "/home/daraghhollman/Main/data/mercury/messenger/mag/2014/01_JAN/MAGMSOSCIAVG14001_01_V08.TAB"
@@ -17,6 +21,7 @@ def main():
             # "/home/daraghhollman/Main/data/mercury/messenger/mag/2012/01_JAN/MAGMSOSCIAVG12002_01_V08.TAB",
         ]
     )
+
 
     start = dt.datetime(year=2014, month=1, day=1, hour=0, minute=0, second=1)
     end = dt.datetime(year=2014, month=1, day=1, hour=0, minute=1, second=20)
@@ -35,6 +40,9 @@ def main():
 
     #plt.legend()
     #plt.show()
+
+def PathsFromDates(root_directory: str, format: str, start: dt.datetime, end: dt.datetime):
+    
 
 
 def StripData(data: pd.DataFrame, start: dt.datetime, end: dt.datetime):
@@ -93,6 +101,7 @@ def Load_Messenger(file_paths: list):
                 "hour": hours,
                 "minute": minutes,
                 "second": seconds,
+                "frame": "MSO",
                 "eph_x": ephemeris[0],
                 "eph_y": ephemeris[1],
                 "eph_z": ephemeris[2],
@@ -194,8 +203,12 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False):
     if not reverse:
         data["eph_z"] = data["eph_z"] - 479
 
+        data["frame"] = "MSM"
+
     else:
         data["eph_z"] = data["eph_z"] + 479
+
+        data["frame"] = "MSO"
 
     return data
 
