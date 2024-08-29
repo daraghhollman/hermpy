@@ -1,6 +1,6 @@
 # Mercury Tools
 
-A repository I've adapted from similar code found at [here](https://github.com/DIASPlanetary/MESSENGER_Tools) to perform science with data from space missions around Mercury.
+A repository I've adapted from similar code found [here](https://github.com/DIASPlanetary/MESSENGER_Tools) to perform science with data from space missions around Mercury.
 
 ## mag.py
 
@@ -19,7 +19,7 @@ data = mag.Load_Messenger([file1, file2, file3, ...])
 start = dt.datetime(year=2014, month=1, day=1, hour=0)
 end = dt.datetime(year=2014, month=1, day=1, hour=10)
 
-data = StripData(data, start, end)
+data = mag.StripData(data, start, end)
 ```
 
 This data object is a Pandas DataFrame, and has the following columns:
@@ -40,17 +40,17 @@ This data object is a Pandas DataFrame, and has the following columns:
 This library also contains function to convert to MSM frames via:
 
 ```python
-data = MSO_TO_MSM(data)
+data = mag.MSO_TO_MSM(data)
 
 # and to convert back
 # warning: the data does not know which frame it in and will be incorret if these actions are repeated
 
-data = MSM_TO_MSM(data)
+data = mag.MSM_TO_MSM(data)
 ```
 
 and also to account for solar wind aberration angles:
 
 ```python
-data = AdjustForAberration(data)
+data = mag.AdjustForAberration(data)
 ```
 
