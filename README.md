@@ -53,7 +53,7 @@ Pulls position data for a given spacecraft and corresponding metakernel.
 
 #### Plot_Mercury
 
-plotting_tools.**Plot_Mercury(ax, shaded_hemisphere="none", offset=(0,0))
+plotting_tools.**Plot_Mercury**(ax, shaded_hemisphere="none", offset=(0,0))
 
 Adds a circle representing Mercury at (0,0) + an optional offset.
 
