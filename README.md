@@ -2,13 +2,13 @@
 
 A repository I've adapted from similar code found [here](https://github.com/DIASPlanetary/MESSENGER_Tools) to perform science with data from space missions around Mercury.
 
-## Docs
+# Docs
 
-### plotting_tools.py
+## plotting_tools.py
 
 A library of functions to assist in creating publication ready plots. Currently, this solely includes the plotting of Mercury onto any matplotlib axis, along with pulling the positions of a given spacecraft between two dates.
 
-#### Usage
+### Usage
 
 A basic usage would be as follows:
 
@@ -35,7 +35,9 @@ ax.set_aspect("equal")
 plt.show()
 ```
 
-#### Functions
+### Functions
+
+#### Get_Trajectory
 
 plotting_tools.**Get_Trajectory**(spacecraft, dates, metakernel, steps=4000)
 
@@ -49,6 +51,8 @@ Pulls position data for a given spacecraft and corresponding metakernel.
 
 ------------------------------------------------------------
 
+#### Plot_Mercury
+
 plotting_tools.**Plot_Mercury(ax, shaded_hemisphere="none", offset=(0,0))
 
 Adds a circle representing Mercury at (0,0) + an optional offset.
@@ -58,11 +62,13 @@ Adds a circle representing Mercury at (0,0) + an optional offset.
 * shaded_hemisphere : string - Which hemisphere to shade, options are: left, right, top, or bottom.
 * offset : tuple\[float, float\] - Apply an offset to the centre of Mercury. Useful when working in none Mercury-centric frames such as MSM / MSM'.
 
-### mag.py
+------------------------------------------------------------
+
+## mag.py
 
 A library of functions to load and manipulate magnetic field data.
 
-#### Usage
+### Usage
 
 A basic usage would be as follows:
 
