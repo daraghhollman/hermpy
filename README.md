@@ -2,11 +2,67 @@
 
 A repository I've adapted from similar code found [here](https://github.com/DIASPlanetary/MESSENGER_Tools) to perform science with data from space missions around Mercury.
 
-## mag.py
+## Docs
+
+### plotting_tools.py
+
+A library of functions to assist in creating publication ready plots. Currently, this solely includes the plotting of Mercury onto any matplotlib axis, along with pulling the positions of a given spacecraft between two dates.
+
+#### Usage
+
+A basic usage would be as follows:
+
+```python
+# metakernel created using autometa
+metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
+
+# we are going to get positions between these two dates
+dates = ["2012-06-10", "2012-06-20"]
+
+positions = plotting_tools.Get_Trajectory("Messenger", dates, metakernel)
+
+positions /= 2439.7 # convert from km to radii
+
+fig, ax = plt.subplots()
+
+ax.plot(positions[:, 0], positions[:, 1])
+
+# Plotting mercury with the left side shaded
+plotting_tools.Plot_Mercury(ax, shaded_hemisphere="left")
+
+ax.set_aspect("equal")
+
+plt.show()
+```
+
+#### Functions
+
+plotting_tools.**Get_Trajectory**(spacecraft, dates, metakernel, steps=4000)
+
+Pulls position data for a given spacecraft and corresponding metakernel.
+
+**Parameters:**
+* spacecraft : string - the name of the required spacecraft. e.g. "Messenger"
+* dates : list\[string\] - A list of length 2, containing a start and finish date as strings. e.g. \["2012-06-10", "2012-06-20"\]
+* metakernel : string - A path to the relevant SPICE metakernel for the given spacecraft. Metakernels can be easily generated using [AutoMeta](https://github.com/mjrutala/AutoMeta).
+* steps : int, *default* 4000 - Number of positions to return between the two dates. 
+
+------------------------------------------------------------
+
+plotting_tools.**Plot_Mercury(ax, shaded_hemisphere="none", offset=(0,0))
+
+Adds a circle representing Mercury at (0,0) + an optional offset.
+
+**Parameters:**
+* ax : matplotlib axis
+* shaded_hemisphere : string - Which hemisphere to shade, options are: left, right, top, or bottom.
+* offset : tuple\[float, float\] - Apply an offset to the centre of Mercury. Useful when working in none Mercury-centric frames such as MSM / MSM'.
+
+### mag.py
 
 A library of functions to load and manipulate magnetic field data.
 
-### Usage
+#### Usage
 
 A basic usage would be as follows:
 
