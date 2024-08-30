@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from numpy import shape
 
 from MercuryTools import trajectory, plotting_tools
 
