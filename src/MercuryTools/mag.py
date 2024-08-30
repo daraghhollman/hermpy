@@ -7,56 +7,18 @@ import pandas as pd
 from tqdm import tqdm
 
 
-def main():
-
-    pd.set_option('display.max_columns', 20)
-
-    root_directory = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
-    paths = PathsFromDates()
-
-    data = Load_Messenger(
-        [
-            "/home/daraghhollman/Main/data/mercury/messenger/mag/2014/01_JAN/MAGMSOSCIAVG14001_01_V08.TAB"
-            #"/home/daraghhollman/Main/data/mercury/messenger/mag/2012/01_JAN/MAGMSOSCIAVG12001_01_V08.TAB"
-            # "/home/daraghhollman/Main/data/mercury/messenger/mag/2012/01_JAN/MAGMSOSCIAVG12002_01_V08.TAB",
-        ]
-    )
-
-
-    start = dt.datetime(year=2014, month=1, day=1, hour=0, minute=0, second=1)
-    end = dt.datetime(year=2014, month=1, day=1, hour=0, minute=1, second=20)
-
-    data = StripData(data, start, end)
-    data = MSO_TO_MSM(data)
-
-    data = AdjustForAberration(data)
-
-    print(data)
-
-    #plt.plot(data["date"], data["mag_total"], color="black", label="|B|")
-    #plt.plot(data["date"], data["mag_x"], color="indianred", label=r"B$_x$")
-    #plt.plot(data["date"], data["mag_y"], color="cornflowerblue", label=r"B$_y$")
-    #plt.plot(data["date"], data["mag_z"], color="turquoise", label=r"B$_z$")
-
-    #plt.legend()
-    #plt.show()
-
-def PathsFromDates(root_directory: str, format: str, start: dt.datetime, end: dt.datetime):
-    
-
-
-def StripData(data: pd.DataFrame, start: dt.datetime, end: dt.datetime):
+def StripData(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.DataFrame:
     """
     Removes the start and end of a dataframe (containing a dt.datetime "date" row) to match give start and end time
     """
 
     indices_to_keep = data.index[(data["date"] >= start) & (data["date"] <= end)]
-    stripped_data = data[data.index.isin(indices_to_keep)]
+    stripped_data = pd.DataFrame(data[data.index.isin(indices_to_keep)])
 
     return stripped_data
 
 
-def Load_Messenger(file_paths: list):
+def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
     """
     Reads data from a list of file paths and converts to a pandas dataframe in the following format:
     year, day of year, x, y, z (ephemeris mso), x, y, z (data mso), magnitude
@@ -126,7 +88,7 @@ def Load_Messenger(file_paths: list):
     return multi_file_data
 
 
-def AdjustForAberration(data: pd.DataFrame):
+def AdjustForAberration(data: pd.DataFrame) -> pd.DataFrame:
     """
     Solar wind impacts mercury's magnetosphere at an angle from the vector to the sun due to its orbital velocity
     """
@@ -157,11 +119,19 @@ def AdjustForAberration(data: pd.DataFrame):
             aberration_angle = np.arctan(orbital_velocity / 400000)
 
         # Adjust x and y ephemeris and data
-        new_mag = (row["mag_x"] * np.cos(aberration_angle) - row["mag_y"] * np.sin(aberration_angle),
-                   row["mag_x"] * np.sin(aberration_angle) + row["mag_y"] * np.cos(aberration_angle))
+        new_mag = (
+            row["mag_x"] * np.cos(aberration_angle)
+            - row["mag_y"] * np.sin(aberration_angle),
+            row["mag_x"] * np.sin(aberration_angle)
+            + row["mag_y"] * np.cos(aberration_angle),
+        )
 
-        new_ephem = (row["eph_x"] * np.cos(aberration_angle) - row["eph_y"] * np.sin(aberration_angle),
-                     row["eph_x"] * np.sin(aberration_angle) + row["eph_y"] * np.cos(aberration_angle))
+        new_ephem = (
+            row["eph_x"] * np.cos(aberration_angle)
+            - row["eph_y"] * np.sin(aberration_angle),
+            row["eph_x"] * np.sin(aberration_angle)
+            + row["eph_y"] * np.cos(aberration_angle),
+        )
 
         new_eph_x.append(new_ephem[0])
         new_eph_y.append(new_ephem[1])
@@ -177,7 +147,7 @@ def AdjustForAberration(data: pd.DataFrame):
     return data
 
 
-def GetDistanceFromSun(date: pd.DataFrame):
+def GetDistanceFromSun(date: dt.datetime) -> float:
     """
     Uses the ephem package to find distance from mercury to the sun
     """
@@ -192,7 +162,7 @@ def GetDistanceFromSun(date: pd.DataFrame):
     return distance_km
 
 
-def MSO_TO_MSM(data: pd.DataFrame, reverse=False):
+def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
     """
     Subtracts from the z component to convert from MSO to MSM.
     Note that angle changes are negligable.
@@ -213,9 +183,5 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False):
     return data
 
 
-def MSM_TO_MSO(data):
+def MSM_TO_MSO(data: pd.DataFrame) -> pd.DataFrame:
     return MSO_TO_MSM(data, reverse=True)
-
-
-if __name__ == "__main__":
-    main()
