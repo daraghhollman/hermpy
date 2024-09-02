@@ -2,6 +2,76 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def PlotMagnetosphericBoundaries(
+    ax: plt.Axes,
+    plot: str = "xy",
+    sub_solar_magnetopause: float = 1.45,
+    alpha: float = 0.5,
+    psi: float = 1.04,
+    p: float = 2.75,
+    initial_x: float = 0.5,
+) -> None:
+    """
+    Add nominal magnetopause and bow shock locations based on
+    Winslow et al. (2013)
+    """
+
+    
+    # Plotting magnetopause
+
+    # need to give these better names
+    # discuss with Charlie, and look into Winslow paper
+    phi = np.linspace(0, 2 * np.pi, 100)
+    rho = sub_solar_magnetopause * (2 / (1 + np.cos(phi))) ** alpha
+
+    magnetopause_x_coords = rho * np.cos(phi)
+    magnetopause_y_coords = rho * np.sin(phi)
+
+    L = psi * p
+
+    rho = L / (1 + psi * np.cos(phi))
+
+    bowshock_x_coords = initial_x + rho * np.cos(phi)
+    bowshock_y_coords = rho * np.sin(phi)
+
+    match plot:
+        case "xy":
+            ax.plot(
+                magnetopause_x_coords,
+                magnetopause_y_coords,
+                ls="--",
+                lw=3,
+                color="black",
+            )
+            ax.plot(
+                bowshock_x_coords,
+                bowshock_y_coords,
+                ls="-",
+                lw=3,
+                color="black",
+            )
+
+
+def SquareAxes(ax: plt.Axes, distance: float) -> None:
+    """
+    Sets limits and aspect ratio of ax
+    """
+    ax.set_aspect("equal")
+    ax.set_xlim(-distance, distance)
+    ax.set_ylim(-distance, distance)
+
+def AddLabels(ax: plt.Axes, plane: str) -> None:
+    """
+    Adds axes labels corresponding to a particular viewplane
+    """
+
+    match plane:
+        case "xy":
+            ax.set_xlabel("X MSM? [radii]")
+            ax.set_ylabel("Y MSM? [radii]")
+
+
+
 def Plot_Mercury(
     ax: plt.Axes,
     shaded_hemisphere: str = "none",

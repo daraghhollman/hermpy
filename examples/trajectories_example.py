@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from pandas import plotting
 
 from MercuryTools import trajectory, plotting_tools
 
@@ -19,10 +20,11 @@ fig, ax = plt.subplots()
 
 ax.plot(positions[:, 0], positions[:, 1])
 
-# Adding Mercury to plot
-
+# In the xy plane
 plotting_tools.Plot_Mercury(ax, shaded_hemisphere="left")
+plotting_tools.PlotMagnetosphericBoundaries(ax)
 
-ax.set_aspect("equal")
+plotting_tools.SquareAxes(ax, 8)
+plotting_tools.AddLabels(ax, "xy")
 
 plt.show()
