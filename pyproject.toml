@@ -3,12 +3,12 @@ requires = ["hatchling", ]
 build-backend = "hatchling.build"
 
 [project]
-name = "hermian_toolbelt"
+name = "hermean_toolbelt"
 version = "0.0.1"
 authors = [
     { name="Daragh Hollman", email="dhollman@cp.dias.ie" },
     { name="Charles Bowers", email="cbowers@cp.dias.ie"},
-    { name="Catriona Jackman", email="cjackman@cp.dias.ie"},
+    { name="Caitriona Jackman", email="cjackman@cp.dias.ie"},
     { name="Adam Healy"}
 ]
 description = "A collection of tools to aid in the creation of publication plots from spacecraft around Mercury."
@@ -32,5 +32,5 @@ dependancies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/daraghhollman/HermianToolbelt"
-Issues = "https://github.com/daraghhollman/HermianToolbelt/issues"
+Homepage = "https://github.com/daraghhollman/HermeanToolbelt"
+Issues = "https://github.com/daraghhollman/HermeanToolbelt/issues"
