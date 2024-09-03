@@ -7,6 +7,9 @@ from MercuryTools import mag
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
 
 # Loading data, downloaded from PDS
+# Should think about using a glob tool to select data
+# between certain doy.
+# i.e. "****/*****/MAGMSOSCIAVG*****_01_V08.TAB"
 data = mag.Load_Messenger(
     [
         root_dir + "2012/01_JAN/MAGMSOSCIAVG12001_01_V08.TAB",
@@ -15,7 +18,7 @@ data = mag.Load_Messenger(
 )
 
 start = dt.datetime(year=2012, month=1, day=1, hour=10)
-end = dt.datetime(year=2012, month=1, day=2, hour=14)
+end = dt.datetime(year=2012, month=1, day=2, hour=10)
 
 # Isolating only a particular portion of the files
 data = mag.StripData(data, start, end)
@@ -45,5 +48,7 @@ mag_total: the total magnetic field strength (nt)
 fig, ax = plt.subplots()
 
 ax.plot(data["date"], data["mag_total"])
+
+ax.set_yscale("log")
 
 plt.show()

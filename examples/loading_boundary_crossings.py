@@ -30,6 +30,7 @@ ax.plot(data["date"], data["mag_total"], color="black")
 
 ax.set_ylabel("|B| [nT]")
 ax.set_xlabel("UTC")
+ax.set_yscale("log")
 
 # Plotting crossing intervals as axvlines
 boundary_crossings.Plot_Crossing_Intervals(ax, start, end, philpott_crossings)

@@ -3,7 +3,7 @@ requires = ["hatchling", ]
 build-backend = "hatchling.build"
 
 [project]
-name = "MercuryTools"
+name = "hermian_toolbelt"
 version = "0.0.1"
 authors = [
     { name="Daragh Hollman", email="dhollman@cp.dias.ie" },
@@ -32,5 +32,5 @@ dependancies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/daraghhollman/MercuryTools"
-Issues = "https://github.com/daraghhollman/MercuryTools/issues"
+Homepage = "https://github.com/daraghhollman/HermianToolbelt"
+Issues = "https://github.com/daraghhollman/HermianToolbelt/issues"

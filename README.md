@@ -1,4 +1,4 @@
-# Mercury Tools
+# Hermian Toolbelt
 
 Tools for aiding in the creation of publication ready plots with data from spacecraft around Mercury.
 
@@ -7,7 +7,7 @@ Tools for aiding in the creation of publication ready plots with data from space
 Pre-publishing, this package can be installed manually from source. When published, this package will be available via pypi.
 
 ```shell
-git clone https://github.com/daraghhollman/MercuryTools
+git clone https://github.com/daraghhollman/HermianToolbelt
 pip install -e /path/to/this/repository/
 ```
 
@@ -15,9 +15,9 @@ pip install -e /path/to/this/repository/
 
 Several subpackages can be imported:
 ```python
-from MercuryTools import plotting_tools
-from MercuryTools import trajectory
-from MercuryTools import mag
+from HermianToolbelt import plotting_tools
+from HermianToolbelt import trajectory
+from HermianToolbelt import mag
 ```
 
 Examples can be found in the `examples/` directory.
