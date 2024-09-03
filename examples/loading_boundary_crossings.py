@@ -2,7 +2,7 @@ import datetime as dt
 
 import matplotlib.pyplot as plt
 
-from MercuryTools import boundary_crossings, mag
+from hermean_toolbelt import boundary_crossings, mag
 
 sun_crossings = boundary_crossings.Load_Crossings("../../sun_crossings.p")
 

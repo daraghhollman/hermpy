@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from MercuryTools import plotting_tools, trajectory
+from hermean_toolbelt import plotting_tools, trajectory
 
 # A metakernel created using AutoMeta
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
