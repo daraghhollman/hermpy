@@ -1,7 +1,25 @@
+import datetime as dt
+
+import numpy as np
 import spiceypy as spice
 
 
-def Get_Trajectory(spacecraft: str, dates: list[str], metakernel: str, steps=4000, frame="MSO"):
+def Get_Position(spacecraft: str, date: dt.datetime, metakernel: str) -> list[float]:
+    """
+    Returns spacecraft position
+    """
+    spice.furnsh(metakernel)
+
+    et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+
+    position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+
+    return position
+
+
+def Get_Trajectory(
+    spacecraft: str, dates: list[str], metakernel: str, steps=4000, frame="MSO"
+):
     """
     Plots a given spacecraft's trajectory between two dates. A SPICE metakernel with the required ephemerids must be provided
     Returns: spacecraft positions in km
@@ -19,9 +37,37 @@ def Get_Trajectory(spacecraft: str, dates: list[str], metakernel: str, steps=400
     match frame:
         case "MSO":
             return positions
-        
+
         case "MSM":
-            positions[:,2] += 479
+            positions[:, 2] += 479
             return positions
 
     return positions
+
+
+def Get_Range_From_Date(
+    spacecraft: str, dates: list[dt.datetime] | dt.datetime, metakernel: str
+):
+    """
+    For a date, or range of dates, return a spacecraft's distance from Mercury
+    """
+
+    if type(dates) == dt.datetime:
+        dates = [dates]
+
+    spice.furnsh(metakernel)
+
+    distances = []
+
+    for date in dates:
+        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+
+        position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+
+        distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+        distances.append(distance)
+
+    if len(distances) == 1:
+        return distances[0]
+
+    return distances

@@ -1,6 +1,7 @@
+import matplotlib.dates as mpl_dates
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
 import numpy as np
+from matplotlib.ticker import MultipleLocator
 
 
 def PlotMagnetosphericBoundaries(
@@ -17,7 +18,6 @@ def PlotMagnetosphericBoundaries(
     Winslow et al. (2013)
     """
 
-    
     # Plotting magnetopause
 
     # need to give these better names
@@ -107,6 +107,7 @@ def SquareAxes(ax: plt.Axes, distance: float) -> None:
     ax.yaxis.set_major_locator(MultipleLocator(major_locator))
     ax.yaxis.set_minor_locator(MultipleLocator(minor_locator))
 
+
 def AddLabels(ax: plt.Axes, plane: str, frame="MSO") -> None:
     """
     Adds axes labels corresponding to a particular viewplane
@@ -170,3 +171,102 @@ def Plot_Mercury(
             ax.fill_between(
                 x_coords, y_coords, where=y_coords < 0, color="black", interpolate=True
             )
+
+
+def Add_Tick_Ephemeris(
+    ax: plt.Axes,
+    metakernel: str,
+    include: set = {"date", "hours", "minutes", "seconds", "range"},
+):
+
+    from hermean_toolbelt import trajectory
+
+    tick_locations = ax.get_xticks()
+
+    new_tick_labels = []
+    for loc in tick_locations:
+        # Matplotlib stores dates as days since 1970-01-01T00:00:00
+        # source: https://matplotlib.org/stable/gallery/text_labels_and_annotations/date.html
+        # This can be converted to a datetime object
+        date = mpl_dates.num2date(loc)
+
+        tick_format: str = ""
+
+        if "date" in include:
+            tick_format += date.strftime("%Y-%m-%d")
+
+        if "hours" in include:
+            tick_format += "\n" + date.strftime("%H")
+        if "minutes" in include:
+            tick_format += date.strftime(":%M")
+        if "seconds" in include:
+            tick_format += date.strftime(":%S")
+
+        if "range" in include:
+            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+            distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+            # Convert from km to radii
+            distance /= 2439.7
+
+            tick_format += "\n" + f"{distance:.2f}"
+
+        if "longitude" in include:
+            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+
+            longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
+
+            if longitude < 0:
+                longitude += 360
+
+            tick_format += "\n" + f"{longitude:.2f}"
+
+        if "latitude" in include:
+            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+
+            latitude = np.arctan2(
+                position[2], np.sqrt(position[0] ** 2 + position[1] ** 2)
+            )
+
+            # convert from radians to degrees
+            latitude *= 180 / np.pi
+
+            tick_format += "\n" + f"{latitude:.2f}"
+
+        if "local time" in include:
+            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+
+            longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
+
+            if longitude < 0:
+                longitude += 360
+            
+            local_time = ((longitude + 180) * 24 / 360) % 24
+            tick_format += "\n" + f"{local_time:.0f}"
+
+        new_tick_labels.append(tick_format)
+
+    first_tick_format: str = ""
+    if "date" in include:
+        first_tick_format += "YYYY-MM-DD"
+
+    if "hours" in include:
+        first_tick_format += "\nHH"
+    if "minutes" in include:
+        first_tick_format += ":MM"
+    if "seconds" in include:
+        first_tick_format += ":SS"
+
+    if "range" in include:
+        first_tick_format += "\n"+r"$R_{\text{MSO}}$ [$R_\text{M}$]"
+
+    if "longitude" in include:
+        first_tick_format += "\nLon. " + r"[$^\circ$]"
+    if "latitude" in include:
+        first_tick_format += "\nLat. " + r"[$^\circ$]"
+
+    if "local time" in include:
+        first_tick_format += "\nLT"
+
+    new_tick_labels[0] = first_tick_format
+
+    ax.set_xticklabels(new_tick_labels)

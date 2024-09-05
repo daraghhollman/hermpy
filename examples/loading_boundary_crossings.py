@@ -1,11 +1,14 @@
 import datetime as dt
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from hermean_toolbelt import boundary_crossings, mag
+from hermean_toolbelt import boundary_crossings, mag, plotting_tools
+
+mpl.rcParams["font.size"] = 14
+
 
 sun_crossings = boundary_crossings.Load_Crossings("../../sun_crossings.p")
-
 philpott_crossings = boundary_crossings.Load_Crossings("../../philpott_crossings.p")
 
 
@@ -19,8 +22,8 @@ data = mag.Load_Messenger(
 )
 
 # Isolating only a particular portion of the files
-start = dt.datetime(year=2012, month=1, day=1, hour=9)
-end = dt.datetime(year=2012, month=1, day=1, hour=15)
+start = dt.datetime(year=2012, month=1, day=1, hour=9, minute=30)
+end = dt.datetime(year=2012, month=1, day=1, hour=10, minute=30)
 data = mag.StripData(data, start, end)
 
 fig, ax = plt.subplots()
@@ -29,10 +32,16 @@ ax.plot(data["date"], data["mag_total"], color="black")
 ### ---------------------------------------
 
 ax.set_ylabel("|B| [nT]")
-ax.set_xlabel("UTC")
-ax.set_yscale("log")
+#ax.set_yscale("log")
 
 # Plotting crossing intervals as axvlines
 boundary_crossings.Plot_Crossing_Intervals(ax, start, end, philpott_crossings)
+
+# Plotting ephemeris information
+# We need a metakernel to retrieve ephemeris information
+metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
+plotting_tools.Add_Tick_Ephemeris(ax, metakernel, include={
+    "date", "hours", "minutes", "range", "latitude", "longitude", "local time" 
+})
 
 plt.show()

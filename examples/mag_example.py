@@ -2,7 +2,7 @@ import datetime as dt
 
 import matplotlib.pyplot as plt
 
-from hermean_toolbelt import mag
+from hermean_toolbelt import mag, plotting_tools
 
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
 
@@ -27,7 +27,7 @@ data = mag.StripData(data, start, end)
 data = mag.MSO_TO_MSM(data)
 
 # Accounting for solar wind aberration angle
-data = mag.AdjustForAberration(data)
+#data = mag.AdjustForAberration(data)
 
 """
 This data object is a Pandas DataFrame, and has the following columns:
@@ -50,5 +50,10 @@ fig, ax = plt.subplots()
 ax.plot(data["date"], data["mag_total"])
 
 ax.set_yscale("log")
+
+# Plotting ephemeris information
+# We need a metakernel to retrieve ephemeris information
+metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
+plotting_tools.Add_Tick_Ephemeris(ax, metakernel)
 
 plt.show()
