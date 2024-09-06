@@ -16,14 +16,11 @@ def PlotMagnetosphericBoundaries(
     initial_x: float = 0.5,
 ) -> None:
     """
-    Add nominal magnetopause and bow shock locations based on
+    Add average magnetopause and bow shock locations based on
     Winslow et al. (2013)
     """
 
     # Plotting magnetopause
-
-    # need to give these better names
-    # discuss with Charlie, and look into Winslow paper
     phi = np.linspace(0, 2 * np.pi, 100)
     rho = sub_solar_magnetopause * (2 / (1 + np.cos(phi))) ** alpha
 

@@ -21,3 +21,8 @@ from HermeanToolbelt import mag
 ```
 
 Examples can be found in the `examples/` directory.
+
+## References
+
+**Average magnetosphere boundary model**
+Winslow, R. M., B. J. Anderson, C. L. Johnson, J. A. Slavin, H. Korth, M. E. Purucker, D. N. Baker, and S. C. Solomon (2013), Mercury’s magnetopause and bow shock from MESSENGER Magnetometer observations, J. Geophys. Res. Space Physics, 118, 2213–2227, doi:10.1002/jgra.50237
