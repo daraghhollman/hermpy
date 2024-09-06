@@ -1,6 +1,9 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from hermean_toolbelt import plotting_tools, trajectory
+
+mpl.rcParams["font.size"] = 14
 
 # A metakernel created using AutoMeta
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
@@ -31,4 +34,5 @@ for i, ax in enumerate(axes):
     plotting_tools.PlotMagnetosphericBoundaries(ax, plane=planes[i])
     plotting_tools.SquareAxes(ax, 6)
 
+fig.suptitle("MESSENGER Trajectory 2012-06-10 to 2012-06-12")
 plt.show()
