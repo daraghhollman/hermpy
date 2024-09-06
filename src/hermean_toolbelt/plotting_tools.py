@@ -1,3 +1,5 @@
+import datetime as dt
+
 import matplotlib.dates as mpl_dates
 import matplotlib.pyplot as plt
 import numpy as np
@@ -239,9 +241,12 @@ def Add_Tick_Ephemeris(
 
             if longitude < 0:
                 longitude += 360
-            
+
             local_time = ((longitude + 180) * 24 / 360) % 24
-            tick_format += "\n" + f"{local_time:.0f}"
+            hours = int(local_time)
+            minutes = int((local_time * 60) % 60)
+            datetime = dt.datetime(year=1, month=1, day=1, hour=hours, minute=minutes)
+            tick_format += "\n" + f"{datetime:%H:%M}"
 
         new_tick_labels.append(tick_format)
 
@@ -257,7 +262,7 @@ def Add_Tick_Ephemeris(
         first_tick_format += ":SS"
 
     if "range" in include:
-        first_tick_format += "\n"+r"$R_{\text{MSO}}$ [$R_\text{M}$]"
+        first_tick_format += "\n" + r"$R_{\text{MSO}}$ [$R_\text{M}$]"
 
     if "longitude" in include:
         first_tick_format += "\nLon. " + r"[$^\circ$]"
