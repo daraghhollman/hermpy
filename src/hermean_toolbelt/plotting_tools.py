@@ -14,6 +14,7 @@ def PlotMagnetosphericBoundaries(
     psi: float = 1.04,
     p: float = 2.75,
     initial_x: float = 0.5,
+    add_legend: bool = False,
 ) -> None:
     """
     Add average magnetopause and bow shock locations based on
@@ -40,31 +41,41 @@ def PlotMagnetosphericBoundaries(
                 magnetopause_x_coords,
                 magnetopause_y_coords,
                 ls="--",
-                lw=3,
+                lw=1,
                 color="black",
             )
             ax.plot(
                 bowshock_x_coords,
                 bowshock_y_coords,
                 ls="-",
-                lw=3,
+                lw=1,
                 color="black",
             )
 
         case "xz":
+
+            bowshock_label = ""
+            magnetopause_label = ""
+
+            if add_legend:
+                bowshock_label = "Avg. Bowshock (Winslow et al. 2013)"
+                magnetopause_label = "Avg. Magnetopause (Winslow et al. 2013)"
+
             ax.plot(
                 magnetopause_x_coords,
                 magnetopause_y_coords,
                 ls="--",
-                lw=3,
+                lw=1,
                 color="black",
+                label=magnetopause_label,
             )
             ax.plot(
                 bowshock_x_coords,
                 bowshock_y_coords,
                 ls="-",
-                lw=3,
+                lw=1,
                 color="black",
+                label=bowshock_label,
             )
 
         case "yz":
@@ -131,7 +142,6 @@ def Plot_Mercury(
     shaded_hemisphere: str = "none",
     plane: str = "xy",
     frame: str = "MSO",
-    offset: list[float] = [0, 0],
 ) -> None:
     """
     Adds mercury circle at 0, 0 on matplotlib axis 'ax'
@@ -140,9 +150,10 @@ def Plot_Mercury(
     shade_hemisphere: ['left', 'right', 'top', or 'bottom']
                       shades half the circle darker
     """
+    offset: list[float] = [0, 0]
 
     if frame == "MSM" and (plane == "xz" or plane == "yz"):
-        offset[1] += 479 / 2439.7
+        offset[1] -= 479 / 2439.7
 
     angles = np.linspace(0, 2 * np.pi, 1000)
     x_coords = np.cos(angles) + offset[0]

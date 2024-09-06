@@ -18,6 +18,7 @@ Several subpackages can be imported:
 from HermeanToolbelt import plotting_tools
 from HermeanToolbelt import trajectory
 from HermeanToolbelt import mag
+from HermeanToolbelt import boundary_crossings
 ```
 
 Examples can be found in the `examples/` directory.
