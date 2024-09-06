@@ -71,3 +71,55 @@ def Get_Range_From_Date(
         return distances[0]
 
     return distances
+
+
+def Get_Nearest_Apoapsis(
+    time: dt.datetime,
+    metakernel: str,
+    time_delta: dt.timedelta = dt.timedelta(minutes=1),
+    time_limit: dt.timedelta = dt.timedelta(hours=12),
+    spacecraft: str = "MESSENGER",
+) -> tuple[dt.datetime, float]:
+    """
+    Finds closest apoapsis to input time and returns apoapsis time
+    and altitude
+    """
+    apoapsis_altitude: float = 0
+    apoapsis_time: dt.datetime = time
+
+    spice.furnsh(metakernel)
+
+    # Search forward in time
+    current_time = time
+    end_time = time + time_limit
+    while current_time < end_time:
+
+        # Get current altitude
+        et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
+        position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+        altitude = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+
+        if altitude > apoapsis_altitude:
+            apoapsis_altitude = altitude
+            apoapsis_time = current_time
+
+        current_time += time_delta
+
+
+    # Search backward in time
+    current_time = time
+    end_time = time - time_limit
+    while current_time > end_time:
+
+        # Get current altitude
+        et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
+        position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+        altitude = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+
+        if altitude > apoapsis_altitude:
+            apoapsis_altitude = altitude
+            apoapsis_time = current_time
+
+        current_time -= time_delta
+
+    return apoapsis_time, apoapsis_altitude
