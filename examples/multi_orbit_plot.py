@@ -105,14 +105,23 @@ for i, orbit_data in enumerate(data_groups):
     ax = axes[i]
 
     if i == middle_index:
-        colour = "orange"
+        colour = "magenta"
+        label = f"{orbit_data['date'].iloc[0].strftime("%Y-%m-%d %H:%M:%S")} to\n{orbit_data['date'].iloc[-1].strftime("%Y-%m-%d %H:%M:%S")}"
+
     else:
         colour = "black"
+
+        if (i - middle_index) < 0:
+            label = f"{abs(i - middle_index)} orbit(s) before"
+        else:
+            label = f"{i - middle_index} orbit(s) after"
+
         ax.plot(
             data_groups[middle_index]["minutes before apoapsis"],
             data_groups[middle_index]["mag_total"],
-            color="orange",
+            color="magenta",
             lw=0.8,
+            alpha=0.5,
         )
 
     ax.plot(
@@ -120,11 +129,20 @@ for i, orbit_data in enumerate(data_groups):
         orbit_data["mag_total"],
         color=colour,
         lw=0.8,
-        label=f"{orbit_data['date'].iloc[0].strftime("%Y-%m-%d %H:%M:%S")} to {orbit_data['date'].iloc[-1].strftime("%Y-%m-%d %H:%M:%S")}",
+    )
+
+    ax.text(
+        1.05,
+        0.5,
+        label,
+        rotation=-90,
+        horizontalalignment="center",
+        verticalalignment="center",
+        fontsize=10,
+        transform=ax.transAxes,
     )
 
     ax.set_xlim(minutes_before, np.min(orbit_data["minutes before apoapsis"]))
-    ax.legend()
 
     ax.set_xmargin(0)
     ax.tick_params("x", which="major", direction="inout", length=16, width=1)
@@ -134,9 +152,5 @@ for i, orbit_data in enumerate(data_groups):
 
 axes[-1].set_xlabel("Minutes before apoapsis")
 fig.text(0.06, 0.5, "|B| [nT]", ha="center", va="center", rotation="vertical")
-
-fig.suptitle(
-    f"Consecutive Orbits From {data_groups[0]['date'][0]} to {data_groups[-1]['date'][0]}"
-)
 
 plt.show()
