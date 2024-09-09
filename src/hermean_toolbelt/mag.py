@@ -12,8 +12,8 @@ def StripData(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.Da
     Removes the start and end of a dataframe (containing a dt.datetime "date" row) to match give start and end time
     """
 
-    indices_to_keep = data.index[(data["date"] >= start) & (data["date"] <= end)]
-    stripped_data = pd.DataFrame(data[data.index.isin(indices_to_keep)])
+    stripped_data = data.loc[data["date"].between(start, end)]
+    stripped_data = stripped_data.reset_index(drop=True)
 
     return stripped_data
 
@@ -84,6 +84,8 @@ def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
         multi_file_data.append(dataframe)
 
     multi_file_data = pd.concat(multi_file_data)
+
+    multi_file_data = multi_file_data.reset_index(drop=True)
 
     return multi_file_data
 
