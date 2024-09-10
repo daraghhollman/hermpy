@@ -109,6 +109,7 @@ def Get_All_Apoapsis_In_Range(
 
         current_time += time_delta
 
+
     # Now we find the peaks and their times using scipy.signal
     peak_indices, _ = scipy.signal.find_peaks(altitudes)
 
@@ -117,18 +118,23 @@ def Get_All_Apoapsis_In_Range(
 
     if number_of_orbits_to_include > 0:
 
-        """
         # if the number of apoapses is greater than the number of orbits
         # we must remove the furthest apoapsis until they are equal
         while len(apoapsis_altitudes) > number_of_orbits_to_include:
+            plt.plot(times, altitudes)
+            plt.scatter(apoapsis_times, apoapsis_altitudes)
+            plt.axvline(dt.datetime(year=2011, month=4, day=11, hour=5))
+            plt.show()
 
             # find the furthest one from the start time
             # it will be at one of the ends
             first_apoapsis_time = apoapsis_times[0]
             last_apoapsis_time = apoapsis_times[-1]
 
-            first_time_difference = start_time - first_apoapsis_time
-            last_time_difference = last_apoapsis_time - start_time
+            midpoint = start_time + (end_time - start_time) / 2
+
+            first_time_difference = abs(first_apoapsis_time - midpoint)
+            last_time_difference = abs(last_apoapsis_time - midpoint)
 
             if first_time_difference > last_time_difference:
                 # remove first
@@ -142,10 +148,12 @@ def Get_All_Apoapsis_In_Range(
 
             else:
                 raise ValueError("Cannot reduce apoapsis list from 1 orbit. Instead, use trajectory.Get_Nearest_Apoapsis")
-        """
-        # Remove the first apoapsis, as we always refere to the next apoapsis
-        apoapsis_times = np.delete(apoapsis_times, 0)
-        apoapsis_altitudes = np.delete(apoapsis_altitudes, 0)
+
+            """
+            # Remove the first apoapsis, as we always refere to the next apoapsis
+            apoapsis_times = np.delete(apoapsis_times, 0)
+            apoapsis_altitudes = np.delete(apoapsis_altitudes, 0)
+            """
 
 
     return apoapsis_altitudes, apoapsis_times 
