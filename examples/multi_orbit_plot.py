@@ -93,16 +93,28 @@ for apoapsis_time in apoapsis_times:
 
     data_groups.append(new_data)
 
-
 ####################################################
-###################### PLOTTING ####################
+################## PLOTTING MAG ####################
 ####################################################
 
-fig, axes = plt.subplots(len(data_groups), 1, sharex=True)
+fig = plt.figure()
+
+ax1 = plt.subplot2grid((2 + len(data_groups), 3), (0, 0), colspan=1, rowspan=2)
+ax2 = plt.subplot2grid((2 + len(data_groups), 3), (0, 1), colspan=1, rowspan=2)
+ax3 = plt.subplot2grid((2 + len(data_groups), 3), (0, 2), colspan=1, rowspan=2)
+trajectory_axes = [ax1, ax2, ax3]
+
+
+mag_axes: list = [0] * len(data_groups)
+
+for i in range(len(data_groups)):
+    mag_axes[i] = plt.subplot2grid((2 + len(data_groups), 3), (i + 2, 0), colspan=3)
+
+mag_axes[0].set_title(" ")
 
 for i, orbit_data in enumerate(data_groups):
 
-    ax = axes[i]
+    ax = mag_axes[i]
 
     if i == middle_index:
         colour = "magenta"
@@ -150,7 +162,59 @@ for i, orbit_data in enumerate(data_groups):
 
     ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(10))
 
-axes[-1].set_xlabel("Minutes before apoapsis")
-fig.text(0.06, 0.5, "|B| [nT]", ha="center", va="center", rotation="vertical")
+    if ax != mag_axes[-1]:
+        ax.set_xticklabels([])
+
+mag_axes[-1].set_xlabel("Minutes before apoapsis")
+mag_axes[middle_index].set_ylabel("|B| [nT]")
+#fig.text(0.06, 0.35, "|B| [nT]", ha="center", va="center", rotation="vertical")
+
+
+#################################################################
+################### PLOTING TRAJECTORIES ########################
+#################################################################
+
+# Here we just plot the trajectory of the middle orbit, along with some padding
+
+frame = "MSM"
+
+
+time_padding = dt.timedelta(hours=4)
+
+start = data_groups[middle_index]["date"].iloc[0]
+end = data_groups[middle_index]["date"].iloc[-1]
+
+dates = [start.strftime("%Y-%m-%d %H:%M:%S"), end.strftime("%Y-%m-%d %H:%M:%S")]
+
+padded_dates = [
+    (start - time_padding).strftime("%Y-%m-%d %H:%M:%S"),
+    (end + time_padding).strftime("%Y-%m-%d %H:%M:%S"),
+]
+
+positions = trajectory.Get_Trajectory("Messenger", dates, metakernel, frame=frame)
+padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, metakernel, frame=frame)
+
+# Convert from km to Mercury radii
+positions /= 2439.7
+padded_positions /= 2439.7
+    
+
+trajectory_axes[0].plot(positions[:, 0], positions[:, 1], color="magenta", lw=3, zorder=10)
+trajectory_axes[1].plot(positions[:, 0], positions[:, 2], color="magenta", lw=3, zorder=10, label="Plotted Trajectory")
+trajectory_axes[2].plot(positions[:, 1], positions[:, 2], color="magenta", lw=3, zorder=10)
+trajectory_axes[0].plot(padded_positions[:, 0], padded_positions[:, 1], color="grey")
+trajectory_axes[1].plot(padded_positions[:, 0], padded_positions[:, 2], color="grey", label=r"Trajectory $\pm$ 6 hours")
+trajectory_axes[2].plot(padded_positions[:, 1], padded_positions[:, 2], color="grey")
+
+planes = ["xy", "xz", "yz"]
+for i, ax in enumerate(trajectory_axes):
+    plotting_tools.Plot_Mercury(
+        ax, shaded_hemisphere="left", plane=planes[i], frame=frame
+    )
+    plotting_tools.AddLabels(ax, planes[i], frame=frame)
+    plotting_tools.PlotMagnetosphericBoundaries(ax, plane=planes[i], add_legend=True)
+    plotting_tools.SquareAxes(ax, 4)
+
+trajectory_axes[1].legend(bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5)
 
 plt.show()

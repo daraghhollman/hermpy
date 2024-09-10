@@ -90,11 +90,12 @@ def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
     return multi_file_data
 
 
-def AdjustForAberration(data: pd.DataFrame) -> pd.DataFrame:
+def AdjustForAberration(data: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     """
     Solar wind impacts mercury's magnetosphere at an angle from the vector to the sun due to its orbital velocity
     """
-    print("Adjusting for Aberration")
+    if verbose:
+        print("Adjusting for Aberration")
 
     new_eph_x = []
     new_eph_y = []
@@ -105,7 +106,7 @@ def AdjustForAberration(data: pd.DataFrame) -> pd.DataFrame:
     r = 0
     aberration_angle = 0
     previous_date = dt.datetime(2010, 1, 1)
-    for _, row in tqdm(data.iterrows(), total=len(data)):
+    for _, row in tqdm(data.iterrows(), total=len(data), disable=not verbose):
 
         # check if day has changed and then update mercury distance
         if (row["date"] - previous_date) > dt.timedelta(days=1):
