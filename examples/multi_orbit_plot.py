@@ -39,14 +39,14 @@ data_length = end - start
 #############################################################
 
 # Set the number of orbits either side
-number_of_orbits = 3
+number_of_orbits = 5
 approx_orbit_period = dt.timedelta(hours=12)
 
 apoapsis_altitudes, apoapsis_times = trajectory.Get_All_Apoapsis_In_Range(
     start - number_of_orbits * approx_orbit_period,
     start + number_of_orbits * approx_orbit_period,
     metakernel,
-    number_of_orbits_to_include=number_of_orbits * 2 + 1,
+    number_of_orbits_to_include=5,
 )
 
 # Determine how far before apoapsis our start time is.
