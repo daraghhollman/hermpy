@@ -1,23 +1,19 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "hermpy"
+description = "A collection of tools to aid in the creation of publication plots from spacecraft around Mercury."
 authors = [
     { name="Daragh Hollman", email="dhollman@cp.dias.ie" },
     { name="Charles Bowers", email="cbowers@cp.dias.ie"},
     { name="Caitriona Jackman", email="cjackman@cp.dias.ie"},
     { name="Adam Healy"}
 ]
-description = "A collection of tools to aid in the creation of publication plots from spacecraft around Mercury."
-keywords = ["Mercury", "Space Science", "Planetary Science", "Space", "MESSENGER", "BepiColombo", "Magnetospheres"]
-
 readme = "README.md"
-requires-python = ">=3.10"
 license = {file = "LICENSE"}
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-    "Operating System :: OS Independent"
-]
-dependancies = [
+dependencies = [
     "numpy",
     "matplotlib",
     "ephem",
@@ -28,16 +24,7 @@ dependancies = [
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://github.com/daraghhollman/HermPy"
-Issues = "https://github.com/daraghhollman/HermPy/issues"
-
-
-[build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-zip_safe = false
+homepage = "https://github.com/daraghhollman/HermPy"
 
 [tool.setuptools.packages.find]
 

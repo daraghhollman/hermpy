@@ -16,9 +16,30 @@ def PlotMagnetosphericBoundaries(
     initial_x: float = 0.5,
     add_legend: bool = False,
 ) -> None:
-    """
-    Add average magnetopause and bow shock locations based on
-    Winslow et al. (2013)
+    """Add average magnetopause and bow shock locations based on
+    Winslow et al. (2013).
+
+    Add the plane projection of the average magnetopause and
+    bow shock locations based on Winslow et al. (2013).
+    These are plotted in units of Mercury radii.
+
+
+    Parameters
+    ----------
+    ax : pyplot.Axes
+        The pyplot axis to add the boundaries to.
+
+    plane : str {`"xy"`, `"xz"`, `"yz"`}, optional
+        What plane to project the boundaries to. yz is not yet
+        implimented.
+
+    add_legend : bool {`True`, `False`}, optional
+        Should pyplot legend labels be added.
+
+
+    Returns
+    -------
+    None
     """
 
     # Plotting magnetopause
@@ -83,8 +104,22 @@ def PlotMagnetosphericBoundaries(
 
 
 def SquareAxes(ax: plt.Axes, distance: float) -> None:
-    """
-    Sets limits and aspect ratio of ax
+    """Sets axis limits and aspect ratio for square trajectory
+    plots.
+
+
+    Parameters
+    ----------
+    ax : pyplot.Axes
+        The pyplot axis to adjust.
+
+    distance : float
+        To what value +/- should the edges extend to.
+
+
+    Returns
+    -------
+    None
     """
     ax.set_aspect("equal")
     ax.set_xlim(-distance, distance)
@@ -119,8 +154,28 @@ def SquareAxes(ax: plt.Axes, distance: float) -> None:
 
 
 def AddLabels(ax: plt.Axes, plane: str, frame="MSO", aberrate=False) -> None:
-    """
-    Adds axes labels corresponding to a particular viewplane
+    """Adds axes labels corresponding to a particular trajectory
+    plane.
+
+
+    Parameters
+    ----------
+    ax : pyplot.Axes
+        The pyplot axis to add labels to.
+
+    plane : str {`"xy"`, `"xz"`, `"yz"`}
+        Which plane is this axis plotting.
+
+    frame : str {`"MSO"`, `"MSM"`}, optional
+        Adjust the coordinate system as written on the labels.
+
+    aberrate : bool {`False`, `True`}, optional
+        Prime the coordinate labels. e.g. X -> X'
+
+
+    Returns
+    -------
+    None
     """
 
     match plane:
@@ -155,12 +210,32 @@ def Plot_Mercury(
     plane: str = "xy",
     frame: str = "MSO",
 ) -> None:
-    """
-    Adds mercury circle at 0, 0 on matplotlib axis 'ax'
-    In units of Mercury radii
+    """Adds a circle represting Mercury.
 
-    shade_hemisphere: ['left', 'right', 'top', or 'bottom']
-                      shades half the circle darker
+    Adds to a pyplot axis a circle (optionally half shaded) to
+    represent Mercury. Circle has radius 1 unit and can be offset
+    to represent MSM coordinates.
+
+
+    Parameters
+    ----------
+    ax : pyplot.Axes
+        The pyplot axis to add Mercury to.
+
+    shaded_hemisphere : str {`"none"`, `"top"`, `"bottom"`, `"left"`, `"right"`}, optional
+        Which side of Mercury to shade.
+
+    plane : str {`"xy"`, `"xz"`, `"yz"`}, optional
+        Which plane is this axis plotting. Needed as frame
+        changes only occur for planes containing z.
+
+    frame : str {`"MSO"`, `"MSM"`}, optional
+        Shift the coordinate centre.
+
+
+    Returns
+    -------
+    None
     """
     offset: list[float] = [0, 0]
 
@@ -199,7 +274,27 @@ def Add_Tick_Ephemeris(
     ax: plt.Axes,
     metakernel: str,
     include: set = {"date", "hours", "minutes", "seconds", "range"},
-):
+) -> None:
+
+    """Adds ephemeris to tick labels
+
+    Formats time series tick labels to include spacecraft 
+    ephemeris.
+
+
+    Parameters
+    ----------
+    ax : pyplot.Axes
+        The pyplot axis to affect.
+
+    metakernel : str
+        An absolute path to a NAIF SPICE metakernel containing
+        the required spacecraft and solar system kernels.
+
+    include : set {"date", "hours", "minutes", "seconds", "range", "latitude", "local time"}
+        Which parameters to include as part of the tick labels.
+    
+    """
 
     from hermean_toolbelt import trajectory
 
