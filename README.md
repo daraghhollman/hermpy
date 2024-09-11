@@ -1,24 +1,24 @@
-# Hermean Toolbelt
+# HERMPY - A toolbelt for space science at Mercury
 
 Tools for aiding in the creation of publication ready plots with data from spacecraft around Mercury.
 
 ## Installation
 
-Pre-publishing, this package can be installed manually from source. When published, this package will be available via pypi.
+Pre-publishing, this package can be installed manually from source.
 
 ```shell
-git clone https://github.com/daraghhollman/HermeanToolbelt
-pip install -e /path/to/this/repository/
+git clone https://github.com/daraghhollman/hermpy
+pip install /path/to/this/repository/
 ```
 
 ## Usage
 
 Several subpackages can be imported:
 ```python
-from HermeanToolbelt import plotting_tools
-from HermeanToolbelt import trajectory
-from HermeanToolbelt import mag
-from HermeanToolbelt import boundary_crossings
+from hermpy import plotting_tools
+from hermpy import trajectory
+from hermpy import mag
+from hermpy import boundary_crossings
 ```
 
 Examples can be found in the `examples/` directory.

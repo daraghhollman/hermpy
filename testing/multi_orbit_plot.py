@@ -25,8 +25,8 @@ crossings = boundary_crossings.Load_Crossings("../../philpott_crossings.p")
 # Specifically, the time segmenet of the centre orbit.
 # We can convert this to minutes before / after apoapsis
 # to look at the same time in other orbits
-start = dt.datetime(year=2011, month=3, day=31, hour=14, minute=15)
-end = dt.datetime(year=2011, month=3, day=31, hour=14, minute=25)
+start = dt.datetime(year=2011, month=3, day=31, hour=3, minute=15)
+end = dt.datetime(year=2011, month=3, day=31, hour=4, minute=20)
 data_length = end - start
 
 # Determine the file padding needed to display all the orbits wanted

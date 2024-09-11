@@ -16,4 +16,4 @@ mp_out = philpott_crossings[philpott_crossings["type"] == "mp_out"]
 bs_in = philpott_crossings[philpott_crossings["type"] == "bs_in"]
 bs_out = philpott_crossings[philpott_crossings["type"] == "bs_out"]
 
-print(mp_in.iloc[10:20])
+print(mp_out.iloc[10:20])

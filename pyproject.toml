@@ -1,10 +1,5 @@
-[build-system]
-requires = ["hatchling", ]
-build-backend = "hatchling.build"
-
 [project]
-name = "hermean_toolbelt"
-version = "0.0.1"
+name = "hermpy"
 authors = [
     { name="Daragh Hollman", email="dhollman@cp.dias.ie" },
     { name="Charles Bowers", email="cbowers@cp.dias.ie"},
@@ -13,6 +8,7 @@ authors = [
 ]
 description = "A collection of tools to aid in the creation of publication plots from spacecraft around Mercury."
 keywords = ["Mercury", "Space Science", "Planetary Science", "Space", "MESSENGER", "BepiColombo", "Magnetospheres"]
+
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
@@ -21,7 +17,6 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent"
 ]
-
 dependancies = [
     "numpy",
     "matplotlib",
@@ -30,7 +25,21 @@ dependancies = [
     "pandas",
     "tqdm"
 ]
+dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://github.com/daraghhollman/HermeanToolbelt"
-Issues = "https://github.com/daraghhollman/HermeanToolbelt/issues"
+Homepage = "https://github.com/daraghhollman/HermPy"
+Issues = "https://github.com/daraghhollman/HermPy/issues"
+
+
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+zip_safe = false
+
+[tool.setuptools.packages.find]
+
+[tool.setuptools_scm]
+write_to = "hermpy/version.py"
