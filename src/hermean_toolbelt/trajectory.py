@@ -83,7 +83,7 @@ def Aberrate_Position(position: list[float], spice_date: float):
     # Aberration angle is related to the orbital velocity and the solar wind speed
     # Solar wind speed is assumed to be 400 km/s
     # Angle is minus as y in the coordinate system points away from the orbital velocity
-    aberration_angle = -np.arctan(orbital_velocity / 400000)
+    aberration_angle = np.arctan(orbital_velocity / 400000)
     aberration_angle *= np.pi / 180
 
     rotation_matrix = np.array(

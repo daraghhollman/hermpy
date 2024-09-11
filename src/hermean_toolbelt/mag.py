@@ -119,7 +119,7 @@ def AdjustForAberration(data: pd.DataFrame, verbose: bool = False) -> pd.DataFra
             G = 6.6743e-11
 
             orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
-            aberration_angle = - np.arctan(orbital_velocity / 400000)
+            aberration_angle = np.arctan(orbital_velocity / 400000)
 
         # Adjust x and y ephemeris and data
         new_mag = (

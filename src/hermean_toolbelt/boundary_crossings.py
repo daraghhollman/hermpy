@@ -37,7 +37,7 @@ def Plot_Crossing_Intervals(
     end: dt.datetime,
     crossings: pd.DataFrame,
     label: bool = True,
-    color: str = "orange"
+    color: str = "orange",
 ):
     """
     Adds vertical lines to a matplotlib axis marking the start and end of crossing intervals
@@ -65,3 +65,46 @@ def Plot_Crossing_Intervals(
 
             ax.axvline(row["start"], color=color, ls="dashed")
             ax.axvline(row["end"], color=color, ls="dashed")
+
+
+def Plot_Crossings_As_Minutes_Before(
+    ax: plt.Axes,
+    crossings: pd.DataFrame,
+    data_start: dt.datetime,
+    data_end: dt.datetime,
+    apoapsis_time: dt.datetime,
+    label: bool = True,
+    color: str = "orange",
+):
+    """
+    Plots crossings as vlines at how far before apoapsis they are
+    """
+
+    for _, row in crossings.iterrows():
+
+        # Check if crossing interval is in plot
+        if (row["start"] > data_start and row["start"] < data_end) or (
+            row["end"] > data_start and row["end"] < data_end
+        ):
+
+            midpoint = row["start"] + (row["end"] - row["start"]) / 2
+
+            # Convert times into minutes before apoapsis
+            start_minutes = (apoapsis_time - row["start"]).total_seconds() / 60
+            end_minutes = (apoapsis_time - row["end"]).total_seconds() / 60
+            midpoint_minutes = (apoapsis_time - midpoint).total_seconds() / 60
+
+            if label:
+                height: float = 0.9
+                ax.text(
+                    (midpoint - data_start).total_seconds() / (data_end - data_start).total_seconds(),
+                    height,
+                    row["type"].upper().replace("_", " "),
+                    transform=ax.transAxes,
+                    color=color,
+                    ha="center",
+                    va="center",
+                )
+
+            ax.axvline(start_minutes, color=color, ls="dashed")
+            ax.axvline(end_minutes, color=color, ls="dashed")
