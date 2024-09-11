@@ -118,23 +118,35 @@ def SquareAxes(ax: plt.Axes, distance: float) -> None:
     ax.yaxis.set_minor_locator(MultipleLocator(minor_locator))
 
 
-def AddLabels(ax: plt.Axes, plane: str, frame="MSO") -> None:
+def AddLabels(ax: plt.Axes, plane: str, frame="MSO", aberrate=False) -> None:
     """
     Adds axes labels corresponding to a particular viewplane
     """
 
     match plane:
         case "xy":
-            ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
-            ax.set_ylabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
+            if aberrate:
+                ax.set_xlabel(r"X'$_{var1}$ [$R_M$]".replace("var1", frame))
+                ax.set_ylabel(r"Y'$_{var1}$ [$R_M$]".replace("var1", frame))
+            else:
+                ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
+                ax.set_ylabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
 
         case "xz":
-            ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
-            ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
+            if aberrate:
+                ax.set_xlabel(r"X'$_{var1}$ [$R_M$]".replace("var1", frame))
+                ax.set_ylabel(r"Z'$_{var1}$ [$R_M$]".replace("var1", frame))
+            else:
+                ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
+                ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
 
         case "yz":
-            ax.set_xlabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
-            ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
+            if aberrate:
+                ax.set_xlabel(r"Y'$_{var1}$ [$R_M$]".replace("var1", frame))
+                ax.set_ylabel(r"Z'$_{var1}$ [$R_M$]".replace("var1", frame))
+            else:
+                ax.set_xlabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
+                ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
 
 
 def Plot_Mercury(

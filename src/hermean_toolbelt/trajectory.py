@@ -1,13 +1,12 @@
 import datetime as dt
 
 import matplotlib.pyplot as plt
-
 import numpy as np
 import scipy.signal
 import spiceypy as spice
 
 
-def Get_Position(spacecraft: str, date: dt.datetime, metakernel: str) -> list[float]:
+def Get_Position(spacecraft: str, date: dt.datetime, metakernel: str):
     """
     Returns spacecraft position
     """
@@ -21,7 +20,12 @@ def Get_Position(spacecraft: str, date: dt.datetime, metakernel: str) -> list[fl
 
 
 def Get_Trajectory(
-    spacecraft: str, dates: list[str], metakernel: str, steps=4000, frame="MSO"
+    spacecraft: str,
+    dates: list[str],
+    metakernel: str,
+    steps: int = 4000,
+    frame: str = "MSO",
+    aberrate: bool = False,
 ):
     """
     Plots a given spacecraft's trajectory between two dates. A SPICE metakernel with the required ephemerids must be provided
@@ -37,6 +41,13 @@ def Get_Trajectory(
 
     positions, _ = spice.spkpos(spacecraft, times, "IAU_MERCURY", "NONE", "MERCURY")
 
+    if aberrate:
+        aberrated_positions = []
+        for i, position in enumerate(positions):
+            aberrated_positions.append(Aberrate_Position(position, times[i]))
+
+        positions = np.array(aberrated_positions)
+
     match frame:
         case "MSO":
             return positions
@@ -46,6 +57,46 @@ def Get_Trajectory(
             return positions
 
     return positions
+
+
+def Aberrate_Position(position: list[float], spice_date: float):
+    """
+    For a given position and date, rotates the spacecraft coordinates into the aberrated system.
+    Assumes a metakernel is already loaded
+    """
+
+    # Get mercury's distance from the sun
+    mercury_position, _ = spice.spkpos(
+        "MERCURY", spice_date, "IAU_MERCURY", "NONE", "SUN"
+    )
+
+    mercury_distance = np.sqrt(
+        mercury_position[0] ** 2 + mercury_position[1] ** 2 + mercury_position[2] ** 2
+    )
+
+    # determine mercury velocity
+    a = 57909050 * 1000
+    M = 1.9891e30
+    G = 6.6743e-11
+    orbital_velocity = np.sqrt(G * M * ((2 / mercury_distance) - (1 / a)))
+
+    # Aberration angle is related to the orbital velocity and the solar wind speed
+    # Solar wind speed is assumed to be 400 km/s
+    # Angle is minus as y in the coordinate system points away from the orbital velocity
+    aberration_angle = -np.arctan(orbital_velocity / 400000)
+    aberration_angle *= np.pi / 180
+
+    rotation_matrix = np.array(
+        [
+            [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
+            [np.sin(aberration_angle), np.cos(aberration_angle), 0],
+            [0, 0, 1],
+        ]
+    )
+
+    rotated_position = np.matmul(rotation_matrix, position)
+
+    return rotated_position
 
 
 def Get_Range_From_Date(
@@ -83,6 +134,7 @@ def Get_All_Apoapsis_In_Range(
     time_delta: dt.timedelta = dt.timedelta(minutes=1),
     number_of_orbits_to_include: int = 0,
     spacecraft: str = "MESSENGER",
+    plot: bool = False,
 ):
     """
     Finds all apoapsis altitudes and times between two times
@@ -109,7 +161,6 @@ def Get_All_Apoapsis_In_Range(
 
         current_time += time_delta
 
-
     # Now we find the peaks and their times using scipy.signal
     peak_indices, _ = scipy.signal.find_peaks(altitudes)
 
@@ -121,10 +172,12 @@ def Get_All_Apoapsis_In_Range(
         # if the number of apoapses is greater than the number of orbits
         # we must remove the furthest apoapsis until they are equal
         while len(apoapsis_altitudes) > number_of_orbits_to_include:
-            plt.plot(times, altitudes)
-            plt.scatter(apoapsis_times, apoapsis_altitudes)
-            plt.axvline(dt.datetime(year=2011, month=4, day=11, hour=5))
-            plt.show()
+
+            if plot:
+                plt.plot(times, altitudes)
+                plt.scatter(apoapsis_times, apoapsis_altitudes)
+                plt.axvline(dt.datetime(year=2011, month=4, day=11, hour=5))
+                plt.show()
 
             # find the furthest one from the start time
             # it will be at one of the ends
@@ -147,7 +200,9 @@ def Get_All_Apoapsis_In_Range(
                 apoapsis_altitudes = np.delete(apoapsis_altitudes, -1)
 
             else:
-                raise ValueError("Cannot reduce apoapsis list from 1 orbit. Instead, use trajectory.Get_Nearest_Apoapsis")
+                raise ValueError(
+                    "Cannot reduce apoapsis list from 1 orbit. Instead, use trajectory.Get_Nearest_Apoapsis"
+                )
 
             """
             # Remove the first apoapsis, as we always refere to the next apoapsis
@@ -155,8 +210,7 @@ def Get_All_Apoapsis_In_Range(
             apoapsis_altitudes = np.delete(apoapsis_altitudes, 0)
             """
 
-
-    return apoapsis_altitudes, apoapsis_times 
+    return apoapsis_altitudes, apoapsis_times
 
 
 def Get_Nearest_Apoapsis(

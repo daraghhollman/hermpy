@@ -4,7 +4,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-import spiceypy as spice
 
 from hermean_toolbelt import mag, plotting_tools, trajectory
 
@@ -191,8 +190,8 @@ padded_dates = [
     (end + time_padding).strftime("%Y-%m-%d %H:%M:%S"),
 ]
 
-positions = trajectory.Get_Trajectory("Messenger", dates, metakernel, frame=frame)
-padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, metakernel, frame=frame)
+positions = trajectory.Get_Trajectory("Messenger", dates, metakernel, frame=frame, aberrate=True)
+padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, metakernel, frame=frame, aberrate=True)
 
 # Convert from km to Mercury radii
 positions /= 2439.7
@@ -211,7 +210,7 @@ for i, ax in enumerate(trajectory_axes):
     plotting_tools.Plot_Mercury(
         ax, shaded_hemisphere="left", plane=planes[i], frame=frame
     )
-    plotting_tools.AddLabels(ax, planes[i], frame=frame)
+    plotting_tools.AddLabels(ax, planes[i], frame=frame, aberrate=True)
     plotting_tools.PlotMagnetosphericBoundaries(ax, plane=planes[i], add_legend=True)
     plotting_tools.SquareAxes(ax, 4)
 
