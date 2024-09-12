@@ -125,6 +125,7 @@ def Plot_Crossings_As_Minutes_Before(
     data_end: dt.datetime,
     apoapsis_time: dt.datetime,
     label: bool = True,
+    height: float = 0.9,
     color: str = "orange",
 ) -> None:
     """
@@ -158,7 +159,11 @@ def Plot_Crossings_As_Minutes_Before(
     label : bool {`True`, `False`}
         If `True`, adds a label specificing the boundary type.
 
-    color : str {`orange`, any other matplotlib named colour}
+    height : float {`0.9`}, optional
+        The height of the label in axis units.
+
+    color : str {`orange`, any other matplotlib named colour}, optional
+        The colour of the vertical lines and labels.
 
 
     Returns
@@ -180,7 +185,6 @@ def Plot_Crossings_As_Minutes_Before(
             end_minutes = (apoapsis_time - row["end"]).total_seconds() / 60
 
             if label:
-                height: float = 0.9
                 ax.text(
                     (midpoint - data_start).total_seconds()
                     / (data_end - data_start).total_seconds(),
