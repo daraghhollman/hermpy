@@ -1,7 +1,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from hermean_toolbelt import plotting_tools, trajectory
+from hermpy import plotting_tools, trajectory
 
 mpl.rcParams["font.size"] = 14
 

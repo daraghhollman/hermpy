@@ -3,7 +3,7 @@ import datetime as dt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from hermean_toolbelt import boundary_crossings, mag, plotting_tools
+from hermpy import boundary_crossings, mag, plotting_tools
 
 mpl.rcParams["font.size"] = 14
 

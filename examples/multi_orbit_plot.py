@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 
-from hermean_toolbelt import mag, plotting_tools, trajectory
+from hermpy import mag, plotting_tools, trajectory
 
 mpl.rcParams["font.size"] = 14
 

@@ -2,7 +2,7 @@ import datetime as dt
 
 import matplotlib.pyplot as plt
 
-from hermean_toolbelt import mag, plotting_tools
+from hermpy import mag, plotting_tools
 
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
 
