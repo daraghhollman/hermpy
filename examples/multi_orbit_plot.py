@@ -1,13 +1,13 @@
 import datetime as dt
+from glob import glob
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
+from hermpy import boundary_crossings, mag, plotting_tools, trajectory
 
-from hermpy import mag, plotting_tools, trajectory
-
-mpl.rcParams["font.size"] = 14
+mpl.rcParams["font.size"] = 18
 
 ############################################################
 #################### LOADING FILES #########################
@@ -17,30 +17,41 @@ root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
 
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 
+philpott_crossings = boundary_crossings.Load_Crossings("../../philpott_crossings.p")
+sun_crossings = boundary_crossings.Load_Crossings("../../sun_crossings.p")
+
 # Define the time segement we want to look at
 # Specifically, the time segmenet of the centre orbit.
 # We can convert this to minutes before / after apoapsis
 # to look at the same time in other orbits
-start = dt.datetime(year=2011, month=4, day=11, hour=5, minute=0)
-end = dt.datetime(year=2011, month=4, day=11, hour=5, minute=30)
+start = dt.datetime(year=2011, month=3, day=31, hour=3, minute=20)
+end = dt.datetime(year=2011, month=3, day=31, hour=4, minute=5)
 data_length = end - start
 
 # Determine the file padding needed to display all the orbits wanted
 search_start = start - dt.timedelta(days=2)
 search_end = end + dt.timedelta(days=2)
 
-dates_to_load: list[dt.datetime] = [search_start + dt.timedelta(days=i) for i in range((search_end - search_start).days)]
+dates_to_load: list[dt.datetime] = [
+    search_start + dt.timedelta(days=i) for i in range((search_end - search_start).days)
+]
 
 files_to_load: list[str] = []
 for date in dates_to_load:
-    file: list[str] = glob(root_dir + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_01_V08.TAB")
+    file: list[str] = glob(
+        root_dir
+        + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_01_V08.TAB"
+    )
 
     if len(file) > 1:
-        raise Exception("ERROR: There are duplicate data files being loaded.")
+        raise ValueError("ERROR: There are duplicate data files being loaded.")
+    elif len(file) == 0:
+        raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
 
     files_to_load.append(file[0])
 
 data = mag.Load_Messenger(files_to_load)
+
 
 #############################################################
 ##################### FINDING ORBITS ########################
@@ -158,8 +169,25 @@ for i, orbit_data in enumerate(data_groups):
         rotation=-90,
         horizontalalignment="center",
         verticalalignment="center",
-        fontsize=10,
+        fontsize=14,
         transform=ax.transAxes,
+    )
+
+    boundary_crossings.Plot_Crossings_As_Minutes_Before(
+        ax,
+        philpott_crossings,
+        orbit_data["date"].iloc[0],
+        orbit_data["date"].iloc[-1],
+        apoapsis_times[i],
+    )
+    boundary_crossings.Plot_Crossings_As_Minutes_Before(
+        ax,
+        sun_crossings,
+        orbit_data["date"].iloc[0],
+        orbit_data["date"].iloc[-1],
+        apoapsis_times[i],
+        height=0.1,
+        color="forestgreen",
     )
 
     ax.set_xlim(minutes_before, np.min(orbit_data["minutes before apoapsis"]))
@@ -175,7 +203,7 @@ for i, orbit_data in enumerate(data_groups):
 
 mag_axes[-1].set_xlabel("Minutes before apoapsis")
 mag_axes[middle_index].set_ylabel("|B| [nT]")
-#fig.text(0.06, 0.35, "|B| [nT]", ha="center", va="center", rotation="vertical")
+# fig.text(0.06, 0.35, "|B| [nT]", ha="center", va="center", rotation="vertical")
 
 
 #################################################################
@@ -187,7 +215,7 @@ mag_axes[middle_index].set_ylabel("|B| [nT]")
 frame = "MSM"
 
 
-time_padding = dt.timedelta(hours=4)
+time_padding = dt.timedelta(hours=6)
 
 start = data_groups[middle_index]["date"].iloc[0]
 end = data_groups[middle_index]["date"].iloc[-1]
@@ -199,30 +227,53 @@ padded_dates = [
     (end + time_padding).strftime("%Y-%m-%d %H:%M:%S"),
 ]
 
-positions = trajectory.Get_Trajectory("Messenger", dates, metakernel, frame=frame, aberrate=True)
-padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, metakernel, frame=frame, aberrate=True)
+positions = trajectory.Get_Trajectory(
+    "Messenger", dates, metakernel, frame=frame, aberrate=True
+)
+padded_positions = trajectory.Get_Trajectory(
+    "Messenger", padded_dates, metakernel, frame=frame, aberrate=True
+)
 
 # Convert from km to Mercury radii
 positions /= 2439.7
 padded_positions /= 2439.7
-    
 
-trajectory_axes[0].plot(positions[:, 0], positions[:, 1], color="magenta", lw=3, zorder=10)
-trajectory_axes[1].plot(positions[:, 0], positions[:, 2], color="magenta", lw=3, zorder=10, label="Plotted Trajectory")
-trajectory_axes[2].plot(positions[:, 1], positions[:, 2], color="magenta", lw=3, zorder=10)
+
+trajectory_axes[0].plot(
+    positions[:, 0], positions[:, 1], color="magenta", lw=3, zorder=10
+)
+trajectory_axes[1].plot(
+    positions[:, 0],
+    positions[:, 2],
+    color="magenta",
+    lw=3,
+    zorder=10,
+    label="Plotted Trajectory",
+)
+trajectory_axes[2].plot(
+    positions[:, 1], positions[:, 2], color="magenta", lw=3, zorder=10
+)
 trajectory_axes[0].plot(padded_positions[:, 0], padded_positions[:, 1], color="grey")
-trajectory_axes[1].plot(padded_positions[:, 0], padded_positions[:, 2], color="grey", label=r"Trajectory $\pm$ 6 hours")
+trajectory_axes[1].plot(
+    padded_positions[:, 0],
+    padded_positions[:, 2],
+    color="grey",
+    label=r"Trajectory $\pm$ " + str(int(time_padding.total_seconds() / 3600)) + " hours",
+)
 trajectory_axes[2].plot(padded_positions[:, 1], padded_positions[:, 2], color="grey")
 
 planes = ["xy", "xz", "yz"]
+shaded = ["left", "left", "none"]
 for i, ax in enumerate(trajectory_axes):
     plotting_tools.Plot_Mercury(
-        ax, shaded_hemisphere="left", plane=planes[i], frame=frame
+        ax, shaded_hemisphere=shaded[i], plane=planes[i], frame=frame
     )
     plotting_tools.AddLabels(ax, planes[i], frame=frame, aberrate=True)
     plotting_tools.PlotMagnetosphericBoundaries(ax, plane=planes[i], add_legend=True)
     plotting_tools.SquareAxes(ax, 4)
 
-trajectory_axes[1].legend(bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5)
+trajectory_axes[1].legend(
+    bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5
+)
 
 plt.show()
