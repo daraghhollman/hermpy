@@ -296,7 +296,7 @@ def Add_Tick_Ephemeris(
     
     """
 
-    from hermean_toolbelt import trajectory
+    from hermpy import trajectory
 
     tick_locations = ax.get_xticks()
 
