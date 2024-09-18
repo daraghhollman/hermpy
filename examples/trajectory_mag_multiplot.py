@@ -3,6 +3,7 @@ import datetime as dt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from glob import glob
 
 from hermpy import mag, plotting_tools, trajectory, boundary_crossings
 
@@ -13,14 +14,32 @@ mpl.rcParams["font.size"] = 14
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
 philpott_crossings = boundary_crossings.Load_Crossings("../../philpott_crossings.p")
 
-data = mag.Load_Messenger(
-    [
-        root_dir + "2011/04_APR/MAGMSOSCIAVG11101_01_V08.TAB",
-    ]
-)
+start = dt.datetime(year=2011, month=9, day=26, hour=12, minute=23)
+end = dt.datetime(year=2011, month=9, day=26, hour=12, minute=59)
 
-start = dt.datetime(year=2011, month=4, day=11, hour=5, minute=0)
-end = dt.datetime(year=2011, month=4, day=11, hour=5, minute=30)
+# Determine the file padding needed to display all the orbits wanted
+search_start = start - dt.timedelta(days=2)
+search_end = end + dt.timedelta(days=2)
+
+dates_to_load: list[dt.datetime] = [
+    search_start + dt.timedelta(days=i) for i in range((search_end - search_start).days)
+]
+
+files_to_load: list[str] = []
+for date in dates_to_load:
+    file: list[str] = glob(
+        root_dir
+        + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_01_V08.TAB"
+    )
+
+    if len(file) > 1:
+        raise ValueError("ERROR: There are duplicate data files being loaded.")
+    elif len(file) == 0:
+        raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
+
+    files_to_load.append(file[0])
+
+data = mag.Load_Messenger(files_to_load)
 
 # Isolating only a particular portion of the files
 data = mag.StripData(data, start, end)
@@ -100,8 +119,8 @@ padded_dates = [
 frame = "MSM"
 
 # Get positions in MSO coordinate system
-positions = trajectory.Get_Trajectory("Messenger", dates, metakernel, frame=frame)
-padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, metakernel, frame=frame)
+positions = trajectory.Get_Trajectory("Messenger", dates, metakernel, frame=frame, aberrate=True)
+padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, metakernel, frame=frame, aberrate=True)
 
 # Convert from km to Mercury radii
 positions /= 2439.7
@@ -121,7 +140,7 @@ for i, ax in enumerate(trajectory_axes):
     plotting_tools.Plot_Mercury(
         ax, shaded_hemisphere="left", plane=planes[i], frame=frame
     )
-    plotting_tools.AddLabels(ax, planes[i], frame=frame)
+    plotting_tools.AddLabels(ax, planes[i], frame=frame, aberrate=True)
     plotting_tools.PlotMagnetosphericBoundaries(ax, plane=planes[i], add_legend=True)
     plotting_tools.SquareAxes(ax, 4)
 
