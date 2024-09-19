@@ -61,6 +61,7 @@ def Plot_Crossing_Intervals(
     end: dt.datetime,
     crossings: pd.DataFrame,
     label: bool = True,
+    height: float = 0.9,
     color: str = "orange",
 ) -> None:
     """Adds vertical lines marking the start and end of given
@@ -106,7 +107,6 @@ def Plot_Crossing_Intervals(
             midpoint = row["start"] + (row["end"] - row["start"]) / 2
 
             if label:
-                height: float = 0.9
                 ax.text(
                     (midpoint - start).total_seconds() / (end - start).total_seconds(),
                     height,

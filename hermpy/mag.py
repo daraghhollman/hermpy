@@ -188,3 +188,43 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
 
 def MSM_TO_MSO(data: pd.DataFrame) -> pd.DataFrame:
     return MSO_TO_MSM(data, reverse=True)
+
+
+def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
+    """Converts data from cartesian to polar coordinates
+
+    Convets to polar coordinates irrespective of frame.
+    Perform transformations and aberrations prior to this
+    function.
+    
+    Takes the values for x, y, and z and creates a new column
+    for each polar coordinate.
+
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        A dataframe of data to be converted
+
+
+    Returns
+    -------
+    out: pandas.DataFrame
+        The resulting data with added columns
+        [mag_r, mag_theta, mag_phi]
+
+    """
+
+    x = data["mag_x"]
+    y = data["mag_y"]
+    z = data["mag_z"]
+
+    r = np.sqrt(x**2 + y**2 + z**2)
+    theta = np.arctan2(y, x) * 180 / np.pi
+    phi = np.arctan2(z, r) * 180 / np.pi
+
+    data["mag_r"] = r
+    data["mag_theta"] = theta
+    data["mag_phi"] = phi
+
+    return data

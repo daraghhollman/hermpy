@@ -37,8 +37,6 @@ def Load_Messenger(file_paths: list[str]):
 
     multi_file_data = {
         "dates": [],
-        "start_energies": [],
-        "stop_energies": [],
         "ve_energies": [],
         "proton_energies": [],
         "ep_energies": [],
@@ -71,19 +69,13 @@ def Load_Messenger(file_paths: list[str]):
         )
 
         multi_file_data["dates"].append(dates)
-        multi_file_data["start_energies"].append(start_energies)
-        multi_file_data["stop_energies"].append(stop_energies)
         multi_file_data["ve_energies"].append(ve_energies)
         multi_file_data["proton_energies"].append(proton_energies)
         multi_file_data["ep_energies"].append(ep_energies)
 
     # We squeeze the list of arrays to combine them into one array.
-    multi_file_data["dates"] = np.squeeze(multi_file_data["dates"])
-    multi_file_data["start_energies"] = np.squeeze(multi_file_data["start_energies"])
-    multi_file_data["stop_energies"] = np.squeeze(multi_file_data["stop_energies"])
-    multi_file_data["ve_energies"] = np.squeeze(multi_file_data["ve_energies"])
-    multi_file_data["proton_energies"] = np.squeeze(multi_file_data["proton_energies"])
-    multi_file_data["ep_energies"] = np.squeeze(multi_file_data["ep_energies"])
+    for key in multi_file_data.keys():
+        multi_file_data[key] = np.squeeze(multi_file_data[key])
     
     return multi_file_data
 
@@ -130,8 +122,6 @@ def Strip_Data(data: dict, start: dt.datetime, stop: dt.datetime):
 
 
     data["dates"] = np.delete(data["dates"], indices_to_remove)
-    data["start_energies"] = np.delete(data["start_energies"], indices_to_remove, 0)
-    data["stop_energies"] = np.delete(data["stop_energies"], indices_to_remove, 0)
     data["ve_energies"] = np.delete(data["ve_energies"], indices_to_remove, 0)
     data["proton_energies"] = np.delete(data["proton_energies"], indices_to_remove, 0)
     data["ep_energies"] = np.delete(data["ep_energies"], indices_to_remove, 0)
