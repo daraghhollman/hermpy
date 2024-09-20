@@ -37,13 +37,15 @@ heavy_ions = np.transpose(data["ve_energies"] - data["proton_energies"])
 protons = np.delete(protons, -1, 1)
 heavy_ions = np.delete(heavy_ions, -1, 1)
 
+fips_calibration = fips.Get_Calibration()
+
 fig, axes = plt.subplots(2, 1, sharex=True)
 
 cmap = "plasma"
 protons_mesh = axes[0].pcolormesh(
-    data["dates"], np.arange(0, 64), protons, norm=mpl_colors.LogNorm(), cmap=cmap
+    data["dates"], fips_calibration, protons, norm=mpl_colors.LogNorm(), cmap=cmap
 )
-heavy_ions_mesh = axes[1].pcolormesh(data["dates"], np.arange(0, 64), heavy_ions, norm=mpl_colors.LogNorm(), cmap=cmap)
+heavy_ions_mesh = axes[1].pcolormesh(data["dates"], fips_calibration, heavy_ions, norm=mpl_colors.LogNorm(), cmap=cmap)
 
 colorbar_label = "Diff. Energy Flux\n[(keV/e)$^{-1}$ sec$^{-1}$ cm$^{-2}$]"
 plt.colorbar(protons_mesh, ax=axes[0], label="Proton " + colorbar_label)
@@ -52,7 +54,8 @@ plt.colorbar(protons_mesh, ax=axes[1], label="Heavy Ion " + colorbar_label)
 plotting_tools.Add_Tick_Ephemeris(axes[1], metakernel, {"date", "hours", "minutes", "range", "latitude", "local time"})
 
 for ax in axes:
-    ax.set_ylabel("Energy Channel")
+    ax.set_ylabel("E/Q [keV/Q]")
+    ax.set_yscale("log")
     boundary_crossings.Plot_Crossing_Intervals(ax, start, stop, philpott_crossings, color="black", height=1.1)
 
 plt.show()
