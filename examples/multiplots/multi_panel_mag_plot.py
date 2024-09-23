@@ -20,13 +20,13 @@ start = dt.datetime(year=2011, month=4, day=11, hour=5, minute=0)
 end = dt.datetime(year=2011, month=4, day=11, hour=5, minute=30)
 
 # Isolating only a particular portion of the files
-data = mag.StripData(data, start, end)
+data = mag.Strip_Data(data, start, end)
 
 # Converting to MSM
 data = mag.MSO_TO_MSM(data)
 
 # Accounting for solar wind aberration angle
-data = mag.AdjustForAberration(data)
+data = mag.Adjust_For_Aberration(data)
 
 # This data can then be plotted using external libraries
 fig, axes = plt.subplots(4, 1, sharex=True)

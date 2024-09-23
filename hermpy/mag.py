@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 
 
-def StripData(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.DataFrame:
+def Strip_Data(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.DataFrame:
     """
     Removes the start and end of a dataframe (containing a dt.datetime "date" row) to match give start and end time
     """
@@ -95,7 +95,7 @@ def Load_Messenger(file_paths: list[str], averaged_measurements=True) -> pd.Data
     return multi_file_data
 
 
-def AdjustForAberration(data: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+def Adjust_For_Aberration(data: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     """
     Solar wind impacts mercury's magnetosphere at an angle from the vector to the sun due to its orbital velocity
     """
