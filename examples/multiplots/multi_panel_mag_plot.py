@@ -8,7 +8,7 @@ from hermpy import mag, plotting_tools
 
 mpl.rcParams["font.size"] = 14
 
-root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
+root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 
 data = mag.Load_Messenger(
     [

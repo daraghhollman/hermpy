@@ -18,7 +18,7 @@ def StripData(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.Da
     return stripped_data
 
 
-def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
+def Load_Messenger(file_paths: list[str], averaged_measurements=True) -> pd.DataFrame:
     """
     Reads data from a list of file paths and converts to a pandas dataframe in the following format:
     year, day of year, x, y, z (ephemeris mso), x, y, z (data mso), magnitude
@@ -53,9 +53,14 @@ def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
 
         # Offset the z of the coordinates due to an asymmetric dipole
         # i.e. convert from MSO to MSM
-        ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
 
-        magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
+        if averaged_measurements:
+            ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
+            magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
+
+        else:
+            ephemeris = np.array([data[:, 6], data[:, 7], data[:, 8]])
+            magnetic_field = np.array([data[:, 9], data[:, 10], data[:, 11]])
 
         dataframe = pd.DataFrame(
             {

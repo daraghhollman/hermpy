@@ -11,7 +11,7 @@ mpl.rcParams["font.size"] = 14
 
 
 ###################### MAG #########################
-root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
+root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 philpott_crossings = boundary_crossings.Load_Crossings("../../philpott_crossings.p")
 
 start = dt.datetime(year=2011, month=9, day=26, hour=12, minute=23)

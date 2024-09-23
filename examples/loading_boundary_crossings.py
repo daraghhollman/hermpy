@@ -13,7 +13,7 @@ philpott_crossings = boundary_crossings.Load_Crossings("../../philpott_crossings
 
 
 ### This section as shown in mag_example.py
-root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
+root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 # Loading data, downloaded from PDS
 data = mag.Load_Messenger(
     [

@@ -13,7 +13,7 @@ mpl.rcParams["font.size"] = 18
 #################### LOADING FILES #########################
 ############################################################
 
-root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
+root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 

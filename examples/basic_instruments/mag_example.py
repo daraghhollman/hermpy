@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from hermpy import mag, plotting_tools
 
-root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
+root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 
 # Loading data, downloaded from PDS
 # Should think about using a glob tool to select data

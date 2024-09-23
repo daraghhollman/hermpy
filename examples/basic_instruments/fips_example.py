@@ -13,7 +13,7 @@ mpl.rcParams["font.size"] = 18
 
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 philpott_crossings = boundary_crossings.Load_Crossings(
-    "/home/daraghhollman/Main/Mercury/philpott_crossings.p"
+    "/home/daraghhollman/Main/mercury/philpott_crossings.p"
 )
 data = fips.Load_Messenger(
     [

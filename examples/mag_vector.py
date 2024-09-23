@@ -15,9 +15,9 @@ import hermpy.boundary_crossings as boundaries
 import hermpy.plotting_tools as hermplot
 
 # Define some paths we'll need later
-root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/"
+root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
-philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Mercury/philpott_crossings.p")
+philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/mercury/philpott_crossings.p")
 
 data = mag.Load_Messenger(
     [
