@@ -5,6 +5,30 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
+def Reformat_Philpott(path: str) -> pd.DataFrame:
+    """Takes Philpott list from suplimetary information and reformat and saves it
+
+    
+    Parameters
+    ----------
+    path : str
+        Path to Philpott+ (2020) table S1
+
+
+    Returns
+    -------
+    out : pandas.DataFrame
+        A pandas dataframe formatted for use with `Load_Crossings`
+    """
+
+    philpott_csv = pd.read_csv(path, dtype=None)
+
+    types = []
+    starts = []
+    ends = []
+
+
+
 def Load_Crossings(path: str) -> pd.DataFrame:
     """Loads a pandas DataFrame from pickle file.
 

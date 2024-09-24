@@ -6,11 +6,27 @@ import scipy.signal
 import spiceypy as spice
 
 
-def Get_Position(spacecraft: str, date: dt.datetime, metakernel: str):
+def Get_Heliocentric_Distance(date: dt.datetime) -> float:
+    """Gets the distance from Mercury to the Sun, assumes a SPICE metakernel is loaded.
+
+
+    Parameters
+    ----------
+    date : dt.datetime
+        The date to query at.
+    
+
+    Returns
+    -------
+    distance : float
+        The distance from Mercury to the sun at time `date`
+    """
+
+
+def Get_Position(spacecraft: str, date: dt.datetime):
     """
     Returns spacecraft position
     """
-    spice.furnsh(metakernel)
 
     et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -22,7 +38,6 @@ def Get_Position(spacecraft: str, date: dt.datetime, metakernel: str):
 def Get_Trajectory(
     spacecraft: str,
     dates: list[str],
-    metakernel: str,
     steps: int = 4000,
     frame: str = "MSO",
     aberrate: bool = False,
@@ -32,14 +47,12 @@ def Get_Trajectory(
     Returns: spacecraft positions in km
     """
 
-    spice.furnsh(metakernel)
-
     et_one = spice.str2et(dates[0])
     et_two = spice.str2et(dates[1])
 
     times = [x * (et_two - et_one) / steps + et_one for x in range(steps)]
 
-    positions, _ = spice.spkpos(spacecraft, times, "IAU_MERCURY", "NONE", "MERCURY")
+    positions, _ = spice.spkpos(spacecraft, times, "BC_MSO", "NONE", "MERCURY")
 
     if aberrate:
         aberrated_positions = []
@@ -67,7 +80,7 @@ def Aberrate_Position(position: list[float], spice_date: float):
 
     # Get mercury's distance from the sun
     mercury_position, _ = spice.spkpos(
-        "MERCURY", spice_date, "IAU_MERCURY", "NONE", "SUN"
+        "MERCURY", spice_date, "J2000", "NONE", "SUN"
     )
 
     mercury_distance = np.sqrt(
@@ -100,8 +113,7 @@ def Aberrate_Position(position: list[float], spice_date: float):
 
 
 def Get_Range_From_Date(
-    spacecraft: str, dates: list[dt.datetime] | dt.datetime, metakernel: str
-):
+    spacecraft: str, dates: list[dt.datetime] | dt.datetime):
     """
     For a date, or range of dates, return a spacecraft's distance from Mercury
     """
@@ -109,14 +121,12 @@ def Get_Range_From_Date(
     if type(dates) == dt.datetime:
         dates = [dates]
 
-    spice.furnsh(metakernel)
-
     distances = []
 
     for date in dates:
         et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
 
         distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
         distances.append(distance)
@@ -130,7 +140,6 @@ def Get_Range_From_Date(
 def Get_All_Apoapsis_In_Range(
     start_time: dt.datetime,
     end_time: dt.datetime,
-    metakernel: str,
     time_delta: dt.timedelta = dt.timedelta(minutes=1),
     number_of_orbits_to_include: int = 0,
     spacecraft: str = "MESSENGER",
@@ -139,9 +148,6 @@ def Get_All_Apoapsis_In_Range(
     """
     Finds all apoapsis altitudes and times between two times
     """
-
-    spice.furnsh(metakernel)
-
     current_time = start_time
 
     altitudes = []
@@ -151,7 +157,7 @@ def Get_All_Apoapsis_In_Range(
 
         # Get current altitude
         et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
-        position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
         current_altitude = np.sqrt(
             position[0] ** 2 + position[1] ** 2 + position[2] ** 2
         )
@@ -215,7 +221,6 @@ def Get_All_Apoapsis_In_Range(
 
 def Get_Nearest_Apoapsis(
     time: dt.datetime,
-    metakernel: str,
     time_delta: dt.timedelta = dt.timedelta(minutes=1),
     time_limit: dt.timedelta = dt.timedelta(hours=12),
     plot: bool = False,
@@ -227,8 +232,6 @@ def Get_Nearest_Apoapsis(
     """
     apoapsis_altitude: float = 0
     apoapsis_time: dt.datetime = time
-
-    spice.furnsh(metakernel)
 
     # Get all position data within time +- time_delta
     search_start = time - time_limit
@@ -243,7 +246,7 @@ def Get_Nearest_Apoapsis(
 
         # Get current altitude
         et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
-        position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
         current_altitude = np.sqrt(
             position[0] ** 2 + position[1] ** 2 + position[2] ** 2
         )
