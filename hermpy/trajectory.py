@@ -37,7 +37,13 @@ def Get_Position(spacecraft: str, date: dt.datetime):
     """
 
     et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
-    position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
+
+    # There are data gaps in the kernels?
+    # We need to test for this
+    try:
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
+    except:
+        position = None
 
     return position
 
