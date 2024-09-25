@@ -272,7 +272,6 @@ def Plot_Mercury(
 
 def Add_Tick_Ephemeris(
     ax: plt.Axes,
-    metakernel: str,
     include: set = {"date", "hours", "minutes", "seconds", "range"},
 ) -> None:
 
@@ -286,10 +285,6 @@ def Add_Tick_Ephemeris(
     ----------
     ax : pyplot.Axes
         The pyplot axis to affect.
-
-    metakernel : str
-        An absolute path to a NAIF SPICE metakernel containing
-        the required spacecraft and solar system kernels.
 
     include : set {"date", "hours", "minutes", "seconds", "range", "latitude", "local time"}
         Which parameters to include as part of the tick labels.
@@ -320,7 +315,7 @@ def Add_Tick_Ephemeris(
             tick_format += date.strftime(":%S")
 
         if "range" in include:
-            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+            position = trajectory.Get_Position("MESSENGER", date)
             distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
             # Convert from km to radii
             distance /= 2439.7
@@ -328,7 +323,7 @@ def Add_Tick_Ephemeris(
             tick_format += "\n" + f"{distance:.2f}"
 
         if "longitude" in include:
-            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+            position = trajectory.Get_Position("MESSENGER", date)
 
             longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
 
@@ -338,7 +333,7 @@ def Add_Tick_Ephemeris(
             tick_format += "\n" + f"{longitude:.2f}"
 
         if "latitude" in include:
-            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+            position = trajectory.Get_Position("MESSENGER", date)
 
             latitude = np.arctan2(
                 position[2], np.sqrt(position[0] ** 2 + position[1] ** 2)
@@ -350,7 +345,7 @@ def Add_Tick_Ephemeris(
             tick_format += "\n" + f"{latitude:.2f}"
 
         if "local time" in include:
-            position = trajectory.Get_Position("MESSENGER", date, metakernel)
+            position = trajectory.Get_Position("MESSENGER", date)
 
             longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
 

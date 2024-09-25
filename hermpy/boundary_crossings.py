@@ -5,45 +5,124 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def Reformat_Philpott(path: str) -> pd.DataFrame:
-    """Takes Philpott list from suplimetary information and reformat and saves it
+def Reformat_Philpott(input_path: str, output_path: str):
+    """Takes Philpott list from suplimetary information and reformat and saves it to csv
 
-    
+
     Parameters
     ----------
-    path : str
+    input_path : str
         Path to Philpott+ (2020) table S1
+
+    output_path : str
+        Path to save the resulting csv
 
 
     Returns
     -------
-    out : pandas.DataFrame
-        A pandas dataframe formatted for use with `Load_Crossings`
+    None
     """
 
-    philpott_csv = pd.read_csv(path, dtype=None)
+    philpott_csv = pd.read_csv(input_path)
 
     types = []
-    starts = []
-    ends = []
+    start_times = []
+    end_times = []
+    start_x = [] # MSO
+    start_y = []
+    start_z = []
+    end_x = []
+    end_y = []
+    end_z = []
+
+    for i, row in philpott_csv.iterrows():
+
+        # We loop through each row, if the row type is equal to
+        # an odd number, it is the start edge of the interval. The
+        # following type will be even, and the end edge of the
+        # interval.
+
+        if row["Boundary number"] % 2 != 0 or row["Boundary number"] == 10:
+
+            match row["Boundary number"]:
+                case 1:
+                    types.append("BS_IN")
+
+                case 3:
+                    types.append("MP_IN")
+
+                case 5:
+                    types.append("MP_OUT")
+
+                case 7:
+                    types.append("BS_OUT")
+
+                # 9 and 10 represent data gaps
+                case 9:
+                    continue
+
+                case 10:
+                    continue
+
+                case _:
+                    print(row["Boundary number"])
+
+            start_string = f"{row['Year']}{row['Day of year']}{row['Hour']}{row['Minute']}{row['Second']}"
+            start_time = dt.datetime.strptime(start_string, "%Y.0%j.0%H.0%M.0%S.%f")
+            start_times.append(start_time)
+
+            start_x.append(row["X_MSO (km)"])
+            start_y.append(row["Y_MSO (km)"])
+            start_z.append(row["Z_MSO (km)"])
+
+            next_row = philpott_csv.iloc[i + 1]
+
+            end_string = f"{next_row['Year']}{next_row['Day of year']}{next_row['Hour']}{next_row['Minute']}{next_row['Second']}"
+            end_time = dt.datetime.strptime(end_string, "%Y.0%j.0%H.0%M.0%S.%f")
+            end_times.append(end_time)
+
+            end_x.append(next_row["X_MSO (km)"])
+            end_y.append(next_row["Y_MSO (km)"])
+            end_z.append(next_row["Z_MSO (km)"])
+
+    
+    # Format this as a dictionary
+    list_data = {
+        "start": start_times,
+        "end": end_times,
+        "start_x": start_x,
+        "start_y": start_y,
+        "start_z": start_z,
+        "end_x": end_x,
+        "end_y": end_y,
+        "end_z": end_z,
+        "type": types,
+    }
+
+    for column in list_data.keys():
+        print(f"{column}: {len(list_data[column])}")
+
+    # Create a pandas dataframe with this information
+    pd.DataFrame(list_data).to_csv(output_path)
+    
 
 
 
 def Load_Crossings(path: str) -> pd.DataFrame:
-    """Loads a pandas DataFrame from pickle file.
+    """Loads a pandas DataFrame from reformatted csv file
 
     Parameters
     ----------
     path : str
         An abosolute path to a crossing intervals file.
         Expects the following columns to be present in the
-        pickle file:
+        csv file:
             [start,
              end,
-             start_x_msm, end_x_msm,
-             start_y_msm, end_y_msm,
-             start_z_msm, end_z_msm,
-             Type
+             start_x, end_x,
+             start_y, end_y,
+             start_z, end_z,
+             type
             ]
 
 
@@ -53,30 +132,20 @@ def Load_Crossings(path: str) -> pd.DataFrame:
         A DataFrame of boundary crossing intervals with columns:
             [start,
              end,
-             start_x_msm, end_x_msm,
-             start_y_msm, end_y_msm,
-             start_z_msm, end_z_msm,
+             start_x, end_x,
+             start_y, end_y,
+             start_z, end_z,
              type
             ]
     """
-    with open(path, "rb") as crossings_file:
-        crossings_data = pickle.load(crossings_file)
+    date_parse_no_ms = lambda x: dt.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+    date_parse_ms = lambda x: dt.datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f')
 
-    reformatted_crossings_data = pd.DataFrame(
-        {
-            "start": crossings_data["start"],
-            "end": crossings_data["end"],
-            "start_x_msm": crossings_data["start_x_msm"],
-            "start_y_msm": crossings_data["start_y_msm"],
-            "start_z_msm": crossings_data["start_z_msm"],
-            "end_x_msm": crossings_data["end_x_msm"],
-            "end_y_msm": crossings_data["end_y_msm"],
-            "end_z_msm": crossings_data["end_z_msm"],
-            "type": crossings_data["Type"],
-        }
-    )
+    crossings_data = pd.read_csv(path, parse_dates=["start", "end"])
+    crossings_data["start"] = pd.to_datetime(crossings_data["start"], format="mixed")
+    crossings_data["end"] = pd.to_datetime(crossings_data["end"], format="mixed")
 
-    return reformatted_crossings_data
+    return crossings_data
 
 
 def Plot_Crossing_Intervals(
