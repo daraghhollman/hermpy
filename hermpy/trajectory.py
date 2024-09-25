@@ -22,6 +22,14 @@ def Get_Heliocentric_Distance(date: dt.datetime) -> float:
         The distance from Mercury to the sun at time `date`
     """
 
+    et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+    position, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
+
+    distance = np.sqrt(position[0]**2 + position[1]**2 + position[2]**2)
+
+    return distance
+    
+
 
 def Get_Position(spacecraft: str, date: dt.datetime):
     """
@@ -29,8 +37,7 @@ def Get_Position(spacecraft: str, date: dt.datetime):
     """
 
     et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
-
-    position, _ = spice.spkpos(spacecraft, et, "IAU_MERCURY", "NONE", "MERCURY")
+    position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
 
     return position
 
