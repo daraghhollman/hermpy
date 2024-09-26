@@ -50,7 +50,7 @@ def Get_Position(spacecraft: str, date: dt.datetime):
 
 def Get_Trajectory(
     spacecraft: str,
-    dates: list[str],
+    dates: list[dt.datetime],
     steps: int = 4000,
     frame: str = "MSO",
     aberrate: bool = False,
@@ -60,8 +60,8 @@ def Get_Trajectory(
     Returns: spacecraft positions in km
     """
 
-    et_one = spice.str2et(dates[0])
-    et_two = spice.str2et(dates[1])
+    et_one = spice.str2et(dates[0].strftime("%Y-%m-%d %H:%M:%S"))
+    et_two = spice.str2et(dates[1].strftime("%Y-%m-%d %H:%M:%S"))
 
     times = [x * (et_two - et_one) / steps + et_one for x in range(steps)]
 
