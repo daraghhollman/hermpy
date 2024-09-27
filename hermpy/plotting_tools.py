@@ -2,11 +2,11 @@ import datetime as dt
 
 import matplotlib.dates as mpl_dates
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
-from matplotlib.ticker import MultipleLocator
 
 
-def PlotMagnetosphericBoundaries(
+def Plot_Magnetospheric_Boundaries(
     ax: plt.Axes,
     plane: str = "xy",
     sub_solar_magnetopause: float = 1.45,
@@ -103,7 +103,7 @@ def PlotMagnetosphericBoundaries(
             pass
 
 
-def SquareAxes(ax: plt.Axes, distance: float) -> None:
+def Square_Axes(ax: plt.Axes, distance: float) -> None:
     """Sets axis limits and aspect ratio for square trajectory
     plots.
 
@@ -147,13 +147,13 @@ def SquareAxes(ax: plt.Axes, distance: float) -> None:
     major_locator = int(distance / 2)
     minor_locator = 0.5
 
-    ax.xaxis.set_major_locator(MultipleLocator(major_locator))
-    ax.xaxis.set_minor_locator(MultipleLocator(minor_locator))
-    ax.yaxis.set_major_locator(MultipleLocator(major_locator))
-    ax.yaxis.set_minor_locator(MultipleLocator(minor_locator))
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(major_locator))
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(minor_locator))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(major_locator))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_locator))
 
 
-def AddLabels(ax: plt.Axes, plane: str, frame="MSO", aberrate=False) -> None:
+def Add_Labels(ax: plt.Axes, plane: str, frame="MSO", aberrate=False) -> None:
     """Adds axes labels corresponding to a particular trajectory
     plane.
 
@@ -272,12 +272,11 @@ def Plot_Mercury(
 
 def Add_Tick_Ephemeris(
     ax: plt.Axes,
-    include: set = {"date", "hours", "minutes", "seconds", "range"},
+    include: set = {"date", "hours", "minutes", "seconds", "range", "latitude", "local time"},
 ) -> None:
-
     """Adds ephemeris to tick labels
 
-    Formats time series tick labels to include spacecraft 
+    Formats time series tick labels to include spacecraft
     ephemeris.
 
 
@@ -288,7 +287,7 @@ def Add_Tick_Ephemeris(
 
     include : set {"date", "hours", "minutes", "seconds", "range", "latitude", "local time"}
         Which parameters to include as part of the tick labels.
-    
+
     """
 
     from hermpy import trajectory
