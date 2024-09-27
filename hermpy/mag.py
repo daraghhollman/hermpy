@@ -1,15 +1,38 @@
+"""
+Functions for loading and handling MAG data
+"""
+
+
 import datetime as dt
 
-import ephem
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+import hermpy.trajectory as trajectory
 
 
 def Strip_Data(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.DataFrame:
-    """
-    Removes the start and end of a dataframe (containing a dt.datetime "date" row) to match give start and end time
+    """Shortens MAG data to only include times between a start and end time
+
+    Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
+    to match give start and end time.
+
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+
+    start : datetime.datetime
+        The start date of the data to be kept. All rows prior will be removed.
+
+    end : datetime.datetime
+        The end date of the data to be kept. All rows after will be removed.
+
+
+    Returns
+    -------
+    stripped_data : pandas.DataFrame
+        A new dataframe containing only the data between the given dates.
     """
 
     stripped_data = data.loc[data["date"].between(start, end)]
@@ -18,10 +41,39 @@ def Strip_Data(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.D
     return stripped_data
 
 
-def Load_Messenger(file_paths: list[str], averaged_measurements=True) -> pd.DataFrame:
-    """
-    Reads data from a list of file paths and converts to a pandas dataframe in the following format:
-    year, day of year, x, y, z (ephemeris mso), x, y, z (data mso), magnitude
+def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
+    """Loads a list of MESSENGER MAG files and combines them into one output
+
+    Reads data from a list of file paths and converts to a pandas dataframe
+    with the following columns:
+        date,
+        hour,
+        minute,
+        second,
+        frame,
+        eph_x,
+        eph_y,
+        eph_z,
+        range,
+        mag_x,
+        mag_y,
+        mag_z,
+        mag_total
+
+    This function is only valid for the 1 second average data-set due to a
+    format difference in the data files between different data-sets.
+
+
+    Parameters
+    ----------
+    file_paths : list[str]
+        A list of paths to the data files to be loaded.
+
+
+    Returns
+    -------
+    multi_file_data : pandas.DataFrame
+        The combined data from each file loaded.
     """
 
     multi_file_data = []
@@ -51,16 +103,8 @@ def Load_Messenger(file_paths: list[str], averaged_measurements=True) -> pd.Data
 
             dates[i] = date
 
-        # Offset the z of the coordinates due to an asymmetric dipole
-        # i.e. convert from MSO to MSM
-
-        if averaged_measurements:
-            ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
-            magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
-
-        else:
-            ephemeris = np.array([data[:, 6], data[:, 7], data[:, 8]])
-            magnetic_field = np.array([data[:, 9], data[:, 10], data[:, 11]])
+        ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
+        magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
 
         dataframe = pd.DataFrame(
             {
@@ -95,12 +139,31 @@ def Load_Messenger(file_paths: list[str], averaged_measurements=True) -> pd.Data
     return multi_file_data
 
 
-def Adjust_For_Aberration(data: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
+    """Shift the data into the aberrated frame. MSO -> MSO', MSM -> MSM'
+
+
+    The solar wind impacts mercury's magnetosphere along an axis different
+    from the vector to the sun due to its orbital velocity. We define a
+    coordinate system with the x axis rotated to be along this direction,
+    rather than pointing at the sun. This is the 'aberrated', or 'primed'
+    frame.
+
+    This function rotates the MAG measurements and spacecraft positions
+    into this frame.
+
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+
+
+    Returns
+    -------
+    data : pandas.DataFrame
+        The input data adjusted as described.
     """
-    Solar wind impacts mercury's magnetosphere at an angle from the vector to the sun due to its orbital velocity
-    """
-    if verbose:
-        print("Adjusting for Aberration")
 
     new_eph_x = []
     new_eph_y = []
@@ -111,11 +174,11 @@ def Adjust_For_Aberration(data: pd.DataFrame, verbose: bool = False) -> pd.DataF
     r = 0
     aberration_angle = 0
     previous_date = dt.datetime(2010, 1, 1)
-    for _, row in tqdm(data.iterrows(), total=len(data), disable=not verbose):
+    for _, row in data.iterrows():
 
         # check if day has changed and then update mercury distance
         if (row["date"] - previous_date) > dt.timedelta(days=1):
-            r = GetDistanceFromSun(row["date"])
+            r = trajectory.Get_Heliocentric_Distance(row["date"])
             previous_date = row["date"]
 
             # determine mercury velocity
@@ -155,35 +218,55 @@ def Adjust_For_Aberration(data: pd.DataFrame, verbose: bool = False) -> pd.DataF
     return data
 
 
-def GetDistanceFromSun(date: dt.datetime) -> float:
-    """
-    Uses the ephem package to find distance from mercury to the sun
-    """
-    mercury_ephem = ephem.Mercury()
-
-    # why do we use and epoch of 1970??
-    mercury_ephem.compute(date, epoch="1970")
-
-    distance_au = mercury_ephem.sun_distance
-    distance_km = distance_au * 1.496e11
-
-    return distance_km
-
-
 def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
-    """
-    Subtracts from the z component to convert from MSO to MSM.
-    Note that angle changes are negligable.
-    Reverse option converts from MSM to MSO
+    """Changes from the MSO to the MSM coordinate system.
 
-    Note that this does not change the range. Range always is distance to centre of planet.
+    MSO is defined by pointing the x axis towards the Sun, the y
+    axis pointing away from Mercury's orbital velocity, and z
+    completing the right handed set. The origin is at the centre
+    of Mercury.
+
+    MSM is similarly defined, with the origin shifted to be at the
+    centre of the dipole field. The x and z axes theoretically
+    point along new directions, but the change in angle is
+    negligible and ignored.
+
+    This function subtracts 479 km from the z component to convert
+    from MSO to MSM. And if reverese, adds 479 km to z.
+
+    Note that this does not change the range. Range always is
+    distance to centre of planet.
+
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+
+    reverse : bool {False}, optional
+        If reverse, changes from MSM to MSO.
+
+
+    Returns
+    -------
+    data : pandas.DataFrame
+        The input data with the ephemeris and frame columns adjusted.
+        There is no change to MAG data.
     """
     if not reverse:
+        if data["frame"] == "MSM":
+            print("WARNING: Data is already in MSM frame, no changes were made.")
+            return data
+
         data["eph_z"] = data["eph_z"] - 479
 
         data["frame"] = "MSM"
 
     else:
+        if data["frame"] == "MSO":
+            print("WARNING: Data is already in MSO frame, no changes were made.")
+            return data
+
         data["eph_z"] = data["eph_z"] + 479
 
         data["frame"] = "MSO"
@@ -192,6 +275,7 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
 
 
 def MSM_TO_MSO(data: pd.DataFrame) -> pd.DataFrame:
+    """See `MSO_TO_MSM()`"""
     return MSO_TO_MSM(data, reverse=True)
 
 
