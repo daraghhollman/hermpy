@@ -1,10 +1,12 @@
 import datetime as dt
 
 import matplotlib.pyplot as plt
+import spiceypy as spice
 
 from hermpy import mag, plotting_tools
 
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
+metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 
 # Loading data, downloaded from PDS
 # Should think about using a glob tool to select data
@@ -21,13 +23,7 @@ start = dt.datetime(year=2012, month=1, day=1, hour=10)
 end = dt.datetime(year=2012, month=1, day=2, hour=10)
 
 # Isolating only a particular portion of the files
-data = mag.StripData(data, start, end)
-
-# Converting to MSM
-data = mag.MSO_TO_MSM(data)
-
-# Accounting for solar wind aberration angle
-#data = mag.AdjustForAberration(data)
+data = mag.Strip_Data(data, start, end)
 
 """
 This data object is a Pandas DataFrame, and has the following columns:
@@ -50,10 +46,12 @@ fig, ax = plt.subplots()
 ax.plot(data["date"], data["mag_total"])
 
 ax.set_yscale("log")
+ax.set_ylabel("|B|")
 
 # Plotting ephemeris information
 # We need a metakernel to retrieve ephemeris information
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
-plotting_tools.Add_Tick_Ephemeris(ax, metakernel)
+spice.furnsh(metakernel)
+plotting_tools.Add_Tick_Ephemeris(ax)
 
 plt.show()

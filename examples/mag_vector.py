@@ -9,6 +9,7 @@ angle in the perpendicular plane.
 import datetime as dt
 
 import matplotlib.pyplot as plt
+import spiceypy as spice
 
 import hermpy.mag as mag
 import hermpy.boundary_crossings as boundaries
@@ -17,7 +18,8 @@ import hermpy.plotting_tools as hermplot
 # Define some paths we'll need later
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
-philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/mercury/philpott_crossings.p")
+spice.furnsh(metakernel)
+philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/mercury/philpott_2020_reformatted.csv")
 
 data = mag.Load_Messenger(
     [
@@ -29,13 +31,10 @@ start = dt.datetime(year=2012, month=1, day=1, hour=6, minute=50)
 end = dt.datetime(year=2012, month=1, day=1, hour=12, minute=10)
 
 # Isolating only a particular portion of the files
-data = mag.StripData(data, start, end)
-
-# Converting to MSM
-data = mag.MSO_TO_MSM(data)
+data = mag.Strip_Data(data, start, end)
 
 # Accounting for solar wind aberration angle
-data = mag.AdjustForAberration(data)
+data = mag.Adjust_For_Aberration(data)
 
 # Converting to polars
 data = mag.Convert_To_Polars(data)
@@ -63,7 +62,7 @@ for ax in axes:
 
 
 # Add ephemeries ticks
-hermplot.Add_Tick_Ephemeris(ax3, metakernel)
+hermplot.Add_Tick_Ephemeris(ax3)
 
 
 plt.show()

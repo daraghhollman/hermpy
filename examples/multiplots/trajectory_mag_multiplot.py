@@ -4,6 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from glob import glob
+import spiceypy as spice
 
 from hermpy import mag, plotting_tools, trajectory, boundary_crossings
 
@@ -12,8 +13,12 @@ mpl.rcParams["font.size"] = 14
 
 ###################### MAG #########################
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
-philpott_crossings = boundary_crossings.Load_Crossings("../../philpott_crossings.p")
+philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/mercury/philpott_2020_reformatted.csv")
 
+# We need a metakernel to retrieve ephemeris information
+metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
+
+spice.furnsh(metakernel)
 start = dt.datetime(year=2011, month=9, day=26, hour=12, minute=23)
 end = dt.datetime(year=2011, month=9, day=26, hour=12, minute=59)
 
@@ -42,13 +47,13 @@ for date in dates_to_load:
 data = mag.Load_Messenger(files_to_load)
 
 # Isolating only a particular portion of the files
-data = mag.StripData(data, start, end)
+data = mag.Strip_Data(data, start, end)
 
 # Converting to MSM
 data = mag.MSO_TO_MSM(data)
 
 # Accounting for solar wind aberration angle
-data = mag.AdjustForAberration(data)
+data = mag.Adjust_For_Aberration(data)
 
 # This data can then be plotted using external libraries
 fig = plt.figure()
@@ -89,11 +94,8 @@ for i, ax in enumerate(mag_axes):
 
 
 # Plotting ephemeris information to the last panel
-# We need a metakernel to retrieve ephemeris information
-metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 plotting_tools.Add_Tick_Ephemeris(
     mag_axes[-1],
-    metakernel,
     include={"date", "hours", "minutes", "range", "latitude", "local time"},
 )
 
@@ -110,17 +112,17 @@ for ax in mag_axes:
 
 # we are going to get positions between these two dates
 time_padding = dt.timedelta(hours=6)
-dates = [start.strftime("%Y-%m-%d %H:%M:%S"), end.strftime("%Y-%m-%d %H:%M:%S")]
+dates = [start, end]
 padded_dates = [
-    (start - time_padding).strftime("%Y-%m-%d %H:%M:%S"),
-    (end + time_padding).strftime("%Y-%m-%d %H:%M:%S"),
+    (start - time_padding),
+    (end + time_padding),
 ]
 
 frame = "MSM"
 
 # Get positions in MSO coordinate system
-positions = trajectory.Get_Trajectory("Messenger", dates, metakernel, frame=frame, aberrate=True)
-padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, metakernel, frame=frame, aberrate=True)
+positions = trajectory.Get_Trajectory("Messenger", dates, frame=frame, aberrate=True)
+padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, frame=frame, aberrate=True)
 
 # Convert from km to Mercury radii
 positions /= 2439.7
@@ -140,9 +142,9 @@ for i, ax in enumerate(trajectory_axes):
     plotting_tools.Plot_Mercury(
         ax, shaded_hemisphere="left", plane=planes[i], frame=frame
     )
-    plotting_tools.AddLabels(ax, planes[i], frame=frame, aberrate=True)
-    plotting_tools.PlotMagnetosphericBoundaries(ax, plane=planes[i], add_legend=True)
-    plotting_tools.SquareAxes(ax, 4)
+    plotting_tools.Add_Labels(ax, planes[i], frame=frame, aberrate=True)
+    plotting_tools.Plot_Magnetospheric_Boundaries(ax, plane=planes[i], add_legend=True)
+    plotting_tools.Square_Axes(ax, 4)
 
 trajectory_axes[1].legend(bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5)
 

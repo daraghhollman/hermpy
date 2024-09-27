@@ -4,6 +4,7 @@ import matplotlib as mpl
 import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
 import numpy as np
+import spiceypy as spice
 
 import hermpy.boundary_crossings as boundary_crossings
 import hermpy.fips as fips
@@ -12,8 +13,9 @@ import hermpy.plotting_tools as plotting_tools
 mpl.rcParams["font.size"] = 18
 
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
+spice.furnsh(metakernel)
 philpott_crossings = boundary_crossings.Load_Crossings(
-    "/home/daraghhollman/Main/mercury/philpott_crossings.p"
+    "/home/daraghhollman/Main/mercury/philpott_2020_reformatted.csv"
 )
 data = fips.Load_Messenger(
     [
@@ -51,7 +53,7 @@ colorbar_label = "Diff. Energy Flux\n[(keV/e)$^{-1}$ sec$^{-1}$ cm$^{-2}$]"
 plt.colorbar(protons_mesh, ax=axes[0], label="Proton " + colorbar_label)
 plt.colorbar(protons_mesh, ax=axes[1], label="Heavy Ion " + colorbar_label)
 
-plotting_tools.Add_Tick_Ephemeris(axes[1], metakernel, {"date", "hours", "minutes", "range", "latitude", "local time"})
+plotting_tools.Add_Tick_Ephemeris(axes[1], {"date", "hours", "minutes", "range", "latitude", "local time"})
 
 for ax in axes:
     ax.set_ylabel("E/Q [keV/Q]")

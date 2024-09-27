@@ -254,7 +254,7 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
         There is no change to MAG data.
     """
     if not reverse:
-        if data["frame"] == "MSM":
+        if np.all(data["frame"] == "MSM"):
             print("WARNING: Data is already in MSM frame, no changes were made.")
             return data
 
@@ -263,7 +263,7 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
         data["frame"] = "MSM"
 
     else:
-        if data["frame"] == "MSO":
+        if np.all(data["frame"] == "MSO"):
             print("WARNING: Data is already in MSO frame, no changes were made.")
             return data
 
