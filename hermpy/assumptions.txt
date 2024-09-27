@@ -1,2 +1,0 @@
-In plotting magnetospheric boundaries, we assume the magnetosphere is symmetrical in Y and Z.
-In determining the aberration angle, we assume a solar wind velocity of 400 km/s.

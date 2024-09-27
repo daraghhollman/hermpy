@@ -1,8 +1,6 @@
 import datetime as dt
 
 import numpy as np
-from numpy._core.multiarray import dtype
-from numpy._typing import ArrayLike
 
 
 def Load_Messenger(file_paths: list[str]):
@@ -163,7 +161,7 @@ def Get_Calibration() -> list[float]:
 
     # This calibration is from the most recent calibration file
     # on the pds. This is column one.
-    # Found: https://search-pdsppi.igpp.ucla.edu/search/view/?f=yes&id=pds://PPI/mess-epps-fips-calibrated/calibration/FIPA_E2014153CDR_V2&o=1
+    # Found here: https://search-pdsppi.igpp.ucla.edu/search/view/?f=yes&id=pds://PPI/mess-epps-fips-calibrated/calibration/FIPA_E2014153CDR_V2&o=1
     calibration = [13.5774, 12.3322, 11.2011, 10.1738, 9.2407,
                    8.3930, 7.6233, 6.9243, 6.2892, 5.7121,
                    5.1884, 4.7126, 4.2802, 3.8877, 3.5310, 
