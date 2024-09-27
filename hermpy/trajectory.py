@@ -14,7 +14,7 @@ def Get_Heliocentric_Distance(date: dt.datetime) -> float:
     ----------
     date : dt.datetime
         The date to query at.
-    
+
 
     Returns
     -------
@@ -25,15 +25,31 @@ def Get_Heliocentric_Distance(date: dt.datetime) -> float:
     et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
     position, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
 
-    distance = np.sqrt(position[0]**2 + position[1]**2 + position[2]**2)
+    distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
 
     return distance
-    
 
 
 def Get_Position(spacecraft: str, date: dt.datetime):
-    """
-    Returns spacecraft position
+    """Returns spacecraft position at a given time
+
+    Uses SPICE to find the position of an input spacecraft
+    at a given time. Assumes the needed SPICE kernels are already loaded.
+
+
+    Parameters
+    ----------
+    spacecraft : str
+        The name of the spacecraft to query. i.e. 'MESSENGER'.
+
+    date : datetime.datetime
+        The date and time to query at.
+
+
+    Returns
+    -------
+    position : list[float]
+        The position in the MSO coordinate frame. In km.
     """
 
     et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
@@ -55,9 +71,45 @@ def Get_Trajectory(
     frame: str = "MSO",
     aberrate: bool = False,
 ):
-    """
-    Plots a given spacecraft's trajectory between two dates. A SPICE metakernel with the required ephemerids must be provided
-    Returns: spacecraft positions in km
+    """Finds a given spacecraft's trajectory between two dates.
+
+    Uses SPICE to find the position of an input spacecraft
+    for a number of `steps` between two dates.
+    Assumes the needed SPICE kernels are already loaded.
+
+
+    Parameters
+    ----------
+    spacecraft : str
+        The name of the spacecraft to query. i.e. 'MESSENGER'.
+
+    dates : list[datetime.datetime]
+        The start and end date and time to query at.
+
+    steps : int {4000}, optional
+        The number of points to sample beween the two times.
+
+    frame : str {MSO, MSM}, optional
+        What frame to return the points in.
+
+    aberrate : bool {False}
+        Set True to return the positions in the aberrated
+        coordinate system.
+        Aberration angle is determined using an average
+        solar wind velocity if 400 km/s, with Mercury's
+        velocity sampled daily.
+
+
+    Returns
+    -------
+    positions : numpy.array
+        The position of the given spacecraft for each of the
+        `steps` between `dates[0]` and `dates[1]`.
+        Formatted as follows:
+        [[x, y, z],
+         [x, y, z],
+         ...
+        ]
     """
 
     et_one = spice.str2et(dates[0].strftime("%Y-%m-%d %H:%M:%S"))
@@ -86,15 +138,31 @@ def Get_Trajectory(
 
 
 def Aberrate_Position(position: list[float], spice_date: float):
-    """
-    For a given position and date, rotates the spacecraft coordinates into the aberrated system.
-    Assumes a metakernel is already loaded
+    """Rotate the spacecraft coordinates into the aberrated coordinate system.
+
+
+    For a given position and date, rotates the spacecraft coordinates into the
+    aberrated system. Assumes a metakernel is already loaded.
+    It is easier to use `Get_Trajectory()` with `aberrate = True` instead of
+    this function.
+
+    Parameters
+    ----------
+    position : list[float]
+        A list of coordinates in a non-aberrated frame, [x, y, z].
+
+    spice_date : float
+        Epoch of transformation in seconds past J2000 TDB.
+
+
+    Returns
+    -------
+    rotated_position : list[float]
+        The new position, rotated into the aberrated frame.
     """
 
     # Get mercury's distance from the sun
-    mercury_position, _ = spice.spkpos(
-        "MERCURY", spice_date, "J2000", "NONE", "SUN"
-    )
+    mercury_position, _ = spice.spkpos("MERCURY", spice_date, "J2000", "NONE", "SUN")
 
     mercury_distance = np.sqrt(
         mercury_position[0] ** 2 + mercury_position[1] ** 2 + mercury_position[2] ** 2
@@ -126,9 +194,27 @@ def Aberrate_Position(position: list[float], spice_date: float):
 
 
 def Get_Range_From_Date(
-    spacecraft: str, dates: list[dt.datetime] | dt.datetime):
-    """
-    For a date, or range of dates, return a spacecraft's distance from Mercury
+    spacecraft: str, dates: list[dt.datetime] | dt.datetime
+) -> list[float]:
+    """For a date, or range of dates, return a spacecraft's distance from Mercury
+
+    Finds the distance of a spacecraft from Mercury at a single, or multiple
+    datetimes. Assumes the relevant SPICE kernels are loaded.
+
+
+    Parameters
+    ----------
+    spacecraft : str
+        The name of the spacecraft to query. i.e. 'MESSENGER'.
+
+    dates : list[datetime.datetime] | datetime.datetime
+        The date or list of dates to query.
+
+
+    Returns
+    -------
+    distances : list[float]
+        The spacecraft's distance from Mercury at each time specified.
     """
 
     if type(dates) == dt.datetime:
@@ -158,8 +244,42 @@ def Get_All_Apoapsis_In_Range(
     spacecraft: str = "MESSENGER",
     plot: bool = False,
 ):
-    """
-    Finds all apoapsis altitudes and times between two times
+    """Finds all apoapsis altitudes and times between two given dates.
+
+    Finds all apoapsis times and their altitudes between `start_time`
+    and `end_time`. Assumes the relevant SPICE kernels are already
+    loaded.
+
+
+    Parameters
+    ----------
+    start_time : datetime.datetime
+        The start date and time of the search.
+
+    end_time : datetime.datetime
+        The end date and time of the search.
+
+    time_delta : datetime.timedelta, {datetime.timedelta(minutes=1)}, optional
+        The time resolution of the search. Default 1 minute.
+
+    number_of_orbits_to_include : int, {0}, optional
+        If set, reduces the number of apoapses in the data until it
+        reaches this number. Disabled if left as 0.
+
+    spacecraft : str, {"MESSENGER"}, optional
+        Which spacecraft to query.
+
+    plot : bool, {False}, optional
+        Displays a plot of the trajectory for debugging purposes.
+
+
+    Returns
+    -------
+    apoapsis_altitudes : numpy.array[float]
+        The altitude of each apoapsis found.
+
+    apoapsis_times : numpy.array[datetime.datetime]
+        The dates and times of each apoapsis found.
     """
     current_time = start_time
 
@@ -223,12 +343,6 @@ def Get_All_Apoapsis_In_Range(
                     "Cannot reduce apoapsis list from 1 orbit. Instead, use trajectory.Get_Nearest_Apoapsis"
                 )
 
-            """
-            # Remove the first apoapsis, as we always refere to the next apoapsis
-            apoapsis_times = np.delete(apoapsis_times, 0)
-            apoapsis_altitudes = np.delete(apoapsis_altitudes, 0)
-            """
-
     return apoapsis_altitudes, apoapsis_times
 
 
@@ -239,9 +353,33 @@ def Get_Nearest_Apoapsis(
     plot: bool = False,
     spacecraft: str = "MESSENGER",
 ) -> tuple[dt.datetime, float]:
-    """
-    Finds closest apoapsis to input time and returns apoapsis time
-    and altitude
+    """Finds closest apoapsis to input time.
+
+    Parameters
+    ----------
+    time : datetime.datetime
+        The time to query around.
+
+    time_delta : datetime.timedelta, {datetime.timedelta(minutes=1)}, optional
+        The time resolution of the search.
+
+    time_limit : datetime.timedelta, {datetime.timedelta(hours=12)}, optional
+        The maximum time to search before and after `time`.
+
+    plot : bool, {False}, optional
+        Produces a plot for debugging purposes.
+
+    spacecraft : str, {'MESSENGER'}, optional
+        Which spacecraft's orbit to query.
+
+
+    Returns
+    -------
+    apoapsis_time : datetime.datetime
+        The dates and times of each apoapsis found.
+
+    apoapsis_altitude : float
+        The altitude of each apoapsis found.
     """
     apoapsis_altitude: float = 0
     apoapsis_time: dt.datetime = time
@@ -281,9 +419,6 @@ def Get_Nearest_Apoapsis(
         time_distances.append(time_distance)
 
     closest_apoapsis_index = peak_indices[np.argmin(time_distances)]
-
-    print(altitudes[closest_apoapsis_index])
-    print(times[closest_apoapsis_index])
 
     if plot:
         plt.plot(times, altitudes)
