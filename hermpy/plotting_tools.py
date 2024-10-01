@@ -9,12 +9,14 @@ import numpy as np
 def Plot_Magnetospheric_Boundaries(
     ax: plt.Axes,
     plane: str = "xy",
+    frame="MSO",
     sub_solar_magnetopause: float = 1.45,
     alpha: float = 0.5,
     psi: float = 1.04,
     p: float = 2.75,
     initial_x: float = 0.5,
     add_legend: bool = False,
+    zorder: int = 0
 ) -> None:
     """Add average magnetopause and bow shock locations based on
     Winslow et al. (2013).
@@ -64,6 +66,7 @@ def Plot_Magnetospheric_Boundaries(
                 ls="--",
                 lw=1,
                 color="black",
+                zorder=zorder,
             )
             ax.plot(
                 bowshock_x_coords,
@@ -71,9 +74,14 @@ def Plot_Magnetospheric_Boundaries(
                 ls="-",
                 lw=1,
                 color="black",
+                zorder=zorder,
             )
 
         case "xz":
+
+            if frame == "MSO":
+                magnetopause_y_coords -= 479 / 2439.7
+                bowshock_y_coords -= 479 / 2439.7
 
             bowshock_label = ""
             magnetopause_label = ""
@@ -89,6 +97,7 @@ def Plot_Magnetospheric_Boundaries(
                 lw=1,
                 color="black",
                 label=magnetopause_label,
+                zorder=zorder,
             )
             ax.plot(
                 bowshock_x_coords,
@@ -96,6 +105,7 @@ def Plot_Magnetospheric_Boundaries(
                 ls="-",
                 lw=1,
                 color="black",
+                zorder=zorder,
                 label=bowshock_label,
             )
 
@@ -209,6 +219,7 @@ def Plot_Mercury(
     shaded_hemisphere: str = "none",
     plane: str = "xy",
     frame: str = "MSO",
+    border_colour: str = "black"
 ) -> None:
     """Adds a circle represting Mercury.
 
@@ -232,6 +243,9 @@ def Plot_Mercury(
     frame : str {`"MSO"`, `"MSM"`}, optional
         Shift the coordinate centre.
 
+    border_colour : str {"black"}, optional
+        The border colour of the representation of Mercury
+
 
     Returns
     -------
@@ -246,27 +260,39 @@ def Plot_Mercury(
     x_coords = np.cos(angles) + offset[0]
     y_coords = np.sin(angles) + offset[1]
 
-    ax.plot(x_coords, y_coords, color="black")
+    ax.plot(x_coords, y_coords, color=border_colour)
 
     match shaded_hemisphere:
         case "left":
             ax.fill_between(
                 x_coords, y_coords, where=x_coords < 0, color="black", interpolate=True
             )
+            ax.fill_between(
+                x_coords, y_coords, where=x_coords > 0, color="white", interpolate=True
+            )
 
         case "right":
             ax.fill_between(
                 x_coords, y_coords, where=x_coords > 0, color="black", interpolate=True
+            )
+            ax.fill_between(
+                x_coords, y_coords, where=x_coords < 0, color="white", interpolate=True
             )
 
         case "top":
             ax.fill_between(
                 x_coords, y_coords, where=y_coords > 0, color="black", interpolate=True
             )
+            ax.fill_between(
+                x_coords, y_coords, where=y_coords < 0, color="white", interpolate=True
+            )
 
         case "bottom":
             ax.fill_between(
                 x_coords, y_coords, where=y_coords < 0, color="black", interpolate=True
+            )
+            ax.fill_between(
+                x_coords, y_coords, where=y_coords > 0, color="white", interpolate=True
             )
 
 
