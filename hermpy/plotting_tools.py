@@ -79,10 +79,6 @@ def Plot_Magnetospheric_Boundaries(
 
         case "xz":
 
-            if frame == "MSO":
-                magnetopause_y_coords -= 479 / 2439.7
-                bowshock_y_coords -= 479 / 2439.7
-
             bowshock_label = ""
             magnetopause_label = ""
 

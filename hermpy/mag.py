@@ -2,15 +2,19 @@
 Functions for loading and handling MAG data
 """
 
-
 import datetime as dt
+from glob import glob
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
+
 import hermpy.trajectory as trajectory
 
 
-def Strip_Data(data: pd.DataFrame, start: dt.datetime, end: dt.datetime) -> pd.DataFrame:
+def Strip_Data(
+    data: pd.DataFrame, start: dt.datetime, end: dt.datetime
+) -> pd.DataFrame:
     """Shortens MAG data to only include times between a start and end time
 
     Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
@@ -78,7 +82,8 @@ def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
 
     multi_file_data = []
     # Load and concatonate into one dataframe
-    for path in file_paths:
+    print("Loading Data")
+    for path in tqdm(file_paths, total=len(file_paths)):
         # Read file
         data = np.genfromtxt(path)
 
@@ -137,6 +142,87 @@ def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
     multi_file_data = multi_file_data.reset_index(drop=True)
 
     return multi_file_data
+
+
+def Load_Between_Dates(root_dir: str, start: dt.datetime, end: dt.datetime):
+    """Automatically finds and loads files between a start and end point
+
+    Automatically locally finds and loads mag data files from MESSENGER
+    between a start and end point using a common regex.
+    Uses `Load_Messenger`.
+
+
+    Parameters
+    ----------
+    root_dir: str
+        The base directory to search in. Expects files in the following
+        format:
+
+        root_dir/2012/01_JAN/MAGMSOSCIAVG12010_01_V08.TAB
+
+    start : datetime.datetime
+        The start point of the data search
+
+    end : datetime.datetime
+        The end point of the data search
+
+
+    Returns
+    -------
+    data : pandas.DataFrame
+        The combined data from each file loaded between the input dates.
+    """
+
+    if (end - start).days == 0:
+        dates_to_load = [start]
+
+    else:
+        dates_to_load: list[dt.datetime] = [
+            start + dt.timedelta(days=i) for i in range((end - start).days)
+        ]
+
+    files_to_load: list[str] = []
+    for date in dates_to_load:
+        file: list[str] = glob(
+            root_dir
+            + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_01_V08.TAB"
+        )
+
+        if len(file) > 1:
+            raise ValueError("ERROR: There are duplicate data files being loaded.")
+        elif len(file) == 0:
+            raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
+
+        files_to_load.append(file[0])
+
+    print("Loading Files")
+    data = Load_Messenger(files_to_load)
+
+    return data
+
+
+def Add_Field_Variability(data: pd.DataFrame, time_frame: dt.timedelta):
+
+    print("Adding Field Variability")
+    variabilities = []
+    for i, row in tqdm(data.iterrows(), total=len(data)):
+
+        # Get the rows before and after
+        # data_to_average = data[ data[ ( (row["date"] - data["date"]) > (time_frame / 2)) and ((row["date"] - data["date"]) < time_frame / 2)]]["mag_total"]
+
+        data_to_average = data.loc[
+            (data["date"].between(row["date"] - time_frame, row["date"]))
+            & (data["date"].between(row["date"], row["date"] + time_frame))
+        ]["mag_total"]
+
+        average_mag = np.mean(data_to_average)
+        variability = np.sqrt((row["mag_total"] - average_mag) ** 2)
+
+        variabilities.append(variability)
+
+    data.insert(len(data.columns), "mag_variability", variabilities)
+
+    return data
 
 
 def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
@@ -285,7 +371,7 @@ def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
     Convets to polar coordinates irrespective of frame.
     Perform transformations and aberrations prior to this
     function.
-    
+
     Takes the values for x, y, and z and creates a new column
     for each polar coordinate.
 
