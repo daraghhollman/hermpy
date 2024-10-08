@@ -223,6 +223,7 @@ def Plot_Crossings_As_Minutes_Before(
     label: bool = True,
     height: float = 0.9,
     color: str = "orange",
+    show_partial_crossings=True,
 ) -> None:
     """
     Plots crossings as vlines with respect to the closest
@@ -273,6 +274,11 @@ def Plot_Crossings_As_Minutes_Before(
         if (row["start"] > data_start and row["start"] < data_end) or (
             row["end"] > data_start and row["end"] < data_end
         ):
+
+            if not show_partial_crossings:
+                if not (row["start"] > data_start and row["start"] < data_end) and (
+                        row["end"] > data_start and row["end"] < data_end):
+                    continue
 
             midpoint = row["start"] + (row["end"] - row["start"]) / 2
 

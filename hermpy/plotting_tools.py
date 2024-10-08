@@ -60,12 +60,20 @@ def Plot_Magnetospheric_Boundaries(
 
     match plane:
         case "xy":
+            bowshock_label = ""
+            magnetopause_label = ""
+
+            if add_legend:
+                bowshock_label = "Avg. Bowshock (Winslow et al. 2013)"
+                magnetopause_label = "Avg. Magnetopause (Winslow et al. 2013)"
+
             ax.plot(
                 magnetopause_x_coords,
                 magnetopause_y_coords,
                 ls="--",
                 lw=1,
                 color="black",
+                label=magnetopause_label,
                 zorder=zorder,
             )
             ax.plot(
@@ -74,6 +82,7 @@ def Plot_Magnetospheric_Boundaries(
                 ls="-",
                 lw=1,
                 color="black",
+                label=magnetopause_label,
                 zorder=zorder,
             )
 

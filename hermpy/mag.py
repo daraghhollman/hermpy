@@ -3,6 +3,7 @@ Functions for loading and handling MAG data
 """
 
 import datetime as dt
+import multiprocessing
 from glob import glob
 
 import numpy as np
@@ -201,24 +202,49 @@ def Load_Between_Dates(root_dir: str, start: dt.datetime, end: dt.datetime):
     return data
 
 
-def Add_Field_Variability(data: pd.DataFrame, time_frame: dt.timedelta):
+def Determine_Variability(items):
+    data, row, time_frame = items
 
-    print("Adding Field Variability")
-    variabilities = []
-    for i, row in tqdm(data.iterrows(), total=len(data)):
+    # Get the rows before and after
+    data_to_average = data.loc[
+        (data["date"].between(row["date"] - time_frame, row["date"]))
+        | (data["date"].between(row["date"], row["date"] + time_frame))
+    ]["mag_total"]
 
-        # Get the rows before and after
-        # data_to_average = data[ data[ ( (row["date"] - data["date"]) > (time_frame / 2)) and ((row["date"] - data["date"]) < time_frame / 2)]]["mag_total"]
+    average_mag = np.mean(data_to_average)
+    variability = np.sqrt((row["mag_total"] - average_mag) ** 2)
 
-        data_to_average = data.loc[
-            (data["date"].between(row["date"] - time_frame, row["date"]))
-            & (data["date"].between(row["date"], row["date"] + time_frame))
-        ]["mag_total"]
+    return variability
 
-        average_mag = np.mean(data_to_average)
-        variability = np.sqrt((row["mag_total"] - average_mag) ** 2)
 
-        variabilities.append(variability)
+def Add_Field_Variability(data: pd.DataFrame, time_frame: dt.timedelta, multiprocess=False):
+
+    if multiprocess:
+        variabilities = []
+        count = 0
+        items = [(data, row, time_frame) for _, row in data.iterrows()]
+        with multiprocessing.Pool() as pool:
+            for result in pool.imap(Determine_Variability, items):
+                if result != None:
+                    variabilities.append(result)
+                count += 1
+                print(f"{count} / {len(data)}", end="\r")
+
+    else:
+        print("Adding Field Variability")
+        variabilities = []
+        for i, row in tqdm(data.iterrows(), total=len(data)):
+
+            # Get the rows before and after
+            data_to_average = data.loc[
+                (data["date"].between(row["date"] - time_frame, row["date"]))
+                | (data["date"].between(row["date"], row["date"] + time_frame))
+            ]["mag_total"]
+
+            average_mag = np.mean(data_to_average)
+            variability = np.sqrt((row["mag_total"] - average_mag) ** 2)
+
+            variabilities.append(variability)
 
     data.insert(len(data.columns), "mag_variability", variabilities)
 
