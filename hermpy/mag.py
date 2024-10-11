@@ -205,7 +205,6 @@ def Load_Between_Dates(
             raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
 
         files_to_load.append(file[0])
-        print(file)
 
     if verbose:
         print("Loading Files")
