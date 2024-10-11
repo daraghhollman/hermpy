@@ -46,7 +46,7 @@ def Strip_Data(
     return stripped_data
 
 
-def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
+def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
     """Loads a list of MESSENGER MAG files and combines them into one output
 
     Reads data from a list of file paths and converts to a pandas dataframe
@@ -83,8 +83,9 @@ def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
 
     multi_file_data = []
     # Load and concatonate into one dataframe
-    print("Loading Data")
-    for path in tqdm(file_paths, total=len(file_paths)):
+    if verbose:
+        print("Loading Data")
+    for path in tqdm(file_paths, total=len(file_paths), disable=not verbose):
         # Read file
         data = np.genfromtxt(path)
 
@@ -145,7 +146,13 @@ def Load_Messenger(file_paths: list[str]) -> pd.DataFrame:
     return multi_file_data
 
 
-def Load_Between_Dates(root_dir: str, start: dt.datetime, end: dt.datetime):
+def Load_Between_Dates(
+    root_dir: str,
+    start: dt.datetime,
+    end: dt.datetime,
+    strip: bool = False,
+    verbose: bool = False,
+):
     """Automatically finds and loads files between a start and end point
 
     Automatically locally finds and loads mag data files from MESSENGER
@@ -167,6 +174,9 @@ def Load_Between_Dates(root_dir: str, start: dt.datetime, end: dt.datetime):
     end : datetime.datetime
         The end point of the data search
 
+    strip : bool {False, True}, optional
+        Should the data be shortened to match the times in start and end
+
 
     Returns
     -------
@@ -174,13 +184,13 @@ def Load_Between_Dates(root_dir: str, start: dt.datetime, end: dt.datetime):
         The combined data from each file loaded between the input dates.
     """
 
-    if (end - start).days == 0:
-        dates_to_load = [start]
+    # convert start and end to days
+    start_date = start.date()
+    end_date = end.date()
 
-    else:
-        dates_to_load: list[dt.datetime] = [
-            start + dt.timedelta(days=i) for i in range((end - start).days)
-        ]
+    dates_to_load: list[dt.date] = [
+        start_date + dt.timedelta(days=i) for i in range((end_date - start_date).days + 1)
+    ]
 
     files_to_load: list[str] = []
     for date in dates_to_load:
@@ -195,9 +205,14 @@ def Load_Between_Dates(root_dir: str, start: dt.datetime, end: dt.datetime):
             raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
 
         files_to_load.append(file[0])
+        print(file)
 
-    print("Loading Files")
-    data = Load_Messenger(files_to_load)
+    if verbose:
+        print("Loading Files")
+    data = Load_Messenger(files_to_load, verbose=verbose)
+
+    if strip:
+        data = Strip_Data(data, start, end)
 
     return data
 
@@ -217,7 +232,9 @@ def Determine_Variability(items):
     return variability
 
 
-def Add_Field_Variability(data: pd.DataFrame, time_frame: dt.timedelta, multiprocess=False):
+def Add_Field_Variability(
+    data: pd.DataFrame, time_frame: dt.timedelta, multiprocess=False
+):
 
     if multiprocess:
         variabilities = []
