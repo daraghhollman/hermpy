@@ -14,16 +14,18 @@ metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 # i.e. "****/*****/MAGMSOSCIAVG*****_01_V08.TAB"
 data = mag.Load_Messenger(
     [
-        root_dir + "2012/01_JAN/MAGMSOSCIAVG12001_01_V08.TAB",
-        root_dir + "2012/01_JAN/MAGMSOSCIAVG12002_01_V08.TAB",
+        root_dir + "2012/05_MAY/MAGMSOSCIAVG12132_01_V08.TAB",
+        root_dir + "2012/05_MAY/MAGMSOSCIAVG12133_01_V08.TAB",
     ]
 )
 
-start = dt.datetime(year=2012, month=1, day=1, hour=10)
-end = dt.datetime(year=2012, month=1, day=2, hour=10)
+start = dt.datetime(year=2012, month=5, day=11, hour=11)
+end = dt.datetime(year=2012, month=5, day=12, hour=12)
 
 # Isolating only a particular portion of the files
 data = mag.Strip_Data(data, start, end)
+
+print(data)
 
 """
 This data object is a Pandas DataFrame, and has the following columns:

@@ -345,6 +345,54 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
+def Aberrate(x: float, y: float, z: float, date: dt.datetime) -> tuple[float, float, float]:
+    """Aberrate any singular x, y, z point
+
+    The solar wind impacts mercury's magnetosphere along an axis different
+    from the vector to the sun due to its orbital velocity. We define a
+    coordinate system with the x axis rotated to be along this direction,
+    rather than pointing at the sun. This is the 'aberrated', or 'primed'
+    frame.
+
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+
+
+    Returns
+    -------
+    new_x: float
+        Aberrated x position
+
+    new_y: float
+        Aberrated y position
+
+    new_z: float
+        Aberrated z position
+
+    date: datetime.datetime | datetime.date
+        The date to aberrate at.
+    """
+
+
+    r = trajectory.Get_Heliocentric_Distance(date)
+
+    # determine mercury velocity
+    a = 57909050 * 1000
+    M = 1.9891e30
+    G = 6.6743e-11
+
+    orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
+    aberration_angle = np.arctan(orbital_velocity / 400000)
+
+    # Adjust x and y ephemeris and data
+    new_x: float = x * np.cos(aberration_angle) - y * np.sin(aberration_angle)
+    new_y: float = x * np.sin(aberration_angle) + y * np.cos(aberration_angle)
+
+    return (new_x, new_y, z)
+
 
 def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
     """Changes from the MSO to the MSM coordinate system.

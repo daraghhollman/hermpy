@@ -156,6 +156,7 @@ def Plot_Crossing_Intervals(
     label: bool = True,
     height: float = 0.9,
     color: str = "orange",
+    lw: float = 1,
 ) -> None:
     """Adds vertical lines marking the start and end of given
     crossing intervals.
@@ -210,8 +211,8 @@ def Plot_Crossing_Intervals(
                     va="center",
                 )
 
-            ax.axvline(row["start"], color=color, ls="dashed")
-            ax.axvline(row["end"], color=color, ls="dashed")
+            ax.axvline(row["start"], color=color, ls="dashed", lw=lw)
+            ax.axvline(row["end"], color=color, ls="dashed", lw=lw)
 
 
 def Plot_Crossings_As_Minutes_Before(

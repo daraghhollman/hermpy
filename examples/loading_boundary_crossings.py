@@ -18,13 +18,13 @@ root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 # Loading data, downloaded from PDS
 data = mag.Load_Messenger(
     [
-        root_dir + "2012/01_JAN/MAGMSOSCIAVG12001_01_V08.TAB",
+        root_dir + "2014/01_JAN/MAGMSOSCIAVG14017_01_V08.TAB",
     ]
 )
 
 # Isolating only a particular portion of the files
-start = dt.datetime(year=2012, month=1, day=1, hour=9, minute=30)
-end = dt.datetime(year=2012, month=1, day=1, hour=10, minute=30)
+start = dt.datetime(year=2014, month=1, day=17, hour=2, minute=0)
+end = dt.datetime(year=2014, month=1, day=17, hour=2, minute=40)
 data = mag.Strip_Data(data, start, end)
 
 fig, ax = plt.subplots()

@@ -30,7 +30,7 @@ def Get_Heliocentric_Distance(date: dt.datetime) -> float:
     return distance
 
 
-def Get_Position(spacecraft: str, date: dt.datetime):
+def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO"):
     """Returns spacecraft position at a given time
 
     Uses SPICE to find the position of an input spacecraft
@@ -45,11 +45,14 @@ def Get_Position(spacecraft: str, date: dt.datetime):
     date : datetime.datetime
         The date and time to query at.
 
+    frame : str {"MSO", "MSM"}, optional
+        The SPICE frame to load
+
 
     Returns
     -------
     position : list[float]
-        The position in the MSO coordinate frame. In km.
+        The position in the MSO / MSM coordinate frame. In km.
     """
 
     et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
@@ -58,10 +61,19 @@ def Get_Position(spacecraft: str, date: dt.datetime):
     # We need to test for this
     try:
         position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
+
+        match frame:
+            case "MSO":
+                return position
+
+            case "MSM":
+                position[2] += 479
+                return position
+
     except:
         position = None
 
-    return position
+        return position
 
 
 def Get_Trajectory(
