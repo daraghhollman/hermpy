@@ -50,7 +50,7 @@ def Load_Messenger(file_paths: list[str]):
             path,
             dtype=None,
             usecols=[1],
-            converters={1: lambda s: dt.datetime.strptime(s, "%Y-%jT%H:%M:%S.%f")},
+            converters={1: lambda s: dt.datetime.strptime(s.decode('utf-8'), "%Y-%jT%H:%M:%S.%f")},
         ).tolist()
         start_energies = np.genfromtxt(
             path, dtype=float, usecols=np.arange(4, 67).tolist()

@@ -15,16 +15,16 @@ mpl.rcParams["font.size"] = 18
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
 philpott_crossings = boundary_crossings.Load_Crossings(
-    "/home/daraghhollman/Main/mercury/philpott_2020_reformatted.csv"
+    "/home/daraghhollman/Main/Work/mercury/philpott_2020_reformatted.csv"
 )
 data = fips.Load_Messenger(
     [
-        "/home/daraghhollman/Main/data/mercury/messenger/FIPS/2013/06_JUN/FIPS_R2013153CDR_V3.TAB"
+        "/home/daraghhollman/Main/data/mercury/messenger/FIPS/2011/12_DEC/FIPS_R2011364CDR_V3.TAB"
     ]
 )
 
-start = dt.datetime(year=2013, month=6, day=2, hour=16, minute=0)
-stop = dt.datetime(year=2013, month=6, day=2, hour=16, minute=30)
+start = dt.datetime(year=2011, month=12, day=30, hour=15)
+stop = dt.datetime(year=2011, month=12, day=30, hour=23, minute=59)
 data = fips.Strip_Data(data, start, stop)
 
 # We transpose to place the time axis along x
