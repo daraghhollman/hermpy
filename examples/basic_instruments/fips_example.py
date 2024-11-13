@@ -17,15 +17,11 @@ spice.furnsh(metakernel)
 philpott_crossings = boundary_crossings.Load_Crossings(
     "/home/daraghhollman/Main/Work/mercury/philpott_2020_reformatted.csv"
 )
-data = fips.Load_Messenger(
-    [
-        "/home/daraghhollman/Main/data/mercury/messenger/FIPS/2011/12_DEC/FIPS_R2011364CDR_V3.TAB"
-    ]
-)
 
-start = dt.datetime(year=2011, month=12, day=30, hour=15)
-stop = dt.datetime(year=2011, month=12, day=30, hour=23, minute=59)
-data = fips.Strip_Data(data, start, stop)
+start = dt.datetime(year=2013, month=8, day=19, hour=12)
+stop = dt.datetime(year=2013, month=8, day=22, hour=21)
+
+data = fips.Load_Between_Dates("/home/daraghhollman/Main/data/mercury/messenger/FIPS/", start, stop, strip=True)
 
 # We transpose to place the time axis along x
 protons = np.transpose(data["proton_energies"])

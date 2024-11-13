@@ -414,4 +414,4 @@ def Add_Tick_Ephemeris(
 
     new_tick_labels[0] = first_tick_format
 
-    ax.set_xticklabels(new_tick_labels)
+    ax.set_xticks(tick_locations, new_tick_labels)

@@ -1,4 +1,5 @@
 import datetime as dt
+from glob import glob
 
 import numpy as np
 
@@ -50,7 +51,11 @@ def Load_Messenger(file_paths: list[str]):
             path,
             dtype=None,
             usecols=[1],
-            converters={1: lambda s: dt.datetime.strptime(s.decode('utf-8'), "%Y-%jT%H:%M:%S.%f")},
+            converters={
+                1: lambda s: dt.datetime.strptime(
+                    s.decode("utf-8"), "%Y-%jT%H:%M:%S.%f"
+                )
+            },
         ).tolist()
         start_energies = np.genfromtxt(
             path, dtype=float, usecols=np.arange(4, 67).tolist()
@@ -82,19 +87,113 @@ def Load_Messenger(file_paths: list[str]):
             proton_energies = proton_energies[indices]
             ep_energies = ep_energies[indices]
 
-        if mode.any() != 2:
-            print(set(mode.tolist()))
 
-        multi_file_data["dates"].append(dates)
-        multi_file_data["ve_energies"].append(ve_energies)
-        multi_file_data["proton_energies"].append(proton_energies)
-        multi_file_data["ep_energies"].append(ep_energies)
+        multi_file_data["dates"] = np.append(multi_file_data["dates"], dates)
 
-    # We squeeze the list of arrays to combine them into one array.
-    for key in multi_file_data.keys():
-        multi_file_data[key] = np.squeeze(multi_file_data[key])
+        keys = ["ve_energies", "proton_energies", "ep_energies"]
+        variables = [ve_energies, proton_energies, ep_energies]
+        for key, var in zip(keys, variables):
+            
+            if type(multi_file_data[key]) is list :
+                multi_file_data[key] = var
+
+            else:
+                multi_file_data[key] = np.vstack((multi_file_data[key], var))
+
+
+        multi_file_data["dates"] = np.squeeze(multi_file_data["dates"])
 
     return multi_file_data
+
+
+def Load_Between_Dates(
+    root_dir: str,
+    start: dt.datetime,
+    end: dt.datetime,
+    strip: bool = False,
+    verbose: bool = False,
+):
+    """Automatically finds and loads files between a start and end point
+
+    Automatically locally finds and loads mag data files from MESSENGER
+    between a start and end point using a common regex.
+    Uses `Load_Messenger`.
+
+
+    Parameters
+    ----------
+    root_dir: str
+        The base directory to search in. Expects files in the following
+        format:
+
+        root_dir/2012/01_JAN/FIPS_R2011364CDR_V3.TAB
+
+    start : datetime.datetime
+        The start point of the data search
+
+    end : datetime.datetime
+        The end point of the data search
+
+    strip : bool {False, True}, optional
+        Should the data be shortened to match the times in start and end
+
+
+    Returns
+    -------
+    out : dict{
+        "dates" : list[datetime.datetime]
+            The date and time of each measurement.
+
+        "start_energies" : numpy.ndarray[float]
+            Desc.
+
+        "stop_energies" : numpy.ndarray[float]
+            Desc.
+
+        "proton_energies" : numpy.ndarray[float]
+            The proton spectra with time on the long axis
+
+        "ep_energies" : numpy.ndarray[float]
+
+    }
+    """
+
+    # convert start and end to days
+    start_date = start.date()
+    end_date = end.date()
+
+    dates_to_load: list[dt.date] = [
+        start_date + dt.timedelta(days=i)
+        for i in range((end_date - start_date).days + 1)
+    ]
+
+    files_to_load: list[str] = []
+    for date in dates_to_load:
+        file: list[str] = glob(
+            root_dir
+            + f"{date.strftime('%Y')}/*/FIPS_R{date.strftime('%Y%j')}CDR_V*.TAB"
+        )
+
+        if len(file) > 1:
+            raise ValueError("ERROR: There are duplicate data files being loaded.")
+        elif len(file) == 0:
+            raise ValueError(
+                "ERROR: The data trying to be loaded doesn't exist!"
+                + f"\n path: {            root_dir
+            + f'{date.strftime('%Y')}/*/FIPS_R{date.strftime('%Y%j')}CDR_V3.TAB'
+}"
+            )
+
+        files_to_load.append(file[0])
+
+    if verbose:
+        print("Loading Files")
+    data = Load_Messenger(files_to_load)
+
+    if strip:
+        data = Strip_Data(data, start, end)
+
+    return data
 
 
 def Strip_Data(data: dict, start: dt.datetime, stop: dt.datetime):
@@ -150,7 +249,7 @@ def Get_Calibration() -> list[float]:
     Currently 'calibration' is assumed constant for all data modes.
     This is accepted within the literature and scientific community.
 
-    
+
     Returns
     -------
     out : list[float]
@@ -158,22 +257,74 @@ def Get_Calibration() -> list[float]:
 
     """
 
-
     # This calibration is from the most recent calibration file
     # on the pds. This is column one.
     # Found here: https://search-pdsppi.igpp.ucla.edu/search/view/?f=yes&id=pds://PPI/mess-epps-fips-calibrated/calibration/FIPA_E2014153CDR_V2&o=1
-    calibration = [13.5774, 12.3322, 11.2011, 10.1738, 9.2407,
-                   8.3930, 7.6233, 6.9243, 6.2892, 5.7121,
-                   5.1884, 4.7126, 4.2802, 3.8877, 3.5310, 
-                   3.2074, 2.9131, 2.6459, 2.4034, 2.1830,
-                   1.9828, 1.8007, 1.6358, 1.4855, 1.3493, 
-                   1.2255, 1.1133, 1.0110, 0.9184, 0.8343, 
-                   0.7576, 0.6880, 0.6251, 0.5677, 0.5156,
-                   0.4682, 0.4255, 0.3863, 0.3510, 0.3189,
-                   0.2896, 0.2631, 0.2388, 0.2170, 0.1970,
-                   0.1789, 0.1627, 0.1478, 0.1340, 0.1219, 
-                   0.1107, 0.1004, 0.0851, 0.0729, 0.0611,
-                   0.0489, 0.0371, 0.0249, 0.0131, 0.0087,
-                   0.0087, 0.0087, 0.0087, 0.0087]
+    calibration = [
+        13.5774,
+        12.3322,
+        11.2011,
+        10.1738,
+        9.2407,
+        8.3930,
+        7.6233,
+        6.9243,
+        6.2892,
+        5.7121,
+        5.1884,
+        4.7126,
+        4.2802,
+        3.8877,
+        3.5310,
+        3.2074,
+        2.9131,
+        2.6459,
+        2.4034,
+        2.1830,
+        1.9828,
+        1.8007,
+        1.6358,
+        1.4855,
+        1.3493,
+        1.2255,
+        1.1133,
+        1.0110,
+        0.9184,
+        0.8343,
+        0.7576,
+        0.6880,
+        0.6251,
+        0.5677,
+        0.5156,
+        0.4682,
+        0.4255,
+        0.3863,
+        0.3510,
+        0.3189,
+        0.2896,
+        0.2631,
+        0.2388,
+        0.2170,
+        0.1970,
+        0.1789,
+        0.1627,
+        0.1478,
+        0.1340,
+        0.1219,
+        0.1107,
+        0.1004,
+        0.0851,
+        0.0729,
+        0.0611,
+        0.0489,
+        0.0371,
+        0.0249,
+        0.0131,
+        0.0087,
+        0.0087,
+        0.0087,
+        0.0087,
+        0.0087,
+    ]
 
     return calibration
