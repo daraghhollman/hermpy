@@ -82,13 +82,20 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
         dataframe = pd.DataFrame(
             {
                 "date": dates,
+
+                "X MSO (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
+                "Y MSO (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
+                "Z MSO (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
+
                 "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
                 "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
-                "Z MSM (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
+                "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM) + Constants.DIPOLE_OFFSET_RADII,
+
                 "range (MSO)": np.sqrt(
                     ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
                 )
                 / Constants.MERCURY_RADIUS_KM,
+
                 "Bx": magnetic_field[0],
                 "By": magnetic_field[1],
                 "Bz": magnetic_field[2],
@@ -226,10 +233,10 @@ def Determine_Variability(items):
     data_to_average = data.loc[
         (data["date"].between(row["date"] - time_frame, row["date"]))
         | (data["date"].between(row["date"], row["date"] + time_frame))
-    ]["mag_total"]
+    ]["|B|"]
 
     average_mag = np.mean(data_to_average)
-    variability = np.sqrt((row["mag_total"] - average_mag) ** 2)
+    variability = np.sqrt((row["|B|"] - average_mag) ** 2)
 
     return variability
 
@@ -258,14 +265,14 @@ def Add_Field_Variability(
             data_to_average = data.loc[
                 (data["date"].between(row["date"] - time_frame, row["date"]))
                 | (data["date"].between(row["date"], row["date"] + time_frame))
-            ]["mag_total"]
+            ]["|B|"]
 
             average_mag = np.mean(data_to_average)
-            variability = np.sqrt((row["mag_total"] - average_mag) ** 2)
+            variability = np.sqrt((row["|B|"] - average_mag) ** 2)
 
             variabilities.append(variability)
 
-    data.insert(len(data.columns), "mag_variability", variabilities)
+    data.insert(len(data.columns), "B_variability", variabilities)
 
     return data
 
@@ -304,7 +311,7 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
 
     r = 0
     aberration_angle = 0
-    previous_date = dt.datetime(2010, 1, 1)
+    previous_date = dt.datetime(2010, 1, 1) # arbitrary date before MESSENGER orbit
     for _, row in data.iterrows():
 
         # check if day has changed and then update mercury distance
@@ -318,21 +325,21 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
             G = Constants.G
 
             orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
-            aberration_angle = np.arctan(orbital_velocity / 400000)
+            aberration_angle = np.arctan(orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG)
 
         # Adjust x and y ephemeris and data
         new_mag = (
-            row["mag_x"] * np.cos(aberration_angle)
-            - row["mag_y"] * np.sin(aberration_angle),
-            row["mag_x"] * np.sin(aberration_angle)
-            + row["mag_y"] * np.cos(aberration_angle),
+            row["Bx"] * np.cos(aberration_angle)
+            - row["By"] * np.sin(aberration_angle),
+            row["Bx"] * np.sin(aberration_angle)
+            + row["Bx"] * np.cos(aberration_angle),
         )
 
         new_ephem = (
-            row["eph_x"] * np.cos(aberration_angle)
-            - row["eph_y"] * np.sin(aberration_angle),
-            row["eph_x"] * np.sin(aberration_angle)
-            + row["eph_y"] * np.cos(aberration_angle),
+            row["X MSM"] * np.cos(aberration_angle)
+            - row["Y MSM"] * np.sin(aberration_angle),
+            row["X MSM"] * np.sin(aberration_angle)
+            + row["Y MSM"] * np.cos(aberration_angle),
         )
 
         new_eph_x.append(new_ephem[0])
@@ -341,10 +348,10 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
         new_mag_x.append(new_mag[0])
         new_mag_y.append(new_mag[1])
 
-    data["eph_x"] = new_eph_x
-    data["eph_y"] = new_eph_y
-    data["mag_x"] = new_mag_x
-    data["mag_y"] = new_mag_y
+    data["X MSM'"] = new_eph_x
+    data["Y MSM'"] = new_eph_y
+    data["X MSM'"] = new_mag_x
+    data["Y MSM'"] = new_mag_y
 
     return data
 
@@ -399,67 +406,6 @@ def Aberrate(
     return (new_x, new_y, z)
 
 
-def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
-    """Changes from the MSO to the MSM coordinate system.
-
-    MSO is defined by pointing the x axis towards the Sun, the y
-    axis pointing away from Mercury's orbital velocity, and z
-    completing the right handed set. The origin is at the centre
-    of Mercury.
-
-    MSM is similarly defined, with the origin shifted to be at the
-    centre of the dipole field. The x and z axes theoretically
-    point along new directions, but the change in angle is
-    negligible and ignored.
-
-    This function subtracts 479 km from the z component to convert
-    from MSO to MSM. And if reverese, adds 479 km to z.
-
-    Note that this does not change the range. Range always is
-    distance to centre of planet.
-
-
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
-
-    reverse : bool {False}, optional
-        If reverse, changes from MSM to MSO.
-
-
-    Returns
-    -------
-    data : pandas.DataFrame
-        The input data with the ephemeris and frame columns adjusted.
-        There is no change to MAG data.
-    """
-    if not reverse:
-        if np.all(data["frame"] == "MSM"):
-            print("WARNING: Data is already in MSM frame, no changes were made.")
-            return data
-
-        data["eph_z"] = data["eph_z"] - Constants.DIPOLE_OFFSET_RADII
-
-        data["frame"] = "MSM"
-
-    else:
-        if np.all(data["frame"] == "MSO"):
-            print("WARNING: Data is already in MSO frame, no changes were made.")
-            return data
-
-        data["eph_z"] = data["eph_z"] + Constants.DIPOLE_OFFSET_RADII
-
-        data["frame"] = "MSO"
-
-    return data
-
-
-def MSM_TO_MSO(data: pd.DataFrame) -> pd.DataFrame:
-    """See `MSO_TO_MSM()`"""
-    return MSO_TO_MSM(data, reverse=True)
-
-
 def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
     """Converts data from cartesian to polar coordinates
 
@@ -485,16 +431,16 @@ def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
 
     """
 
-    x = data["mag_x"]
-    y = data["mag_y"]
-    z = data["mag_z"]
+    x = data["Bx"]
+    y = data["By"]
+    z = data["Bz"]
 
     r = np.sqrt(x**2 + y**2 + z**2)
     theta = np.arctan2(y, x) * 180 / np.pi
     phi = np.arctan2(z, r) * 180 / np.pi
 
-    data["mag_r"] = r
-    data["mag_theta"] = theta
-    data["mag_phi"] = phi
+    data["Br"] = r
+    data["Btheta"] = theta
+    data["Bphi"] = phi
 
     return data
