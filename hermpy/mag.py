@@ -11,6 +11,7 @@ import pandas as pd
 from tqdm import tqdm
 
 import hermpy.trajectory as trajectory
+from hermpy.utils import Constants
 
 
 def Strip_Data(
@@ -95,20 +96,15 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
         minutes = data[:, 3]
         seconds = data[:, 4]
 
-        # Create a list of datetime objects for a new date column
-        dates = [dt.datetime(1, 1, 1)] * len(day_of_years)
-        for i, day in enumerate(day_of_years):
-            date = dt.datetime(
-                year=int(years[i]),
-                month=1,
-                day=1,
-                hour=int(hours[i]),
-                minute=int(minutes[i]),
-                second=int(seconds[i]),
+        dates = [
+            dt.datetime(int(year), 1, 1)  # Start with the first date of that year
+            + dt.timedelta(  # Add time to get to the day of year and time.
+                days=day_of_year - 1, hours=int(hour), minutes=int(minute), seconds=int(second)
             )
-            date += dt.timedelta(days=day - 1)
-
-            dates[i] = date
+            for year, day_of_year, hour, minute, second in zip(
+                years, day_of_years, hours, minutes, seconds
+            )
+        ]
 
         ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
         magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
@@ -116,20 +112,17 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
         dataframe = pd.DataFrame(
             {
                 "date": dates,
-                "hour": hours,
-                "minute": minutes,
-                "second": seconds,
-                "frame": "MSO",
-                "eph_x": ephemeris[0],
-                "eph_y": ephemeris[1],
-                "eph_z": ephemeris[2],
-                "range": np.sqrt(
+                "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
+                "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
+                "Z MSM (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
+                "range (MSO)": np.sqrt(
                     ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
-                ),
-                "mag_x": magnetic_field[0],
-                "mag_y": magnetic_field[1],
-                "mag_z": magnetic_field[2],
-                "mag_total": np.sqrt(
+                )
+                / Constants.MERCURY_RADIUS_KM,
+                "Bx": magnetic_field[0],
+                "By": magnetic_field[1],
+                "Bz": magnetic_field[2],
+                "|B|": np.sqrt(
                     magnetic_field[0] ** 2
                     + magnetic_field[1] ** 2
                     + magnetic_field[2] ** 2
@@ -194,14 +187,15 @@ def Load_Between_Dates(
     end_date = end.date()
 
     dates_to_load: list[dt.date] = [
-        start_date + dt.timedelta(days=i) for i in range((end_date - start_date).days + 1)
+        start_date + dt.timedelta(days=i)
+        for i in range((end_date - start_date).days + 1)
     ]
 
     files_to_load: list[str] = []
     for date in dates_to_load:
         file: list[str] = glob(
             root_dir
-                + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
+            + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
         )
 
         if len(file) > 1:
@@ -213,6 +207,7 @@ def Load_Between_Dates(
 
     if verbose:
         print("Loading Files")
+
     data = Load_Messenger(files_to_load, verbose=verbose)
 
     if strip:
@@ -315,9 +310,9 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
             previous_date = row["date"]
 
             # determine mercury velocity
-            a = 57909050 * 1000
-            M = 1.9891e30
-            G = 6.6743e-11
+            a = Constants.MERCURY_SEMI_MAJOR_AXIS
+            M = Constants.SOLAR_MASS
+            G = Constants.G
 
             orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
             aberration_angle = np.arctan(orbital_velocity / 400000)
@@ -350,7 +345,10 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-def Aberrate(x: float, y: float, z: float, date: dt.datetime) -> tuple[float, float, float]:
+
+def Aberrate(
+    x: float, y: float, z: float, date: dt.datetime
+) -> tuple[float, float, float]:
     """Aberrate any singular x, y, z point
 
     The solar wind impacts mercury's magnetosphere along an axis different
@@ -381,16 +379,15 @@ def Aberrate(x: float, y: float, z: float, date: dt.datetime) -> tuple[float, fl
         The date to aberrate at.
     """
 
-
     r = trajectory.Get_Heliocentric_Distance(date)
 
     # determine mercury velocity
-    a = 57909050 * 1000
-    M = 1.9891e30
-    G = 6.6743e-11
+    a = Constants.MERCURY_SEMI_MAJOR_AXIS
+    M = Constants.SOLAR_MASS
+    G = Constants.G
 
     orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
-    aberration_angle = np.arctan(orbital_velocity / 400000)
+    aberration_angle = np.arctan(orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG)
 
     # Adjust x and y ephemeris and data
     new_x: float = x * np.cos(aberration_angle) - y * np.sin(aberration_angle)
@@ -439,7 +436,7 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
             print("WARNING: Data is already in MSM frame, no changes were made.")
             return data
 
-        data["eph_z"] = data["eph_z"] - 479
+        data["eph_z"] = data["eph_z"] - Constants.DIPOLE_OFFSET_RADII
 
         data["frame"] = "MSM"
 
@@ -448,7 +445,7 @@ def MSO_TO_MSM(data: pd.DataFrame, reverse=False) -> pd.DataFrame:
             print("WARNING: Data is already in MSO frame, no changes were made.")
             return data
 
-        data["eph_z"] = data["eph_z"] + 479
+        data["eph_z"] = data["eph_z"] + Constants.DIPOLE_OFFSET_RADII
 
         data["frame"] = "MSO"
 
