@@ -14,39 +14,6 @@ import hermpy.trajectory as trajectory
 from hermpy.utils import Constants
 
 
-def Strip_Data(
-    data: pd.DataFrame, start: dt.datetime, end: dt.datetime
-) -> pd.DataFrame:
-    """Shortens MAG data to only include times between a start and end time
-
-    Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
-    to match give start and end time.
-
-
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
-
-    start : datetime.datetime
-        The start date of the data to be kept. All rows prior will be removed.
-
-    end : datetime.datetime
-        The end date of the data to be kept. All rows after will be removed.
-
-
-    Returns
-    -------
-    stripped_data : pandas.DataFrame
-        A new dataframe containing only the data between the given dates.
-    """
-
-    stripped_data = data.loc[data["date"].between(start, end)]
-    stripped_data = stripped_data.reset_index(drop=True)
-
-    return stripped_data
-
-
 def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
     """Loads a list of MESSENGER MAG files and combines them into one output
 
@@ -99,7 +66,10 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
         dates = [
             dt.datetime(int(year), 1, 1)  # Start with the first date of that year
             + dt.timedelta(  # Add time to get to the day of year and time.
-                days=day_of_year - 1, hours=int(hour), minutes=int(minute), seconds=int(second)
+                days=day_of_year - 1,
+                hours=int(hour),
+                minutes=int(minute),
+                seconds=int(second),
             )
             for year, day_of_year, hour, minute, second in zip(
                 years, day_of_years, hours, minutes, seconds
@@ -214,6 +184,39 @@ def Load_Between_Dates(
         data = Strip_Data(data, start, end)
 
     return data
+
+
+def Strip_Data(
+    data: pd.DataFrame, start: dt.datetime, end: dt.datetime
+) -> pd.DataFrame:
+    """Shortens MAG data to only include times between a start and end time
+
+    Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
+    to match give start and end time.
+
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+
+    start : datetime.datetime
+        The start date of the data to be kept. All rows prior will be removed.
+
+    end : datetime.datetime
+        The end date of the data to be kept. All rows after will be removed.
+
+
+    Returns
+    -------
+    stripped_data : pandas.DataFrame
+        A new dataframe containing only the data between the given dates.
+    """
+
+    stripped_data = data.loc[data["date"].between(start, end)]
+    stripped_data = stripped_data.reset_index(drop=True)
+
+    return stripped_data
 
 
 def Determine_Variability(items):
