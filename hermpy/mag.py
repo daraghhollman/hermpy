@@ -17,26 +17,6 @@ from hermpy.utils import Constants
 def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
     """Loads a list of MESSENGER MAG files and combines them into one output
 
-    Reads data from a list of file paths and converts to a pandas dataframe
-    with the following columns:
-        date,
-        hour,
-        minute,
-        second,
-        frame,
-        eph_x,
-        eph_y,
-        eph_z,
-        range,
-        mag_x,
-        mag_y,
-        mag_z,
-        mag_total
-
-    This function is only valid for the 1 second average data-set due to a
-    format difference in the data files between different data-sets.
-
-
     Parameters
     ----------
     file_paths : list[str]
@@ -82,20 +62,17 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
         dataframe = pd.DataFrame(
             {
                 "date": dates,
-
                 "X MSO (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
                 "Y MSO (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
                 "Z MSO (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
-
                 "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
                 "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
-                "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM) + Constants.DIPOLE_OFFSET_RADII,
-
+                "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM)
+                + Constants.DIPOLE_OFFSET_RADII,
                 "range (MSO)": np.sqrt(
                     ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
                 )
                 / Constants.MERCURY_RADIUS_KM,
-
                 "Bx": magnetic_field[0],
                 "By": magnetic_field[1],
                 "Bz": magnetic_field[2],
@@ -122,6 +99,7 @@ def Load_Between_Dates(
     end: dt.datetime,
     average: int = 1,
     strip: bool = True,
+    aberrate: bool = False,
     verbose: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
@@ -152,6 +130,10 @@ def Load_Between_Dates(
     strip : bool {True, False}, optional
         Should the data be shortened to match the times in start and end
 
+    aberrate : bool {False, True}, optional
+        Should the dataframe contain MAG data and Ephemeris data in MSM'
+
+        Requires a loaded spice kernel
 
     Returns
     -------
@@ -190,6 +172,9 @@ def Load_Between_Dates(
     if strip:
         data = Strip_Data(data, start, end)
 
+    if aberrate:
+        data = Adjust_For_Aberration(data)
+
     return data
 
 
@@ -224,6 +209,36 @@ def Strip_Data(
     stripped_data = stripped_data.reset_index(drop=True)
 
     return stripped_data
+
+
+def Remove_Spikes(data: pd.DataFrame, threshold: int = 1_000) -> None:
+    """Removes non-physical large spikes (> 1 μT) in the data
+
+    Replaces values above 1,000 nT with np.nan
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+
+    threshold : float {1,000} optional,
+        Threshold at which to start removing values.
+
+
+    Returns
+    -------
+    None
+        Operates in place
+
+    """
+
+    components = ["|B|", "Bx", "By", "Bz"]
+
+    for component in components:
+
+        data.loc[abs(data[component]) > threshold, component] = np.nan
+
+    return
 
 
 def Determine_Variability(items):
@@ -311,7 +326,7 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
 
     r = 0
     aberration_angle = 0
-    previous_date = dt.datetime(2010, 1, 1) # arbitrary date before MESSENGER orbit
+    previous_date = dt.datetime(2010, 1, 1)  # arbitrary date before MESSENGER orbit
     for _, row in data.iterrows():
 
         # check if day has changed and then update mercury distance
@@ -325,21 +340,21 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
             G = Constants.G
 
             orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
-            aberration_angle = np.arctan(orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG)
+            aberration_angle = np.arctan(
+                orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
+            )
 
         # Adjust x and y ephemeris and data
         new_mag = (
-            row["Bx"] * np.cos(aberration_angle)
-            - row["By"] * np.sin(aberration_angle),
-            row["Bx"] * np.sin(aberration_angle)
-            + row["Bx"] * np.cos(aberration_angle),
+            row["Bx"] * np.cos(aberration_angle) - row["By"] * np.sin(aberration_angle),
+            row["Bx"] * np.sin(aberration_angle) + row["Bx"] * np.cos(aberration_angle),
         )
 
         new_ephem = (
-            row["X MSM"] * np.cos(aberration_angle)
-            - row["Y MSM"] * np.sin(aberration_angle),
-            row["X MSM"] * np.sin(aberration_angle)
-            + row["Y MSM"] * np.cos(aberration_angle),
+            row["X MSM (radii)"] * np.cos(aberration_angle)
+            - row["Y MSM (radii)"] * np.sin(aberration_angle),
+            row["X MSM (radii)"] * np.sin(aberration_angle)
+            + row["Y MSM (radii)"] * np.cos(aberration_angle),
         )
 
         new_eph_x.append(new_ephem[0])
@@ -348,10 +363,10 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
         new_mag_x.append(new_mag[0])
         new_mag_y.append(new_mag[1])
 
-    data["X MSM'"] = new_eph_x
-    data["Y MSM'"] = new_eph_y
-    data["X MSM'"] = new_mag_x
-    data["Y MSM'"] = new_mag_y
+    data["X MSM' (radii)"] = new_eph_x
+    data["Y MSM' (radii)"] = new_eph_y
+    data["Bx"] = new_mag_x
+    data["By"] = new_mag_y
 
     return data
 

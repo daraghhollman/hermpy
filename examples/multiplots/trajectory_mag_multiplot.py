@@ -13,7 +13,7 @@ mpl.rcParams["font.size"] = 14
 
 ###################### MAG #########################
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
-philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/mercury/philpott_2020_reformatted.csv")
+philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020_reformatted.csv")
 
 # We need a metakernel to retrieve ephemeris information
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
@@ -22,38 +22,12 @@ spice.furnsh(metakernel)
 start = dt.datetime(year=2011, month=9, day=26, hour=12, minute=23)
 end = dt.datetime(year=2011, month=9, day=26, hour=12, minute=59)
 
-# Determine the file padding needed to display all the orbits wanted
-search_start = start - dt.timedelta(days=2)
-search_end = end + dt.timedelta(days=2)
-
-dates_to_load: list[dt.datetime] = [
-    search_start + dt.timedelta(days=i) for i in range((search_end - search_start).days)
-]
-
-files_to_load: list[str] = []
-for date in dates_to_load:
-    file: list[str] = glob(
-        root_dir
-        + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_01_V08.TAB"
-    )
-
-    if len(file) > 1:
-        raise ValueError("ERROR: There are duplicate data files being loaded.")
-    elif len(file) == 0:
-        raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
-
-    files_to_load.append(file[0])
-
-data = mag.Load_Messenger(files_to_load)
-
-# Isolating only a particular portion of the files
-data = mag.Strip_Data(data, start, end)
-
-# Converting to MSM
-data = mag.MSO_TO_MSM(data)
+data = mag.Load_Between_Dates(root_dir, start, end, strip=True)
 
 # Accounting for solar wind aberration angle
 data = mag.Adjust_For_Aberration(data)
+
+mag.Remove_Spikes(data)
 
 # This data can then be plotted using external libraries
 fig = plt.figure()
@@ -71,7 +45,7 @@ mag_axes = [ax4, ax5, ax6, ax7]
 
 ax4.set_title(" ")
 
-to_plot = ["mag_x", "mag_y", "mag_z", "mag_total"]
+to_plot = ["Bx", "By", "Bz", "|B|"]
 y_labels = ["B$_x$", "B$_y$", "B$_z$", "|B|"]
 
 for i, ax in enumerate(mag_axes):
