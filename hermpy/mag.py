@@ -150,7 +150,8 @@ def Load_Between_Dates(
     root_dir: str,
     start: dt.datetime,
     end: dt.datetime,
-    strip: bool = False,
+    average: int = 1,
+    strip: bool = True,
     verbose: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
@@ -174,7 +175,11 @@ def Load_Between_Dates(
     end : datetime.datetime
         The end point of the data search
 
-    strip : bool {False, True}, optional
+    average : int {1, 5, 10, 60}, optional
+        Which time average of data product to load. i.e. 1 second average,
+        5 second average, etc.
+
+    strip : bool {True, False}, optional
         Should the data be shortened to match the times in start and end
 
 
@@ -196,7 +201,7 @@ def Load_Between_Dates(
     for date in dates_to_load:
         file: list[str] = glob(
             root_dir
-            + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_01_V08.TAB"
+                + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
         )
 
         if len(file) > 1:

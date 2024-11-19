@@ -8,22 +8,13 @@ from hermpy import mag, plotting_tools
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 
-# Loading data, downloaded from PDS
-# Should think about using a glob tool to select data
-# between certain doy.
-# i.e. "****/*****/MAGMSOSCIAVG*****_01_V08.TAB"
-data = mag.Load_Messenger(
-    [
-        root_dir + "2012/05_MAY/MAGMSOSCIAVG12132_01_V08.TAB",
-        root_dir + "2012/05_MAY/MAGMSOSCIAVG12133_01_V08.TAB",
-    ]
-)
-
 start = dt.datetime(year=2012, month=5, day=11, hour=11)
 end = dt.datetime(year=2012, month=5, day=12, hour=12)
 
 # Isolating only a particular portion of the files
-data = mag.Strip_Data(data, start, end)
+data = mag.Load_Between_Dates(
+    "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/", start, end
+)
 
 print(data)
 
