@@ -1,7 +1,7 @@
 import datetime as dt
-import pickle
 
 import matplotlib.pyplot as plt
+import matplotlib.transforms as transforms
 import pandas as pd
 
 
@@ -202,10 +202,10 @@ def Plot_Crossing_Intervals(
 
             if label:
                 ax.text(
-                    (midpoint - start).total_seconds() / (end - start).total_seconds(),
+                    midpoint,
                     height,
                     row["type"].upper().replace("_", " "),
-                    transform=ax.transAxes,
+                    transform=ax.get_xaxis_transform(),
                     color=color,
                     ha="center",
                     va="center",
