@@ -1,151 +1,36 @@
 import datetime as dt
 
 import matplotlib.pyplot as plt
-import matplotlib.transforms as transforms
 import pandas as pd
 
-
-def Reformat_Philpott(input_path: str, output_path: str):
-    """Takes Philpott list from suplimetary information and reformat and saves it to csv
+from hermpy.utils import Constants
 
 
-    Parameters
-    ----------
-    input_path : str
-        Path to Philpott+ (2020) table S1
-
-    output_path : str
-        Path to save the resulting csv
-
-
-    Returns
-    -------
-    None
-    """
-
-    philpott_csv = pd.read_csv(input_path)
-
-    types = []
-    start_times = []
-    end_times = []
-    start_x = [] # MSO
-    start_y = []
-    start_z = []
-    end_x = []
-    end_y = []
-    end_z = []
-
-    for i, row in philpott_csv.iterrows():
-
-        # We loop through each row, if the row type is equal to
-        # an odd number, it is the start edge of the interval. The
-        # following type will be even, and the end edge of the
-        # interval.
-
-        if row["Boundary number"] % 2 != 0 or row["Boundary number"] == 10:
-
-            match row["Boundary number"]:
-                case 1:
-                    types.append("BS_IN")
-
-                case 3:
-                    types.append("MP_IN")
-
-                case 5:
-                    types.append("MP_OUT")
-
-                case 7:
-                    types.append("BS_OUT")
-
-                # 9 and 10 represent data gaps
-                case 9:
-                    continue
-
-                case 10:
-                    continue
-
-                case _:
-                    print(row["Boundary number"])
-
-            start_string = f"{row['Year']}{row['Day of year']}{row['Hour']}{row['Minute']}{row['Second']}"
-            start_time = dt.datetime.strptime(start_string, "%Y.0%j.0%H.0%M.0%S.%f")
-            start_times.append(start_time)
-
-            start_x.append(row["X_MSO (km)"])
-            start_y.append(row["Y_MSO (km)"])
-            start_z.append(row["Z_MSO (km)"])
-
-            next_row = philpott_csv.iloc[i + 1]
-
-            end_string = f"{next_row['Year']}{next_row['Day of year']}{next_row['Hour']}{next_row['Minute']}{next_row['Second']}"
-            end_time = dt.datetime.strptime(end_string, "%Y.0%j.0%H.0%M.0%S.%f")
-            end_times.append(end_time)
-
-            end_x.append(next_row["X_MSO (km)"])
-            end_y.append(next_row["Y_MSO (km)"])
-            end_z.append(next_row["Z_MSO (km)"])
-
-    
-    # Format this as a dictionary
-    list_data = {
-        "start": start_times,
-        "end": end_times,
-        "start_x": start_x,
-        "start_y": start_y,
-        "start_z": start_z,
-        "end_x": end_x,
-        "end_y": end_y,
-        "end_z": end_z,
-        "type": types,
-    }
-
-    for column in list_data.keys():
-        print(f"{column}: {len(list_data[column])}")
-
-    # Create a pandas dataframe with this information
-    pd.DataFrame(list_data).to_csv(output_path)
-    
-
-
-
-def Load_Crossings(path: str) -> pd.DataFrame:
-    """Loads a pandas DataFrame from reformatted csv file
+def Load_Crossings(path: str, backend: str="Philpott") -> pd.DataFrame:
+    """Loads a pandas DataFrame from
 
     Parameters
     ----------
     path : str
-        An abosolute path to a crossing intervals file.
-        Expects the following columns to be present in the
-        csv file:
-            [start,
-             end,
-             start_x, end_x,
-             start_y, end_y,
-             start_z, end_z,
-             type
-            ]
+        An abosolute path to a crossing intervals file
+
+    backend : str {"Philpott", "Sun" (to be added)}, optional
+        Which list is being loaded. Informs which backend function
+        to use.
 
 
     Returns
     -------
     Crossings Data : pandas.DataFrame
-        A DataFrame of boundary crossing intervals with columns:
-            [start,
-             end,
-             start_x, end_x,
-             start_y, end_y,
-             start_z, end_z,
-             type
-            ]
     """
-    date_parse_no_ms = lambda x: dt.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
-    date_parse_ms = lambda x: dt.datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f')
 
-    crossings_data = pd.read_csv(path, parse_dates=["start", "end"])
-    crossings_data["start"] = pd.to_datetime(crossings_data["start"], format="mixed")
-    crossings_data["end"] = pd.to_datetime(crossings_data["end"], format="mixed")
+    if backend == "Philpott":
+        crossings = Reformat_Philpott(path)
 
-    return crossings_data
+    else:
+        raise Exception(f"Unknown backend: {backend}")
+
+    return crossings
 
 
 def Plot_Crossing_Intervals(
@@ -278,7 +163,8 @@ def Plot_Crossings_As_Minutes_Before(
 
             if not show_partial_crossings:
                 if not (row["start"] > data_start and row["start"] < data_end) and (
-                        row["end"] > data_start and row["end"] < data_end):
+                    row["end"] > data_start and row["end"] < data_end
+                ):
                     continue
 
             midpoint = row["start"] + (row["end"] - row["start"]) / 2
@@ -349,3 +235,195 @@ def Get_Crossings_As_Points(
             positions.append(position)
 
     return positions
+
+
+def Reformat_Philpott(input_path: str):
+    """Takes Philpott list from suplimetary information and reformats
+
+    Parameters
+    ----------
+    input_path : str
+        Path to Philpott+ (2020) table S1
+
+
+    Returns
+    -------
+    None
+    """
+
+    # philpott_csv = pd.read_csv(input_path)
+    philpott_csv = pd.read_excel(input_path)
+
+    types = []
+    start_times = []
+    end_times = []
+    start_x_mso_radii = []  # MSO
+    start_y_mso_radii = []
+    start_z_mso_radii = []
+    end_x_mso_radii = []
+    end_y_mso_radii = []
+    end_z_mso_radii = []
+    start_x_mso_km = []
+    start_y_mso_km = []
+    start_z_mso_km = []
+    end_x_mso_km = []
+    end_y_mso_km = []
+    end_z_mso_km = []
+
+    for i, row in philpott_csv.iterrows():
+
+        # We loop through each row, if the row type is equal to
+        # an odd number, it is the start edge of the interval. The
+        # following type will be even, and the end edge of the
+        # interval.
+
+        if row["Boundary number"] % 2 != 0 or row["Boundary number"] == 10:
+
+            match row["Boundary number"]:
+                case 1:
+                    types.append("BS_IN")
+
+                case 3:
+                    types.append("MP_IN")
+
+                case 5:
+                    types.append("MP_OUT")
+
+                case 7:
+                    types.append("BS_OUT")
+
+                # 9 and 10 represent data gaps
+                case 9:
+                    continue
+
+                case 10:
+                    continue
+
+                case _:
+                    print(row["Boundary number"])
+
+            start_string = f"{row['Year']}{row['Day of year']}{row['Hour']}{row['Minute']}{row['Second']}"
+            start_time = dt.datetime.strptime(start_string, "%Y.0%j.0%H.0%M.0%S.%f")
+            start_times.append(start_time)
+
+            start_x_mso_radii.append(row["X_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
+            start_y_mso_radii.append(row["Y_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
+            start_z_mso_radii.append(row["Z_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
+            start_x_mso_km.append(row["X_MSO (km)"])
+            start_y_mso_km.append(row["Y_MSO (km)"])
+            start_z_mso_km.append(row["Z_MSO (km)"])
+
+            next_row = philpott_csv.iloc[i + 1]
+
+            end_string = f"{next_row['Year']}{next_row['Day of year']}{next_row['Hour']}{next_row['Minute']}{next_row['Second']}"
+            end_time = dt.datetime.strptime(end_string, "%Y.0%j.0%H.0%M.0%S.%f")
+            end_times.append(end_time)
+
+            end_x_mso_radii.append(next_row["X_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
+            end_y_mso_radii.append(next_row["Y_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
+            end_z_mso_radii.append(next_row["Z_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
+            end_x_mso_km.append(next_row["X_MSO (km)"])
+            end_y_mso_km.append(next_row["Y_MSO (km)"])
+            end_z_mso_km.append(next_row["Z_MSO (km)"])
+
+    # Format this as a dictionary
+    list_data = {
+        "Interval Type": types,
+        "Interval Start": start_times,
+        "Interval End": end_times,
+        "X MSO Start (radii)": start_x_mso_radii,
+        "Y MSO Start (radii)": start_y_mso_radii,
+        "Z MSO Start (radii)": start_z_mso_radii,
+        "X MSO End (radii)": end_x_mso_radii,
+        "Y MSO End (radii)": end_y_mso_radii,
+        "Z MSO End (radii)": end_z_mso_radii,
+        "X MSO Start (km)": start_x_mso_km,
+        "Y MSO Start (km)": start_y_mso_km,
+        "Z MSO Start (km)": start_z_mso_km,
+        "X MSO End (km)": end_x_mso_km,
+        "Y MSO End (km)": end_y_mso_km,
+        "Z MSO End (km)": end_z_mso_km,
+        "X MSM Start (radii)": start_x_mso_radii,
+        "Y MSM Start (radii)": start_y_mso_radii,
+        "Z MSM Start (radii)": [
+            z - Constants.DIPOLE_OFFSET_RADII for z in start_z_mso_radii
+        ],
+        "X MSM End (radii)": end_x_mso_radii,
+        "Y MSM End (radii)": end_y_mso_radii,
+        "Z MSM End (radii)": [
+            z - Constants.DIPOLE_OFFSET_RADII for z in end_z_mso_radii
+        ],
+        "X MSM Start (km)": start_x_mso_km,
+        "Y MSM Start (km)": start_y_mso_km,
+        "Z MSM Start (km)": [z - Constants.DIPOLE_OFFSET_RADII for z in start_z_mso_km],
+        "X MSM End (km)": end_x_mso_km,
+        "Y MSM End (km)": end_y_mso_km,
+        "Z MSM End (km)": [z - Constants.DIPOLE_OFFSET_RADII for z in end_z_mso_km],
+    }
+
+    multi_index_columns = pd.MultiIndex.from_tuples(
+        [
+            ("Type", "", ""),
+            ("Start", "Time", ""),
+            ("Start", "MSO", "X (radii)"),
+            ("Start", "MSO", "Y (radii)"),
+            ("Start", "MSO", "Z (radii)"),
+            ("Start", "MSO", "X (km)"),
+            ("Start", "MSO", "Y (km)"),
+            ("Start", "MSO", "Z (km)"),
+            ("Start", "MSM", "X (radii)"),
+            ("Start", "MSM", "Y (radii)"),
+            ("Start", "MSM", "Z (radii)"),
+            ("Start", "MSM", "X (km)"),
+            ("Start", "MSM", "Y (km)"),
+            ("Start", "MSM", "Z (km)"),
+            ("End", "Time", ""),
+            ("End", "MSO", "X (radii)"),
+            ("End", "MSO", "Y (radii)"),
+            ("End", "MSO", "Z (radii)"),
+            ("End", "MSO", "X (km)"),
+            ("End", "MSO", "Y (km)"),
+            ("End", "MSO", "Z (km)"),
+            ("End", "MSM", "X (radii)"),
+            ("End", "MSM", "Y (radii)"),
+            ("End", "MSM", "Z (radii)"),
+            ("End", "MSM", "X (km)"),
+            ("End", "MSM", "Y (km)"),
+            ("End", "MSM", "Z (km)"),
+        ]
+    )
+
+    multi_index_data = [
+        list_data["Interval Type"],
+        list_data["Interval Start"],
+        list_data["X MSO Start (radii)"],
+        list_data["Y MSO Start (radii)"],
+        list_data["Z MSO Start (radii)"],
+        list_data["X MSO Start (km)"],
+        list_data["Y MSO Start (km)"],
+        list_data["Z MSO Start (km)"],
+        list_data["X MSM Start (radii)"],
+        list_data["Y MSM Start (radii)"],
+        list_data["Z MSM Start (radii)"],
+        list_data["X MSM Start (km)"],
+        list_data["Y MSM Start (km)"],
+        list_data["Z MSM Start (km)"],
+        list_data["Interval End"],
+        list_data["X MSO End (radii)"],
+        list_data["Y MSO End (radii)"],
+        list_data["Z MSO End (radii)"],
+        list_data["X MSO End (km)"],
+        list_data["Y MSO End (km)"],
+        list_data["Z MSO End (km)"],
+        list_data["X MSM End (radii)"],
+        list_data["Y MSM End (radii)"],
+        list_data["Z MSM End (radii)"],
+        list_data["X MSM End (km)"],
+        list_data["Y MSM End (km)"],
+        list_data["Z MSM End (km)"],
+    ]
+
+    # Create a pandas dataframe with this information
+    df = pd.DataFrame(data=dict(zip(multi_index_columns, multi_index_data)))
+
+    return df
