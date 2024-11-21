@@ -1,6 +1,8 @@
 import datetime as dt
+import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from hermpy.utils import Constants
@@ -31,8 +33,7 @@ def Load_Crossings(path: str, backend: str = "Philpott") -> pd.DataFrame:
         raise Exception(f"Unknown backend: {backend}")
 
     # Flatten multi-index
-    crossings.columns = [' '.join(col).strip() for col in crossings.columns.values]
-
+    crossings.columns = [" ".join(col).strip() for col in crossings.columns.values]
 
     return crossings
 
@@ -87,9 +88,7 @@ def Plot_Crossing_Intervals(
         if (row["Start Time"] > start and row["Start Time"] < end) or (
             row["End Time"] > start and row["End Time"] < end
         ):
-            midpoint = (
-                row["Start Time"] + (row["End Time"] - row["Start Time"]) / 2
-            )
+            midpoint = row["Start Time"] + (row["End Time"] - row["Start Time"]) / 2
 
             if label:
                 ax.text(
@@ -168,9 +167,9 @@ def Plot_Crossings_As_Minutes_Before(
         ):
 
             if not show_partial_crossings:
-                if not (row["Start Time"] > data_start and row["Start Time"] < data_end) and (
-                    row["End Time"] > data_start and row["End Time"] < data_end
-                ):
+                if not (
+                    row["Start Time"] > data_start and row["Start Time"] < data_end
+                ) and (row["End Time"] > data_start and row["End Time"] < data_end):
                     continue
 
             midpoint = row["Start Time"] + (row["End Time"] - row["Start Time"]) / 2
@@ -243,7 +242,143 @@ def Get_Crossings_As_Points(
     return positions
 
 
-def Reformat_Philpott(input_path: str):
+def Reformat_Sun(input_directory: str) -> pd.DataFrame:
+    """Reads directory containing Sun 2023 crossing lists and reformats to
+    a singular pandas dataframe.
+
+    https://zenodo.org/records/8298647
+
+    Parameters
+    ----------
+    input_directory : str
+        Path to a directory containing the files from the zenodo data set.
+
+
+    Returns
+    -------
+    out : pandas.DataFrame
+    """
+
+    # Process:
+    # Load and loop through each file in the directory.
+    # Extract and form a dataframe from the information in the file
+    # Concatanate all dataframes and then sort by start time.
+
+    sub_crossings_lists = []
+
+    # First load each file in the directory
+    for path in [
+        input_directory + file_name for file_name in os.listdir(input_directory)
+    ]:
+
+        file_data_numeric = np.genfromtxt(path, dtype=float, usecols=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+        file_data_letters = np.genfromtxt(path, dtype=str, usecols=(12, 13))
+
+        start_year = file_data_numeric[:, 0].astype(int)
+        start_month = file_data_numeric[:, 1].astype(int)
+        start_day = file_data_numeric[:, 2].astype(int)
+        start_hour = file_data_numeric[:, 3].astype(int)
+        start_minute = file_data_numeric[:, 4].astype(int)
+        start_second = abs(
+            file_data_numeric[:, 5]
+        )  # ABOSULTE VALUE IS NEEDED AS THERE ARE NEGATIVE??? SECONDS
+
+        start_times = []
+
+        for y, m, d, H, M, S, us in zip(
+            start_year,
+            start_month,
+            start_day,
+            start_hour,
+            start_minute,
+            np.floor(start_second).astype(int),
+            ((start_second - np.floor(start_second)) * 1e6).astype(
+                int
+            ),  # convert decimal seconds to microseconds
+        ):
+
+            start_times.append(
+                dt.datetime(y, m, d)
+                + dt.timedelta(
+                    hours=float(H),
+                    minutes=float(M),
+                    seconds=float(S),
+                    microseconds=float(us),
+                )
+            )
+
+        end_year = file_data_numeric[:, 6].astype(int)
+        end_month = file_data_numeric[:, 7].astype(int)
+        end_day = file_data_numeric[:, 8].astype(int)
+        end_hour = file_data_numeric[:, 9].astype(int)
+        end_minute = file_data_numeric[:, 10].astype(int)
+        end_second = abs(
+            file_data_numeric[:, 11]
+        )  # ABOSULTE VALUE IS NEEDED AS THERE ARE NEGATIVE??? SECONDS
+
+        end_times = []
+
+        for y, m, d, H, M, S, us in zip(
+            end_year,
+            end_month,
+            end_day,
+            end_hour,
+            end_minute,
+            np.floor(end_second).astype(int),
+            ((end_second - np.floor(end_second)) * 1e6).astype(
+                int
+            ),  # convert decimal seconds to microseconds
+        ):
+
+            end_times.append(
+                dt.datetime(y, m, d)
+                + dt.timedelta(
+                    hours=float(H),
+                    minutes=float(M),
+                    seconds=float(S),
+                    microseconds=float(us),
+                )
+            )
+
+        boundary_id = file_data_letters[:, 0][0]
+        match boundary_id:
+
+            case "BSI":
+                new_boundary_id = "BS_IN"
+
+            case "BSO":
+                new_boundary_id = "BS_OUT"
+
+            case "MPI":
+                new_boundary_id = "MP_IN"
+
+            case "MPO":
+                new_boundary_id = "MP_OUT"
+
+            case _:
+                raise Exception(f"Unrecognised boundary id ({boundary_id}) in {path}")
+
+        boundary_ids = [new_boundary_id for _ in range(len(file_data_numeric))]
+
+        sub_crossings_list = pd.DataFrame(
+            {
+                "start": start_times,
+                "end": end_times,
+                "type": boundary_ids,
+            }
+        )
+
+        sub_crossings_lists.append(sub_crossings_list)
+
+    full_list = pd.concat(sub_crossings_lists)
+
+    full_list.sort_values("start", inplace=True)
+    full_list.reset_index(drop=True, inplace=True)
+
+    # Now that we have the full list, we can add on the extra columns we need!
+
+
+def Reformat_Philpott(input_path: str) -> pd.DataFrame:
     """Takes Philpott list from suplimetary information and reformats
 
     Parameters
@@ -254,7 +389,7 @@ def Reformat_Philpott(input_path: str):
 
     Returns
     -------
-    None
+    out : pandas.DataFrame
     """
 
     # philpott_csv = pd.read_csv(input_path)
