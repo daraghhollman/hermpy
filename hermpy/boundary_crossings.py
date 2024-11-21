@@ -6,7 +6,7 @@ import pandas as pd
 from hermpy.utils import Constants
 
 
-def Load_Crossings(path: str, backend: str="Philpott") -> pd.DataFrame:
+def Load_Crossings(path: str, backend: str = "Philpott") -> pd.DataFrame:
     """Loads a pandas DataFrame from
 
     Parameters
@@ -29,6 +29,10 @@ def Load_Crossings(path: str, backend: str="Philpott") -> pd.DataFrame:
 
     else:
         raise Exception(f"Unknown backend: {backend}")
+
+    # Flatten multi-index
+    crossings.columns = [' '.join(col).strip() for col in crossings.columns.values]
+
 
     return crossings
 
@@ -80,24 +84,26 @@ def Plot_Crossing_Intervals(
     for _, row in crossings.iterrows():
 
         # If crossing interval is in plot
-        if (row["start"] > start and row["start"] < end) or (
-            row["end"] > start and row["end"] < end
+        if (row["Start Time"] > start and row["Start Time"] < end) or (
+            row["End Time"] > start and row["End Time"] < end
         ):
-            midpoint = row["start"] + (row["end"] - row["start"]) / 2
+            midpoint = (
+                row["Start Time"] + (row["End Time"] - row["Start Time"]) / 2
+            )
 
             if label:
                 ax.text(
                     midpoint,
                     height,
-                    row["type"].upper().replace("_", " "),
+                    row["Type"].upper().replace("_", " "),
                     transform=ax.get_xaxis_transform(),
                     color=color,
                     ha="center",
                     va="center",
                 )
 
-            ax.axvline(row["start"], color=color, ls="dashed", lw=lw)
-            ax.axvline(row["end"], color=color, ls="dashed", lw=lw)
+            ax.axvline(row["Start Time"], color=color, ls="dashed", lw=lw)
+            ax.axvline(row["End Time"], color=color, ls="dashed", lw=lw)
 
 
 def Plot_Crossings_As_Minutes_Before(
@@ -157,28 +163,28 @@ def Plot_Crossings_As_Minutes_Before(
     for _, row in crossings.iterrows():
 
         # Check if crossing interval is in plot
-        if (row["start"] > data_start and row["start"] < data_end) or (
-            row["end"] > data_start and row["end"] < data_end
+        if (row["Start Time"] > data_start and row["Start Time"] < data_end) or (
+            row["End Time"] > data_start and row["End Time"] < data_end
         ):
 
             if not show_partial_crossings:
-                if not (row["start"] > data_start and row["start"] < data_end) and (
-                    row["end"] > data_start and row["end"] < data_end
+                if not (row["Start Time"] > data_start and row["Start Time"] < data_end) and (
+                    row["End Time"] > data_start and row["End Time"] < data_end
                 ):
                     continue
 
-            midpoint = row["start"] + (row["end"] - row["start"]) / 2
+            midpoint = row["Start Time"] + (row["End Time"] - row["Start Time"]) / 2
 
             # Convert times into minutes before apoapsis
-            start_minutes = (apoapsis_time - row["start"]).total_seconds() / 60
-            end_minutes = (apoapsis_time - row["end"]).total_seconds() / 60
+            start_minutes = (apoapsis_time - row["Start Time"]).total_seconds() / 60
+            end_minutes = (apoapsis_time - row["End Time"]).total_seconds() / 60
 
             if label:
                 ax.text(
                     (midpoint - data_start).total_seconds()
                     / (data_end - data_start).total_seconds(),
                     height,
-                    row["type"].upper().replace("_", " "),
+                    row["Type"].upper().replace("_", " "),
                     transform=ax.transAxes,
                     color=color,
                     ha="center",
