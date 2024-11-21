@@ -13,7 +13,7 @@ mpl.rcParams["font.size"] = 14
 
 ###################### MAG #########################
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
-philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020_reformatted.csv")
+philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
 
 # We need a metakernel to retrieve ephemeris information
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
@@ -22,12 +22,7 @@ spice.furnsh(metakernel)
 start = dt.datetime(year=2011, month=9, day=26, hour=12, minute=23)
 end = dt.datetime(year=2011, month=9, day=26, hour=12, minute=59)
 
-data = mag.Load_Between_Dates(root_dir, start, end, strip=True)
-
-# Accounting for solar wind aberration angle
-data = mag.Adjust_For_Aberration(data)
-
-mag.Remove_Spikes(data)
+data = mag.Load_Between_Dates(root_dir, start, end, strip=True, aberrate=True)
 
 # This data can then be plotted using external libraries
 fig = plt.figure()

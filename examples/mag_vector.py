@@ -19,22 +19,12 @@ import hermpy.plotting_tools as hermplot
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
-philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/mercury/philpott_2020_reformatted.csv")
-
-data = mag.Load_Messenger(
-    [
-        root_dir + "2012/01_JAN/MAGMSOSCIAVG12001_01_V08.TAB",
-    ]
-)
+philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
 
 start = dt.datetime(year=2012, month=1, day=1, hour=6, minute=50)
 end = dt.datetime(year=2012, month=1, day=1, hour=12, minute=10)
 
-# Isolating only a particular portion of the files
-data = mag.Strip_Data(data, start, end)
-
-# Accounting for solar wind aberration angle
-data = mag.Adjust_For_Aberration(data)
+data = mag.Load_Between_Dates(root_dir, start, end, strip=True, aberrate=True)
 
 # Converting to polars
 data = mag.Convert_To_Polars(data)
@@ -45,9 +35,9 @@ fig, axes = plt.subplots(3, 1, sharex=True)
 ax1, ax2, ax3 = axes
 
 # Plotting Data
-ax1.plot(data["date"], data["mag_r"], color="black", lw=0.8)
-ax2.plot(data["date"], data["mag_theta"], color="black", lw=0.8)
-ax3.plot(data["date"], data["mag_phi"], color="black", lw=0.8)
+ax1.plot(data["date"], data["Br"], color="black", lw=0.8)
+ax2.plot(data["date"], data["Btheta"], color="black", lw=0.8)
+ax3.plot(data["date"], data["Bphi"], color="black", lw=0.8)
 
 ax1.set_ylabel("R")
 ax2.set_ylabel(r"$\theta$")

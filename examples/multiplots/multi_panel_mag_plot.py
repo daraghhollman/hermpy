@@ -16,7 +16,7 @@ spice.furnsh(metakernel)
 start = dt.datetime(year=2011, month=4, day=11, hour=5, minute=0)
 end = dt.datetime(year=2011, month=4, day=11, hour=5, minute=30)
 
-data = mag.Load_Between_Dates(root_dir, start, end, strip=True, aberrate=False)
+data = mag.Load_Between_Dates(root_dir, start, end, strip=True, aberrate=True)
 
 # This data can then be plotted using external libraries
 fig, axes = plt.subplots(4, 1, sharex=True)
@@ -24,7 +24,6 @@ fig, axes = plt.subplots(4, 1, sharex=True)
 to_plot = ["Bx", "By", "Bz", "|B|"]
 y_labels = ["B$_x$", "B$_y$", "B$_z$", "|B|"]
 
-ax: plt.Axes
 for i, ax in enumerate(axes):
 
     # Plot Data

@@ -15,7 +15,7 @@ mpl.rcParams["font.size"] = 18
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
 philpott_crossings = boundary_crossings.Load_Crossings(
-    "/home/daraghhollman/Main/Work/mercury/philpott_2020_reformatted.csv"
+    "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
 )
 
 start = dt.datetime(year=2013, month=8, day=19, hour=12)

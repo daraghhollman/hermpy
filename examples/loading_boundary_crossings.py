@@ -10,26 +10,22 @@ mpl.rcParams["font.size"] = 14
 
 
 #sun_crossings = boundary_crossings.Load_Crossings("../../sun_crossings.p")
-philpott_crossings = boundary_crossings.Load_Crossings("../../philpott_2020_reformatted.csv")
+philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
 
 
 ### This section as shown in mag_example.py
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 # Loading data, downloaded from PDS
-data = mag.Load_Messenger(
-    [
-        root_dir + "2014/01_JAN/MAGMSOSCIAVG14017_01_V08.TAB",
-    ]
-)
 
 # Isolating only a particular portion of the files
 start = dt.datetime(year=2014, month=1, day=17, hour=2, minute=0)
 end = dt.datetime(year=2014, month=1, day=17, hour=2, minute=40)
-data = mag.Strip_Data(data, start, end)
+
+data = mag.Load_Between_Dates(root_dir, start, end, strip=True)
 
 fig, ax = plt.subplots()
 
-ax.plot(data["date"], data["mag_total"], color="black")
+ax.plot(data["date"], data["|B|"], color="black")
 ### ---------------------------------------
 
 ax.set_ylabel("|B| [nT]")

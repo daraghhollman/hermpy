@@ -7,7 +7,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import spiceypy as spice
 
-from hermpy import boundary_crossings, mag, plotting_tools, trajectory
+from hermpy import boundary_crossings, mag, plotting_tools, trajectory, utils
 
 mpl.rcParams["font.size"] = 18
 
@@ -21,7 +21,7 @@ metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
 
 philpott_crossings = boundary_crossings.Load_Crossings(
-    "/home/daraghhollman/Main/mercury/philpott_2020_reformatted.csv"
+    "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
 )
 
 # Define the time segement we want to look at
@@ -36,26 +36,9 @@ data_length = end - start
 search_start = start - dt.timedelta(days=2)
 search_end = end + dt.timedelta(days=2)
 
-dates_to_load: list[dt.datetime] = [
-    search_start + dt.timedelta(days=i) for i in range((search_end - search_start).days)
-]
-
-files_to_load: list[str] = []
-for date in dates_to_load:
-    file: list[str] = glob(
-        root_dir
-        + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_01_V08.TAB"
-    )
-
-    if len(file) > 1:
-        raise ValueError("ERROR: There are duplicate data files being loaded.")
-    elif len(file) == 0:
-        raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
-
-    files_to_load.append(file[0])
-
-data = mag.Load_Messenger(files_to_load)
-
+data = mag.Load_Between_Dates(
+    root_dir, search_start, search_end, strip=True, aberrate=True
+)
 
 #############################################################
 ##################### FINDING ORBITS ########################
@@ -79,10 +62,6 @@ middle_apoapsis_altitude = apoapsis_altitudes[middle_index]
 
 
 middle_data = mag.Strip_Data(data, start, end)
-# Converting to MSM
-middle_data = mag.MSO_TO_MSM(middle_data)
-# Accounting for solar wind aberration angle
-middle_data = mag.Adjust_For_Aberration(middle_data)
 
 # Create new column in data for minutes before apoapsis
 minutes_before_apoapsis = []
@@ -106,10 +85,6 @@ for apoapsis_time in apoapsis_times:
         start_time,
         end_time,
     )
-    # Converting to MSM
-    new_data = mag.MSO_TO_MSM(new_data)
-    # Accounting for solar wind aberration angle
-    new_data = mag.Adjust_For_Aberration(new_data)
 
     new_data["minutes before apoapsis"] = minutes_before_apoapsis
 
@@ -152,7 +127,7 @@ for i, orbit_data in enumerate(data_groups):
 
         ax.plot(
             data_groups[middle_index]["minutes before apoapsis"],
-            data_groups[middle_index]["mag_total"],
+            data_groups[middle_index]["|B|"],
             color="magenta",
             lw=0.8,
             alpha=0.5,
@@ -160,7 +135,7 @@ for i, orbit_data in enumerate(data_groups):
 
     ax.plot(
         orbit_data["minutes before apoapsis"],
-        orbit_data["mag_total"],
+        orbit_data["|B|"],
         color=colour,
         lw=0.8,
     )
@@ -221,16 +196,14 @@ padded_dates = [
     (end + time_padding),
 ]
 
-positions = trajectory.Get_Trajectory(
-    "Messenger", dates, frame=frame, aberrate=True
-)
+positions = trajectory.Get_Trajectory("Messenger", dates, frame=frame, aberrate=True)
 padded_positions = trajectory.Get_Trajectory(
     "Messenger", padded_dates, frame=frame, aberrate=True
 )
 
 # Convert from km to Mercury radii
-positions /= 2439.7
-padded_positions /= 2439.7
+positions /= utils.Constants.MERCURY_RADIUS_KM
+padded_positions /= utils.Constants.MERCURY_RADIUS_KM
 
 
 trajectory_axes[0].plot(
