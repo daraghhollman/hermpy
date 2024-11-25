@@ -1,19 +1,17 @@
 import datetime as dt
 
 import matplotlib.pyplot as plt
-import spiceypy as spice
 
-from hermpy import mag, plotting_tools
+from hermpy import mag, plotting_tools, boundary_crossings
 
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
-metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 
-start = dt.datetime(year=2012, month=5, day=11, hour=11)
-end = dt.datetime(year=2012, month=5, day=12, hour=12)
+start = dt.datetime(year=2011, month=10, day=15, hour=14, minute=15, second=0)
+end = dt.datetime(year=2011, month=10, day=15, hour=15, minute=0, second=0)
 
 # Isolating only a particular portion of the files
 data = mag.Load_Between_Dates(
-    "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/", start, end
+    "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/", start, end, strip=True, aberrate=True
 )
 
 # This data can then be plotted using external libraries
@@ -26,8 +24,6 @@ ax.set_ylabel("|B|")
 
 # Plotting ephemeris information
 # We need a metakernel to retrieve ephemeris information
-metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
-spice.furnsh(metakernel)
 plotting_tools.Add_Tick_Ephemeris(ax)
 
 plt.show()

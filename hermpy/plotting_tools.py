@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 
+from .utils import Constants
+
 
 def Plot_Magnetospheric_Boundaries(
     ax: plt.Axes,
@@ -45,7 +47,7 @@ def Plot_Magnetospheric_Boundaries(
     """
 
     # Plotting magnetopause
-    phi = np.linspace(0, 2 * np.pi, 100)
+    phi = np.linspace(0, 2 * np.pi, 1000)
     rho = sub_solar_magnetopause * (2 / (1 + np.cos(phi))) ** alpha
 
     magnetopause_x_coords = rho * np.cos(phi)
@@ -303,7 +305,7 @@ def Plot_Mercury(
 
 def Add_Tick_Ephemeris(
     ax: plt.Axes,
-    include: set = {"date", "hours", "minutes", "seconds", "range", "latitude", "local time"},
+    include: set = {"date", "hours", "minutes", "seconds", "range", "latitude", "MLat", "local time"},
 ) -> None:
     """Adds ephemeris to tick labels
 
@@ -348,7 +350,7 @@ def Add_Tick_Ephemeris(
             position = trajectory.Get_Position("MESSENGER", date)
             distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
             # Convert from km to radii
-            distance /= 2439.7
+            distance /= Constants.MERCURY_RADIUS_KM
 
             tick_format += "\n" + f"{distance:.2f}"
 
@@ -373,6 +375,18 @@ def Add_Tick_Ephemeris(
             latitude *= 180 / np.pi
 
             tick_format += "\n" + f"{latitude:.2f}"
+
+        if "MLat" in include:
+            position = trajectory.Get_Position("MESSENGER", date)
+
+            mlat = np.arctan2(
+                position[2] - Constants.DIPOLE_OFFSET_KM, np.sqrt(position[0] ** 2 + position[1] ** 2)
+            )
+
+            # convert from radians to degrees
+            mlat *= 180 / np.pi
+
+            tick_format += "\n" + f"{mlat:.2f}"
 
         if "local time" in include:
             position = trajectory.Get_Position("MESSENGER", date)
@@ -408,6 +422,8 @@ def Add_Tick_Ephemeris(
         first_tick_format += "\nLon. " + r"[$^\circ$]"
     if "latitude" in include:
         first_tick_format += "\nLat. " + r"[$^\circ$]"
+    if "MLat" in include:
+        first_tick_format += "\nMLat. " + r"[$^\circ$]"
 
     if "local time" in include:
         first_tick_format += "\nLT"

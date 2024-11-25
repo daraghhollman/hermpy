@@ -6,13 +6,21 @@ import requests
 from tqdm import tqdm
 
 
+class User:
+
+    METAKERNEL = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
+    DATA_DIRECTORIES = {
+        "MAG": "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/",
+        "FIPS": "/home/daraghhollman/Main/data/mercury/messenger/FIPS/",
+    }
+
 class Constants:
     # All are in base SI units
     MERCURY_RADIUS = 2_439_700  # meters
     MERCURY_RADIUS_KM = MERCURY_RADIUS / 1_000  # kilometers
 
-    DIPOLE_OFFSET_KM = 497  # kilometerss
-    DIPOLE_OFFSET_RADII = DIPOLE_OFFSET_KM / MERCURY_RADIUS_KM
+    DIPOLE_OFFSET_KM = 479
+    DIPOLE_OFFSET_RADII = 479 / MERCURY_RADIUS_KM
 
     MERCURY_SEMI_MAJOR_AXIS = 57_909_050 * 1_000  # meters
     SOLAR_MASS = 1.9891e30  # kilograms
@@ -20,6 +28,10 @@ class Constants:
     SOLAR_WIND_SPEED_AVG = 400_000  # meters / second
 
     G = 6.6743e-11  # N m^2 / kg^2
+
+
+    def KM_TO_AU(km):
+        return km / 1.496e+8
 
 
 class Urls:

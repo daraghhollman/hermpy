@@ -62,13 +62,22 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
         dataframe = pd.DataFrame(
             {
                 "date": dates,
+                "X MSO (km)": ephemeris[0],
+                "Y MSO (km)": ephemeris[1],
+                "Z MSO (km)": ephemeris[2],
+
                 "X MSO (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
                 "Y MSO (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
                 "Z MSO (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
+
+                "X MSM (km)": ephemeris[0],
+                "Y MSM (km)": ephemeris[1],
+                "Z MSM (km)": ephemeris[2] - Constants.DIPOLE_OFFSET_KM,
+
                 "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
                 "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
                 "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM)
-                + Constants.DIPOLE_OFFSET_RADII,
+                - Constants.DIPOLE_OFFSET_RADII,
                 "range (MSO)": np.sqrt(
                     ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
                 )
@@ -317,9 +326,10 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
     data : pandas.DataFrame
         The input data adjusted as described.
     """
-
-    new_eph_x = []
-    new_eph_y = []
+    new_eph_x_km = []
+    new_eph_y_km = []
+    new_eph_x_radii = []
+    new_eph_y_radii = []
 
     new_mag_x = []
     new_mag_y = []
@@ -331,7 +341,7 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
 
         # check if day has changed and then update mercury distance
         if (row["date"] - previous_date) > dt.timedelta(days=1):
-            r = trajectory.Get_Heliocentric_Distance(row["date"])
+            r = trajectory.Get_Heliocentric_Distance(pd.to_datetime(row["date"]).date()) * 1000
             previous_date = row["date"]
 
             # determine mercury velocity
@@ -350,21 +360,33 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
             row["Bx"] * np.sin(aberration_angle) + row["Bx"] * np.cos(aberration_angle),
         )
 
-        new_ephem = (
+        new_ephem_km = (
+            row["X MSM (km)"] * np.cos(aberration_angle)
+            - row["Y MSM (km)"] * np.sin(aberration_angle),
+            row["X MSM (km)"] * np.sin(aberration_angle)
+            + row["Y MSM (km)"] * np.cos(aberration_angle),
+        )
+
+        new_ephem_radii = (
             row["X MSM (radii)"] * np.cos(aberration_angle)
             - row["Y MSM (radii)"] * np.sin(aberration_angle),
             row["X MSM (radii)"] * np.sin(aberration_angle)
             + row["Y MSM (radii)"] * np.cos(aberration_angle),
         )
-
-        new_eph_x.append(new_ephem[0])
-        new_eph_y.append(new_ephem[1])
+        new_eph_x_km.append(new_ephem_km[0])
+        new_eph_y_km.append(new_ephem_km[1])
+        new_eph_x_radii.append(new_ephem_radii[0])
+        new_eph_y_radii.append(new_ephem_radii[1])
 
         new_mag_x.append(new_mag[0])
         new_mag_y.append(new_mag[1])
 
-    data["X MSM' (radii)"] = new_eph_x
-    data["Y MSM' (radii)"] = new_eph_y
+    data["X MSM' (km)"] = new_eph_x_km
+    data["Y MSM' (km)"] = new_eph_y_km
+    data["Z MSM' (km)"] = data["Z MSM (km)"]
+    data["X MSM' (radii)"] = new_eph_x_radii
+    data["Y MSM' (radii)"] = new_eph_y_radii
+    data["Z MSM' (radii)"] = data["Z MSM (radii)"]
     data["Bx"] = new_mag_x
     data["By"] = new_mag_y
 
