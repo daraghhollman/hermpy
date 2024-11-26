@@ -13,6 +13,9 @@ class User:
         "MAG": "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/",
         "FIPS": "/home/daraghhollman/Main/data/mercury/messenger/FIPS/",
     }
+    CROSSING_LISTS = {
+        "Philpott": "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
+    }
 
 class Constants:
     # All are in base SI units
