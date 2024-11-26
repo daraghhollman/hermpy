@@ -3,6 +3,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal
+import scipy.spatial
 import spiceypy as spice
 from tqdm import tqdm
 
@@ -38,7 +39,8 @@ def Get_Heliocentric_Distance(date: dt.datetime) -> float:
 
 def Longitude(position: list[float]) -> float:
 
-    longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
+    longitude = np.arctan2(position[1], position[0])
+    longitude = Constants.RADIANS_TO_DEGREES(longitude)
 
     if longitude < 0:
         longitude += 360
@@ -55,25 +57,17 @@ def Local_Time(position: list[float]) -> float:
 
 def Latitude(position: list[float]) -> float:
 
-    latitude = (
-        np.arctan2(position[2], np.sqrt(position[0] ** 2 + position[1] ** 2))
-        * 180
-        / np.pi
-    )
+    latitude = np.arctan2(position[2], np.sqrt(position[0] ** 2 + position[1] ** 2))
+    latitude = Constants.RADIANS_TO_DEGREES(latitude)
 
     return latitude
 
 
 def Magnetic_Latitude(position: list[float]) -> float:
 
-    magnetic_latitude = (
-        np.arctan2(
-            position[2] - Constants.DIPOLE_OFFSET_RADII,
-            np.sqrt(position[0] ** 2 + position[1] ** 2),
-        )
-        * 180
-        / np.pi
-    )
+    magnetic_latitude = np.arctan2(position[2] - Constants.DIPOLE_OFFSET_RADII,
+                                   np.sqrt(position[0] ** 2 + position[1] ** 2))
+    magnetic_latitude = Constants.RADIANS_TO_DEGREES(magnetic_latitude)
 
     return magnetic_latitude
 
@@ -124,7 +118,8 @@ def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrat
             return position
 
         except:
-            position = None
+            # position = None
+            raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
 
             return position
 
@@ -132,7 +127,7 @@ def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrat
 def Get_Trajectory(
     spacecraft: str,
     dates: list[dt.datetime],
-    steps: int = 4000,
+    steps: int = 100,
     frame: str = "MSO",
     aberrate: bool = False,
 ):
@@ -151,7 +146,7 @@ def Get_Trajectory(
     dates : list[datetime.datetime]
         The start and end date and time to query at.
 
-    steps : int {4000}, optional
+    steps : int {100}, optional
         The number of points to sample beween the two times.
 
     frame : str {MSO, MSM}, optional
@@ -227,19 +222,20 @@ def Aberrate_Position(position: list[float], date: dt.datetime | str | float, ve
         The new position, rotated into the aberrated frame.
     """
 
-    aberration_angle = Get_Aberration_Angle(date)
+    with spice.KernelPool(User.METAKERNEL):
+        aberration_angle = Get_Aberration_Angle(date)
 
-    rotation_matrix = np.array(
-        [
-            [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
-            [np.sin(aberration_angle), np.cos(aberration_angle), 0],
-            [0, 0, 1],
-        ]
-    )
+        rotation_matrix = np.array(
+            [
+                [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
+                [np.sin(aberration_angle), np.cos(aberration_angle), 0],
+                [0, 0, 1],
+            ]
+        )
 
-    rotated_position = np.matmul(rotation_matrix, position)
+        rotated_position = np.matmul(rotation_matrix, position)
 
-    return rotated_position
+        return rotated_position
 
 
 def Get_Aberration_Angle(date: dt.datetime | str | float) -> float:
@@ -258,47 +254,47 @@ def Get_Aberration_Angle(date: dt.datetime | str | float) -> float:
 
     """
 
-    if isinstance(date, str):
-        et = spice.str2et(date)
-
-    elif isinstance(date, dt.datetime):
-        et = spice.str2et(date.strftime("%Y-%m-%d"))
-
-    elif isinstance(date, float):
-        et = date
-
-    else:
-        raise ValueError(f"Invalid type for input 'date': {type(date)}")
-
     with spice.KernelPool(User.METAKERNEL):
+        if isinstance(date, str):
+            et = spice.str2et(date)
+
+        elif isinstance(date, dt.datetime):
+            et = spice.str2et(date.strftime("%Y-%m-%d"))
+
+        elif isinstance(date, float):
+            et = date
+
+        else:
+            raise ValueError(f"Invalid type for input 'date': {type(date)}")
+
         # Get mercury's distance from the sun
         mercury_position, _ = spice.spkpos(
             "MERCURY", et, "J2000", "NONE", "SUN"
         )
 
-    mercury_distance = np.sqrt(
-        mercury_position[0] ** 2
-        + mercury_position[1] ** 2
-        + mercury_position[2] ** 2
-    ) * 1000
+        mercury_distance = np.sqrt(
+            mercury_position[0] ** 2
+            + mercury_position[1] ** 2
+            + mercury_position[2] ** 2
+        ) * 1000
 
-    # print(f"Sun distance: {Constants.KM_TO_AU(mercury_distance)}")
+        # print(f"Sun distance: {Constants.KM_TO_AU(mercury_distance)}")
 
-    # determine mercury velocity
-    a = Constants.MERCURY_SEMI_MAJOR_AXIS
-    M = Constants.SOLAR_MASS
-    G = Constants.G
+        # determine mercury velocity
+        a = Constants.MERCURY_SEMI_MAJOR_AXIS
+        M = Constants.SOLAR_MASS
+        G = Constants.G
 
-    orbital_velocity = np.sqrt(G * M * ((2 / mercury_distance) - (1 / a)))
+        orbital_velocity = np.sqrt(G * M * ((2 / mercury_distance) - (1 / a)))
 
-    # Aberration angle is related to the orbital velocity and the solar wind speed
-    # Solar wind speed is assumed to be 400 km/s
-    # Angle is minus as y in the coordinate system points away from the orbital velocity
-    aberration_angle = np.arctan(
-        orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
-    )
+        # Aberration angle is related to the orbital velocity and the solar wind speed
+        # Solar wind speed is assumed to be 400 km/s
+        # Angle is minus as y in the coordinate system points away from the orbital velocity
+        aberration_angle = np.arctan(
+            orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
+        )
 
-    return aberration_angle
+        return aberration_angle
 
 def Get_Range_From_Date(
     spacecraft: str, dates: list[dt.datetime] | dt.datetime
@@ -325,7 +321,7 @@ def Get_Range_From_Date(
     """
 
     with spice.KernelPool(User.METAKERNEL):
-        if type(dates) == dt.datetime:
+        if isinstance(dates, dt.datetime):
             dates = [dates]
 
         distances = []
@@ -544,7 +540,7 @@ def Get_Nearest_Apoapsis(
         return apoapsis_time, apoapsis_altitude
 
 
-def Get_Grazing_Angle(crossing, function="bow shock"):
+def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
     """
     We find the closest position on the Winslow (2013) average BS and MP model
     Assuming any expansion / compression occurs parallel to the normal vector
@@ -563,6 +559,7 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
         )
         / Constants.MERCURY_RADIUS_KM
     )
+
     next_position = (
         traj.Get_Position(
             "MESSENGER",
@@ -573,9 +570,13 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
         / Constants.MERCURY_RADIUS_KM
     )
 
-    print(f"Start Position: {start_position}")
+    cylindrical_start_position = np.array([start_position[0], np.sqrt(start_position[1] ** 2 + start_position[2] ** 2)])
+    cylindrical_next_position = np.array([next_position[0], np.sqrt(next_position[1] ** 2 + next_position[2] ** 2)])
 
-    velocity = next_position - start_position
+    cylindrical_velocity = cylindrical_next_position - cylindrical_start_position
+
+    # normalise velocity
+    cylindrical_velocity /= np.sqrt( np.sum(cylindrical_velocity ** 2) )
 
     match function:
         case "bow shock":
@@ -586,15 +587,15 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
 
             L = psi * p
 
-            phi = np.linspace(0, 2 * np.pi, 1000)
+            phi = np.linspace(0, 2 * np.pi, 10000)
             rho = L / (1 + psi * np.cos(phi))
 
+            # Cylindrical coordinates (X, R)
             bow_shock_x_coords = initial_x + rho * np.cos(phi)
-            bow_shock_y_coords = rho * np.sin(phi)
-            bow_shock_z_coords = rho * np.sin(phi)
+            bow_shock_r_coords = rho * np.sin(phi)
 
             boundary_positions = np.array(
-                [bow_shock_x_coords, bow_shock_y_coords, bow_shock_z_coords]
+                [bow_shock_x_coords, bow_shock_r_coords]
             ).T
 
         case "magnetopause":
@@ -606,12 +607,12 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
             phi = np.linspace(0, 2 * np.pi, 10000)
             rho = sub_solar_point * (2 / (1 + np.cos(phi))) ** alpha
 
+            # Cylindrical coordinates (X, R)
             magnetopause_x_coords = rho * np.cos(phi)
-            magnetopause_y_coords = rho * np.sin(phi)
-            magnetopause_z_coords = rho * np.sin(phi)
+            magnetopause_r_coords = rho * np.sin(phi)
 
             boundary_positions = np.array(
-                [magnetopause_x_coords, magnetopause_y_coords, magnetopause_z_coords]
+                [magnetopause_x_coords, magnetopause_r_coords]
             ).T
 
         case _:
@@ -619,6 +620,13 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
                 f"Invalid function choice: {function}. Options are 'bow shock', 'magnetopause'."
             )
 
+
+    kd_tree = scipy.spatial.KDTree(boundary_positions)
+    
+    distance, index = kd_tree.query(cylindrical_start_position)
+    closest_position = index
+
+    """
     # Initialise some crazy big value
     shortest_distance = float('inf')
     closest_position = 0
@@ -626,9 +634,8 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
     for i, boundary_position in enumerate(boundary_positions):
 
         distance_to_position = np.sqrt(
-            (start_position[0] - boundary_position[0]) ** 2
-            + (start_position[1] - boundary_position[1]) ** 2
-            + (start_position[2] - boundary_position[2]) ** 2
+            (cylindrical_start_position[0] - boundary_position[0]) ** 2
+            + (cylindrical_start_position[1] - boundary_position[1]) ** 2
         )
 
         if distance_to_position < shortest_distance:
@@ -637,40 +644,34 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
 
         else:
             continue
+    """
 
     # Get the normal vector of the BS at this point
     # This is just the normalised vector between the spacecraft and the closest point
-    normal_vector = boundary_positions[closest_position] - start_position
-
-    print(closest_position)
-    print(boundary_positions[3888])
-    print(boundary_positions[closest_position])
-
-    # plt.plot(boundary_positions[0], boundary_positions[1])
-    # plt.scatter(boundary_positions)
+    normal_vector = boundary_positions[closest_position] - cylindrical_start_position
 
     normal_vector = normal_vector / np.sqrt(np.sum(normal_vector**2))
 
-    grazing_angle = (
-        np.arccos(
-            np.dot(normal_vector, velocity)
-            / (np.sqrt(np.sum(normal_vector**2)) + np.sqrt(np.sum(velocity**2)))
-        )
-        * 180
-        / np.pi
-    )
+    grazing_angle = np.arccos(
+                        np.dot(normal_vector, cylindrical_velocity)
+                        / (np.sqrt(np.sum(normal_vector**2)) + np.sqrt( np.sum(cylindrical_velocity ** 2) ))
+                    )
+    grazing_angle = Constants.RADIANS_TO_DEGREES(grazing_angle)
 
     # If the grazing angle is greater than 90, then we take 180 - angle as its from the other side
-    # This occurs as we don't make an assumption as to what side of the model boundary we are
+    # This occurs as we don't make an assumption as to what side of the model boundary we are.
+    # i.e. we could be referencing the normal, or the anti-normal.
 
     if grazing_angle > 90:
         grazing_angle = 180 - grazing_angle
 
-    print(f"Position (spacecraft): {start_position}")
-    print(f"Crossing Start Time: {crossing['Start Time']}")
-    print(f"Crossing Type: {crossing['Type']}")
-    print(f"Normal Vector (MSM): {normal_vector}")
-    print(f"Velocity Vector (MSM): {np.sqrt(np.sum(velocity**2))}")
-    print(f"Grazing Angle: {grazing_angle:.3f} deg.")
+    if verbose:
+        print(f"Crossing Start Time: {crossing['Start Time']}")
+        print(f"Crossing Type: {crossing['Type']}")
+        print(f"Spacecraft Position: {cylindrical_start_position}")
+        print(f"Closest Boundary Point: {boundary_positions[closest_position]}")
+        print(f"Normal Vector (MSM): {normal_vector}")
+        print(f"Velocity Vector (MSM): {cylindrical_velocity}")
+        print(f"Grazing Angle: {grazing_angle:.3f} deg.")
 
     return grazing_angle

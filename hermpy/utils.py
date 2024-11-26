@@ -4,6 +4,7 @@ import os
 
 import requests
 from tqdm import tqdm
+import numpy as np
 
 
 class User:
@@ -33,8 +34,20 @@ class Constants:
     G = 6.6743e-11  # N m^2 / kg^2
 
 
+    @staticmethod
     def KM_TO_AU(km):
         return km / 1.496e+8
+
+    @staticmethod
+    def RADIANS_TO_DEGREES(radians):
+        degrees = radians * 180 / np.pi
+        return degrees
+
+    @staticmethod
+    def DEGREES_TO_RADIANS(degrees):
+        radians = degrees * np.pi / 180
+        return radians
+
 
 
 class Urls:

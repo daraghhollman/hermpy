@@ -76,20 +76,18 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
 
                 "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
                 "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
-                "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM)
-                - Constants.DIPOLE_OFFSET_RADII,
+                "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM) - Constants.DIPOLE_OFFSET_RADII,
+
                 "range (MSO)": np.sqrt(
                     ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
-                )
-                / Constants.MERCURY_RADIUS_KM,
+                ) / Constants.MERCURY_RADIUS_KM,
+
                 "Bx": magnetic_field[0],
                 "By": magnetic_field[1],
                 "Bz": magnetic_field[2],
-                "|B|": np.sqrt(
-                    magnetic_field[0] ** 2
-                    + magnetic_field[1] ** 2
-                    + magnetic_field[2] ** 2
-                ),
+                "|B|": np.sqrt( magnetic_field[0] ** 2
+                       + magnetic_field[1] ** 2
+                       + magnetic_field[2] ** 2),
             }
         )
 
@@ -457,8 +455,8 @@ def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
     z = data["Bz"]
 
     r = np.sqrt(x**2 + y**2 + z**2)
-    theta = np.arctan2(y, x) * 180 / np.pi
-    phi = np.arctan2(z, r) * 180 / np.pi
+    theta = Constants.RADIANS_TO_DEGREES(np.arctan2(y, x))
+    phi = Constants.RADIANS_TO_DEGREES(np.arctan2(z, r))
 
     data["Br"] = r
     data["Btheta"] = theta

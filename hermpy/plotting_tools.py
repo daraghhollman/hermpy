@@ -11,7 +11,6 @@ from .utils import Constants
 def Plot_Magnetospheric_Boundaries(
     ax: plt.Axes,
     plane: str = "xy",
-    frame="MSO",
     sub_solar_magnetopause: float = 1.45,
     alpha: float = 0.5,
     psi: float = 1.04,
@@ -170,7 +169,7 @@ def Square_Axes(ax: plt.Axes, distance: float) -> None:
     ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_locator))
 
 
-def Add_Labels(ax: plt.Axes, plane: str, frame="MSO", aberrate=False) -> None:
+def Add_Labels(ax: plt.Axes, plane: str, frame="MSO") -> None:
     """Adds axes labels corresponding to a particular trajectory
     plane.
 
@@ -183,11 +182,8 @@ def Add_Labels(ax: plt.Axes, plane: str, frame="MSO", aberrate=False) -> None:
     plane : str {`"xy"`, `"xz"`, `"yz"`}
         Which plane is this axis plotting.
 
-    frame : str {`"MSO"`, `"MSM"`}, optional
+    frame : str {`"MSO"`, `"MSM"`, "MSM'"}, optional
         Adjust the coordinate system as written on the labels.
-
-    aberrate : bool {`False`, `True`}, optional
-        Prime the coordinate labels. e.g. X -> X'
 
 
     Returns
@@ -197,28 +193,16 @@ def Add_Labels(ax: plt.Axes, plane: str, frame="MSO", aberrate=False) -> None:
 
     match plane:
         case "xy":
-            if aberrate:
-                ax.set_xlabel(r"X'$_{var1}$ [$R_M$]".replace("var1", frame))
-                ax.set_ylabel(r"Y'$_{var1}$ [$R_M$]".replace("var1", frame))
-            else:
-                ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
-                ax.set_ylabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_ylabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
 
         case "xz":
-            if aberrate:
-                ax.set_xlabel(r"X'$_{var1}$ [$R_M$]".replace("var1", frame))
-                ax.set_ylabel(r"Z'$_{var1}$ [$R_M$]".replace("var1", frame))
-            else:
-                ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
-                ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
 
         case "yz":
-            if aberrate:
-                ax.set_xlabel(r"Y'$_{var1}$ [$R_M$]".replace("var1", frame))
-                ax.set_ylabel(r"Z'$_{var1}$ [$R_M$]".replace("var1", frame))
-            else:
-                ax.set_xlabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
-                ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_xlabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
 
 
 def Plot_Mercury(
@@ -261,7 +245,7 @@ def Plot_Mercury(
     offset: list[float] = [0, 0]
 
     if frame == "MSM" and (plane == "xz" or plane == "yz"):
-        offset[1] -= 479 / 2439.7
+        offset[1] -= Constants.DIPOLE_OFFSET_RADII
 
     angles = np.linspace(0, 2 * np.pi, 1000)
     x_coords = np.cos(angles) + offset[0]
