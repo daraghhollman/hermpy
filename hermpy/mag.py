@@ -341,18 +341,8 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
 
         # check if day has changed and then update mercury distance
         if (row["date"] - previous_date) > dt.timedelta(days=1):
-            r = trajectory.Get_Heliocentric_Distance(pd.to_datetime(row["date"]).date()) * 1000
-            previous_date = row["date"]
 
-            # determine mercury velocity
-            a = Constants.MERCURY_SEMI_MAJOR_AXIS
-            M = Constants.SOLAR_MASS
-            G = Constants.G
-
-            orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
-            aberration_angle = np.arctan(
-                orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
-            )
+            aberration_angle = trajectory.Get_Aberration_Angle(row.iloc[0]["date"])
 
         # Adjust x and y ephemeris and data
         new_mag = (
@@ -384,9 +374,11 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
     data["X MSM' (km)"] = new_eph_x_km
     data["Y MSM' (km)"] = new_eph_y_km
     data["Z MSM' (km)"] = data["Z MSM (km)"]
+
     data["X MSM' (radii)"] = new_eph_x_radii
     data["Y MSM' (radii)"] = new_eph_y_radii
     data["Z MSM' (radii)"] = data["Z MSM (radii)"]
+
     data["Bx"] = new_mag_x
     data["By"] = new_mag_y
 
@@ -426,15 +418,7 @@ def Aberrate(
         The date to aberrate at.
     """
 
-    r = trajectory.Get_Heliocentric_Distance(date)
-
-    # determine mercury velocity
-    a = Constants.MERCURY_SEMI_MAJOR_AXIS
-    M = Constants.SOLAR_MASS
-    G = Constants.G
-
-    orbital_velocity = np.sqrt(G * M * ((2 / r) - (1 / a)))
-    aberration_angle = np.arctan(orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG)
+    aberration_angle = trajectory.Get_Aberration_Angle(date)
 
     # Adjust x and y ephemeris and data
     new_x: float = x * np.cos(aberration_angle) - y * np.sin(aberration_angle)

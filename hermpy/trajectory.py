@@ -203,7 +203,7 @@ def Get_Trajectory(
         return positions
 
 
-def Aberrate_Position(position: list[float], date: dt.datetime | str, verbose=False):
+def Aberrate_Position(position: list[float], date: dt.datetime | str | float, verbose=False):
     """Rotate the spacecraft coordinates into the aberrated coordinate system.
 
 
@@ -227,62 +227,78 @@ def Aberrate_Position(position: list[float], date: dt.datetime | str, verbose=Fa
         The new position, rotated into the aberrated frame.
     """
 
+    aberration_angle = Get_Aberration_Angle(date)
+
+    rotation_matrix = np.array(
+        [
+            [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
+            [np.sin(aberration_angle), np.cos(aberration_angle), 0],
+            [0, 0, 1],
+        ]
+    )
+
+    rotated_position = np.matmul(rotation_matrix, position)
+
+    return rotated_position
+
+
+def Get_Aberration_Angle(date: dt.datetime | str | float) -> float:
+    """For a given date, find the solar wind aberration angle.
+
+    Parameters
+    ----------
+    date : dt.datetime | str | float
+        The datetime to determine the aberration angle
+
+
+    Returns
+    -------
+    angle : float
+        Aberration Angle
+
+    """
+
+    if isinstance(date, str):
+        et = spice.str2et(date)
+
+    elif isinstance(date, dt.datetime):
+        et = spice.str2et(date.strftime("%Y-%m-%d"))
+
+    elif isinstance(date, float):
+        et = date
+
+    else:
+        raise ValueError(f"Invalid type for input 'date': {type(date)}")
+
     with spice.KernelPool(User.METAKERNEL):
         # Get mercury's distance from the sun
-        if verbose:
-            print(f"FINDING ABERRATION AT TIME {date}")
-
-        if type(date) != str:
-            et = date
-
-        elif type(date) == str:
-            et = spice.str2et(date)
-
-        else:
-            et = spice.str2et(date.strftime("%Y-%m-%d"))
-
         mercury_position, _ = spice.spkpos(
             "MERCURY", et, "J2000", "NONE", "SUN"
         )
 
-        mercury_distance = np.sqrt(
-            mercury_position[0] ** 2
-            + mercury_position[1] ** 2
-            + mercury_position[2] ** 2
-        ) * 1000
+    mercury_distance = np.sqrt(
+        mercury_position[0] ** 2
+        + mercury_position[1] ** 2
+        + mercury_position[2] ** 2
+    ) * 1000
 
-        # print(f"Sun distance: {Constants.KM_TO_AU(mercury_distance)}")
+    # print(f"Sun distance: {Constants.KM_TO_AU(mercury_distance)}")
 
-        # determine mercury velocity
-        a = Constants.MERCURY_SEMI_MAJOR_AXIS
-        M = Constants.SOLAR_MASS
-        G = Constants.G
+    # determine mercury velocity
+    a = Constants.MERCURY_SEMI_MAJOR_AXIS
+    M = Constants.SOLAR_MASS
+    G = Constants.G
 
-        orbital_velocity = np.sqrt(G * M * ((2 / mercury_distance) - (1 / a)))
+    orbital_velocity = np.sqrt(G * M * ((2 / mercury_distance) - (1 / a)))
 
-        if verbose:
-            print(f"Mercury Orbital Velocity: {orbital_velocity}")
+    # Aberration angle is related to the orbital velocity and the solar wind speed
+    # Solar wind speed is assumed to be 400 km/s
+    # Angle is minus as y in the coordinate system points away from the orbital velocity
+    aberration_angle = np.arctan(
+        orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
+    )
 
-        # Aberration angle is related to the orbital velocity and the solar wind speed
-        # Solar wind speed is assumed to be 400 km/s
-        # Angle is minus as y in the coordinate system points away from the orbital velocity
-        aberration_angle = np.arctan(
-            orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
-        )
-
-
-        rotation_matrix = np.array(
-            [
-                [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
-                [np.sin(aberration_angle), np.cos(aberration_angle), 0],
-                [0, 0, 1],
-            ]
-        )
-
-        rotated_position = np.matmul(rotation_matrix, position)
-
-        return rotated_position
-
+    return aberration_angle
 
 def Get_Range_From_Date(
     spacecraft: str, dates: list[dt.datetime] | dt.datetime
