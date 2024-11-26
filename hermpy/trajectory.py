@@ -78,7 +78,7 @@ def Magnetic_Latitude(position: list[float]) -> float:
     return magnetic_latitude
 
 
-def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO"):
+def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrate=False):
     """Returns spacecraft position at a given time
 
     Uses SPICE to find the position of an input spacecraft
@@ -113,11 +113,15 @@ def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO"):
 
             match frame:
                 case "MSO":
-                    return position
+                    pass
 
                 case "MSM":
                     position[2] -= Constants.DIPOLE_OFFSET_KM
-                    return position
+
+            if aberrate:
+                position = Aberrate_Position(position, date.strftime("%Y-%m-%d"))
+
+            return position
 
         except:
             position = None
@@ -539,6 +543,7 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
             "MESSENGER",
             crossing["Start Time"],
             frame="MSM",
+            aberrate=True,
         )
         / Constants.MERCURY_RADIUS_KM
     )
@@ -547,9 +552,12 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
             "MESSENGER",
             crossing["Start Time"] + dt.timedelta(seconds=1),
             frame="MSM",
+            aberrate=True,
         )
         / Constants.MERCURY_RADIUS_KM
     )
+
+    print(f"Start Position: {start_position}")
 
     velocity = next_position - start_position
 
@@ -579,7 +587,7 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
             sub_solar_point = 1.45  # radii
             alpha = 0.5
 
-            phi = np.linspace(0, 2 * np.pi, 1000)
+            phi = np.linspace(0, 2 * np.pi, 10000)
             rho = sub_solar_point * (2 / (1 + np.cos(phi))) ** alpha
 
             magnetopause_x_coords = rho * np.cos(phi)
@@ -596,7 +604,7 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
             )
 
     # Initialise some crazy big value
-    shortest_distance = 10000
+    shortest_distance = float('inf')
     closest_position = 0
 
     for i, boundary_position in enumerate(boundary_positions):
@@ -618,6 +626,8 @@ def Get_Grazing_Angle(crossing, function="bow shock"):
     # This is just the normalised vector between the spacecraft and the closest point
     normal_vector = boundary_positions[closest_position] - start_position
 
+    print(closest_position)
+    print(boundary_positions[3888])
     print(boundary_positions[closest_position])
 
     # plt.plot(boundary_positions[0], boundary_positions[1])
