@@ -19,12 +19,13 @@ class User:
     }
 
 class Constants:
-    # All are in base SI units
+    # If no units are specified in the variable name,
+    # SI units are implied.
     MERCURY_RADIUS = 2_439_700  # meters
     MERCURY_RADIUS_KM = MERCURY_RADIUS / 1_000  # kilometers
 
-    DIPOLE_OFFSET_KM = 479
-    DIPOLE_OFFSET_RADII = 479 / MERCURY_RADIUS_KM
+    DIPOLE_OFFSET_KM = 479 # km
+    DIPOLE_OFFSET_RADII = 479 / MERCURY_RADIUS_KM # radii
 
     MERCURY_SEMI_MAJOR_AXIS = 57_909_050 * 1_000  # meters
     SOLAR_MASS = 1.9891e30  # kilograms
@@ -53,7 +54,6 @@ class Constants:
 class Urls:
 
     PDS_BASE = "https://search-pdsppi.igpp.ucla.edu/"
-
     MAG_EXTENSION = "ditdos/download?id=pds://PPI/mess-mag-calibrated/data/mso-avg/"
 
 
