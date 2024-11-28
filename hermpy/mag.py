@@ -332,7 +332,6 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
     new_mag_x = []
     new_mag_y = []
 
-    r = 0
     aberration_angle = 0
     previous_date = dt.datetime(2010, 1, 1)  # arbitrary date before MESSENGER orbit
     for _, row in data.iterrows():
@@ -340,7 +339,8 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
         # check if day has changed and then update mercury distance
         if (row["date"] - previous_date) > dt.timedelta(days=1):
 
-            aberration_angle = trajectory.Get_Aberration_Angle(row.iloc[0]["date"])
+            aberration_angle = trajectory.Get_Aberration_Angle(row["date"])
+            previous_date = row["date"]
 
         # Adjust x and y ephemeris and data
         new_mag = (

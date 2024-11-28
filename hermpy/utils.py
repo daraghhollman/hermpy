@@ -60,8 +60,6 @@ class Urls:
 def Download_MESSENGER_MAG(
     save_directory: str,
     resolution: str = "01",
-    force_update: bool = False,
-    show_progress: bool = True,
 ) -> None:
     """Function to automatically download MESSENGER MAG data
 

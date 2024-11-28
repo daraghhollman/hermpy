@@ -12,7 +12,7 @@ import hermpy.trajectory as traj
 from .utils import Constants, User
 
 
-def Get_Heliocentric_Distance(date: dt.datetime) -> float:
+def Get_Heliocentric_Distance(date: dt.datetime | dt.date) -> float:
     """Gets the distance from Mercury to the Sun, assumes a SPICE metakernel is loaded.
 
 
@@ -25,7 +25,7 @@ def Get_Heliocentric_Distance(date: dt.datetime) -> float:
     Returns
     -------
     distance : float
-        The distance from Mercury to the sun at time `date`
+        The distance from Mercury to the sun at time `date` in km
     """
 
     with spice.KernelPool(User.METAKERNEL):
@@ -113,15 +113,12 @@ def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrat
                     position[2] -= Constants.DIPOLE_OFFSET_KM
 
             if aberrate:
-                position = Aberrate_Position(position, date.strftime("%Y-%m-%d"))
+                position = Aberrate_Position(position, date.date())
 
             return position
 
         except:
-            # position = None
             raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
-
-            return position
 
 
 def Get_Trajectory(
@@ -130,6 +127,7 @@ def Get_Trajectory(
     steps: int = 100,
     frame: str = "MSO",
     aberrate: bool = False,
+    verbose: bool = False,
 ):
     """Finds a given spacecraft's trajectory between two dates.
 
@@ -173,19 +171,29 @@ def Get_Trajectory(
     """
 
     with spice.KernelPool(User.METAKERNEL):
-        et_one = spice.str2et(dates[0].strftime("%Y-%m-%d %H:%M:%S"))
-        et_two = spice.str2et(dates[1].strftime("%Y-%m-%d %H:%M:%S"))
 
-        times = [x * (et_two - et_one) / steps + et_one for x in range(steps)]
+        dates = [dates[0] + (t * (dates[1] - dates[0]) / steps) for t in range(steps)]
+        spice_times = spice.str2et([date.strftime("%Y-%m-%d %H:%M:%S") for date in dates])
 
-        positions, _ = spice.spkpos(spacecraft, times, "BC_MSO", "NONE", "MERCURY")
+        positions, _ = spice.spkpos(spacecraft, spice_times, "BC_MSO", "NONE", "MERCURY")
 
         if aberrate:
-            aberrated_positions = []
-            for i, position in tqdm(enumerate(positions), total=len(positions)):
-                aberrated_positions.append(Aberrate_Position(position, times[i]))
+            # Precompute aberration angles
+            aberration_angles = np.array([Get_Aberration_Angle(date.date()) for date in dates])
 
-            positions = np.array(aberrated_positions)
+            # Create rotation matrices
+            cos_angles = np.cos(aberration_angles)
+            sin_angles = np.sin(aberration_angles)
+
+            rotation_matrices = np.array([
+                [[cos, -sin, 0],
+                 [sin,  cos, 0],
+                 [0,      0, 1]]
+                for cos, sin in zip(cos_angles, sin_angles)
+            ])
+
+
+            positions = np.einsum('ijk,ik->ij', rotation_matrices, positions)
 
         match frame:
             case "MSO":
@@ -198,7 +206,7 @@ def Get_Trajectory(
         return positions
 
 
-def Aberrate_Position(position: list[float], date: dt.datetime | str | float, verbose=False):
+def Aberrate_Position(position: list[float], date: dt.datetime | dt.date, verbose=False):
     """Rotate the spacecraft coordinates into the aberrated coordinate system.
 
 
@@ -223,6 +231,7 @@ def Aberrate_Position(position: list[float], date: dt.datetime | str | float, ve
     """
 
     with spice.KernelPool(User.METAKERNEL):
+
         aberration_angle = Get_Aberration_Angle(date)
 
         rotation_matrix = np.array(
@@ -238,8 +247,10 @@ def Aberrate_Position(position: list[float], date: dt.datetime | str | float, ve
         return rotated_position
 
 
-def Get_Aberration_Angle(date: dt.datetime | str | float) -> float:
+def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
     """For a given date, find the solar wind aberration angle.
+
+    Uses a daily average
 
     Parameters
     ----------
@@ -254,47 +265,27 @@ def Get_Aberration_Angle(date: dt.datetime | str | float) -> float:
 
     """
 
-    with spice.KernelPool(User.METAKERNEL):
-        if isinstance(date, str):
-            et = spice.str2et(date)
+    if type(date) == dt.datetime:
+        mercury_distance = Get_Heliocentric_Distance(date.date()) * 1000 # convert to meters
 
-        elif isinstance(date, dt.datetime):
-            et = spice.str2et(date.strftime("%Y-%m-%d"))
+    else:
+        mercury_distance = Get_Heliocentric_Distance(date) * 1000
 
-        elif isinstance(date, float):
-            et = date
+    # determine mercury velocity
+    a = Constants.MERCURY_SEMI_MAJOR_AXIS
+    M = Constants.SOLAR_MASS
+    G = Constants.G
 
-        else:
-            raise ValueError(f"Invalid type for input 'date': {type(date)}")
+    orbital_velocity = np.sqrt(G * M * ((2 / mercury_distance) - (1 / a)))
 
-        # Get mercury's distance from the sun
-        mercury_position, _ = spice.spkpos(
-            "MERCURY", et, "J2000", "NONE", "SUN"
-        )
+    # Aberration angle is related to the orbital velocity and the solar wind speed
+    # Solar wind speed is assumed to be 400 km/s
+    # Angle is minus as y in the coordinate system points away from the orbital velocity
+    aberration_angle = np.arctan(
+        orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
+    )
 
-        mercury_distance = np.sqrt(
-            mercury_position[0] ** 2
-            + mercury_position[1] ** 2
-            + mercury_position[2] ** 2
-        ) * 1000
-
-        # print(f"Sun distance: {Constants.KM_TO_AU(mercury_distance)}")
-
-        # determine mercury velocity
-        a = Constants.MERCURY_SEMI_MAJOR_AXIS
-        M = Constants.SOLAR_MASS
-        G = Constants.G
-
-        orbital_velocity = np.sqrt(G * M * ((2 / mercury_distance) - (1 / a)))
-
-        # Aberration angle is related to the orbital velocity and the solar wind speed
-        # Solar wind speed is assumed to be 400 km/s
-        # Angle is minus as y in the coordinate system points away from the orbital velocity
-        aberration_angle = np.arctan(
-            orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
-        )
-
-        return aberration_angle
+    return aberration_angle
 
 def Get_Range_From_Date(
     spacecraft: str, dates: list[dt.datetime] | dt.datetime
@@ -553,7 +544,7 @@ def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
     start_position = (
         traj.Get_Position(
             "MESSENGER",
-            crossing["Start Time"],
+            crossing["Start Time"] + (crossing["End Time"] - crossing["Start Time"]) / 2,
             frame="MSM",
             aberrate=True,
         )
@@ -563,7 +554,8 @@ def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
     next_position = (
         traj.Get_Position(
             "MESSENGER",
-            crossing["Start Time"] + dt.timedelta(seconds=1),
+            crossing["Start Time"] + (crossing["End Time"] - crossing["Start Time"]) / 2
+                                   + dt.timedelta(seconds=1),
             frame="MSM",
             aberrate=True,
         )
@@ -616,35 +608,15 @@ def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
             ).T
 
         case _:
-            raise ValueError(
-                f"Invalid function choice: {function}. Options are 'bow shock', 'magnetopause'."
-            )
+            raise ValueError( f"Invalid function choice: {function}. Options are 'bow shock', 'magnetopause'.")
 
 
+    # This is setup is faster than iterrating through the points.
+    # O(logN) vs O(N)
     kd_tree = scipy.spatial.KDTree(boundary_positions)
     
-    distance, index = kd_tree.query(cylindrical_start_position)
+    _, index = kd_tree.query(cylindrical_start_position)
     closest_position = index
-
-    """
-    # Initialise some crazy big value
-    shortest_distance = float('inf')
-    closest_position = 0
-
-    for i, boundary_position in enumerate(boundary_positions):
-
-        distance_to_position = np.sqrt(
-            (cylindrical_start_position[0] - boundary_position[0]) ** 2
-            + (cylindrical_start_position[1] - boundary_position[1]) ** 2
-        )
-
-        if distance_to_position < shortest_distance:
-            shortest_distance = distance_to_position
-            closest_position = i
-
-        else:
-            continue
-    """
 
     # Get the normal vector of the BS at this point
     # This is just the normalised vector between the spacecraft and the closest point

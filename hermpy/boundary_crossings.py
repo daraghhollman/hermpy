@@ -8,7 +8,7 @@ import pandas as pd
 from hermpy.utils import Constants
 
 
-def Load_Crossings(path: str, backend: str = "Philpott") -> pd.DataFrame:
+def Load_Crossings(path: str, backend: str = "Philpott", include_data_gaps=True) -> pd.DataFrame:
     """Loads a pandas DataFrame from
 
     Parameters
@@ -18,7 +18,10 @@ def Load_Crossings(path: str, backend: str = "Philpott") -> pd.DataFrame:
 
     backend : str {"Philpott", "Sun" (to be added)}, optional
         Which list is being loaded. Informs which backend function
-        to use.
+        to use. Backend must match file being loaded.
+
+    include_data_gaps : bool {True, False}, optional
+        Should data gaps be included in the list.
 
 
     Returns
@@ -27,7 +30,7 @@ def Load_Crossings(path: str, backend: str = "Philpott") -> pd.DataFrame:
     """
 
     if backend == "Philpott":
-        crossings = Reformat_Philpott(path)
+        crossings = Reformat_Philpott(path, include_data_gaps=include_data_gaps)
 
     else:
         raise Exception(f"Unknown backend: {backend}")
@@ -378,13 +381,18 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
     # Now that we have the full list, we can add on the extra columns we need!
 
 
-def Reformat_Philpott(input_path: str) -> pd.DataFrame:
+def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
     """Takes Philpott list from suplimetary information and reformats
+
+    Backend function, developer use only
 
     Parameters
     ----------
     input_path : str
         Path to Philpott+ (2020) table S1
+
+    include_data_gaps : bool {True, False}, optional
+        Should data gaps be included in the list.
 
 
     Returns
@@ -595,5 +603,9 @@ def Reformat_Philpott(input_path: str) -> pd.DataFrame:
 
     # Create a pandas dataframe with this information
     df = pd.DataFrame(data=dict(zip(multi_index_columns, multi_index_data)))
+
+    if include_data_gaps is False:
+        df = df.loc[ df["Type"] != "DATA_GAP" ]
+
 
     return df
