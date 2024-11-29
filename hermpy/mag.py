@@ -4,6 +4,7 @@ Functions for loading and handling MAG data
 
 import datetime as dt
 import multiprocessing
+import warnings
 from glob import glob
 
 import numpy as np
@@ -31,67 +32,10 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
 
     multi_file_data = []
     # Load and concatonate into one dataframe
-    if verbose:
-        print("Loading Data")
-    for path in tqdm(file_paths, total=len(file_paths), disable=not verbose):
-        # Read file
-        data = np.genfromtxt(path)
 
-        years = data[:, 0]
-        day_of_years = data[:, 1]
-        hours = data[:, 2]
-        minutes = data[:, 3]
-        seconds = data[:, 4]
-
-        dates = [
-            dt.datetime(int(year), 1, 1)  # Start with the first date of that year
-            + dt.timedelta(  # Add time to get to the day of year and time.
-                days=day_of_year - 1,
-                hours=int(hour),
-                minutes=int(minute),
-                seconds=int(second),
-            )
-            for year, day_of_year, hour, minute, second in zip(
-                years, day_of_years, hours, minutes, seconds
-            )
-        ]
-
-        ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
-        magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
-
-        dataframe = pd.DataFrame(
-            {
-                "date": dates,
-                "X MSO (km)": ephemeris[0],
-                "Y MSO (km)": ephemeris[1],
-                "Z MSO (km)": ephemeris[2],
-
-                "X MSO (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
-                "Y MSO (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
-                "Z MSO (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
-
-                "X MSM (km)": ephemeris[0],
-                "Y MSM (km)": ephemeris[1],
-                "Z MSM (km)": ephemeris[2] - Constants.DIPOLE_OFFSET_KM,
-
-                "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
-                "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
-                "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM) - Constants.DIPOLE_OFFSET_RADII,
-
-                "range (MSO)": np.sqrt(
-                    ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
-                ) / Constants.MERCURY_RADIUS_KM,
-
-                "Bx": magnetic_field[0],
-                "By": magnetic_field[1],
-                "Bz": magnetic_field[2],
-                "|B|": np.sqrt( magnetic_field[0] ** 2
-                       + magnetic_field[1] ** 2
-                       + magnetic_field[2] ** 2),
-            }
-        )
-
-        multi_file_data.append(dataframe)
+    with multiprocessing.Pool() as pool:
+        for result in tqdm(pool.imap(Extract_Data, file_paths), total=len(file_paths), desc="Extracting Data", disable=not verbose):
+            multi_file_data.append(result)
 
     multi_file_data = pd.concat(multi_file_data)
 
@@ -158,7 +102,7 @@ def Load_Between_Dates(
     ]
 
     files_to_load: list[str] = []
-    for date in dates_to_load:
+    for date in tqdm(dates_to_load, total=len(dates_to_load), desc="Loading Files", disable= not verbose):
         file: list[str] = glob(
             root_dir
             + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
@@ -167,12 +111,10 @@ def Load_Between_Dates(
         if len(file) > 1:
             raise ValueError("ERROR: There are duplicate data files being loaded.")
         elif len(file) == 0:
-            raise ValueError("ERROR: The data trying to be loaded doesn't exist!")
+            warnings.warn(f"WARNING: The data trying to be loaded doesn't exist at filepath: {f'{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB'}")
+            continue
 
         files_to_load.append(file[0])
-
-    if verbose:
-        print("Loading Files")
 
     data = Load_Messenger(files_to_load, verbose=verbose)
 
@@ -184,6 +126,65 @@ def Load_Between_Dates(
 
     return data
 
+def Extract_Data(path):
+    # Read file
+    data = np.genfromtxt(path)
+
+    years = data[:, 0]
+    day_of_years = data[:, 1]
+    hours = data[:, 2]
+    minutes = data[:, 3]
+    seconds = data[:, 4]
+
+    dates = [
+        dt.datetime(int(year), 1, 1)  # Start with the first date of that year
+        + dt.timedelta(  # Add time to get to the day of year and time.
+            days=day_of_year - 1,
+            hours=int(hour),
+            minutes=int(minute),
+            seconds=int(second),
+        )
+        for year, day_of_year, hour, minute, second in zip(
+            years, day_of_years, hours, minutes, seconds
+        )
+    ]
+
+    ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
+    magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
+
+    df = pd.DataFrame(
+        {
+            "date": dates,
+            "X MSO (km)": ephemeris[0],
+            "Y MSO (km)": ephemeris[1],
+            "Z MSO (km)": ephemeris[2],
+
+            "X MSO (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
+            "Y MSO (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
+            "Z MSO (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
+
+            "X MSM (km)": ephemeris[0],
+            "Y MSM (km)": ephemeris[1],
+            "Z MSM (km)": ephemeris[2] - Constants.DIPOLE_OFFSET_KM,
+
+            "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
+            "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
+            "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM) - Constants.DIPOLE_OFFSET_RADII,
+
+            "range (MSO)": np.sqrt(
+                ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
+            ) / Constants.MERCURY_RADIUS_KM,
+
+            "Bx": magnetic_field[0],
+            "By": magnetic_field[1],
+            "Bz": magnetic_field[2],
+            "|B|": np.sqrt( magnetic_field[0] ** 2
+                   + magnetic_field[1] ** 2
+                   + magnetic_field[2] ** 2),
+        }
+    )
+
+    return df
 
 def Strip_Data(
     data: pd.DataFrame, start: dt.datetime, end: dt.datetime
