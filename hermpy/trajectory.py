@@ -72,7 +72,7 @@ def Magnetic_Latitude(position: list[float]) -> float:
     return magnetic_latitude
 
 
-def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrate=False):
+def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrate=True):
     """Returns spacecraft position at a given time
 
     Uses SPICE to find the position of an input spacecraft
@@ -125,8 +125,8 @@ def Get_Trajectory(
     spacecraft: str,
     dates: list[dt.datetime],
     steps: int = 100,
-    frame: str = "MSO",
-    aberrate: bool = False,
+    frame: str = "MSM",
+    aberrate: bool = True,
     verbose: bool = False,
 ):
     """Finds a given spacecraft's trajectory between two dates.
@@ -147,10 +147,10 @@ def Get_Trajectory(
     steps : int {100}, optional
         The number of points to sample beween the two times.
 
-    frame : str {MSO, MSM}, optional
+    frame : str {MSM, MSO}, optional
         What frame to return the points in.
 
-    aberrate : bool {False}
+    aberrate : bool {True, False}
         Set True to return the positions in the aberrated
         coordinate system.
         Aberration angle is determined using an average

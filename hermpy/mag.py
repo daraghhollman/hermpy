@@ -50,7 +50,7 @@ def Load_Between_Dates(
     end: dt.datetime,
     average: int = 1,
     strip: bool = True,
-    aberrate: bool = False,
+    aberrate: bool = True,
     verbose: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
@@ -81,7 +81,7 @@ def Load_Between_Dates(
     strip : bool {True, False}, optional
         Should the data be shortened to match the times in start and end
 
-    aberrate : bool {False, True}, optional
+    aberrate : bool {True, False}, optional
         Should the dataframe contain MAG data and Ephemeris data in MSM'
 
         Requires a loaded spice kernel
@@ -122,7 +122,7 @@ def Load_Between_Dates(
         data = Strip_Data(data, start, end)
 
     if aberrate:
-        data = Adjust_For_Aberration(data)
+        data = Add_Aberrated_Terms(data)
 
     return data
 
@@ -300,7 +300,7 @@ def Add_Field_Variability(
     return data
 
 
-def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
+def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
     """Shift the data into the aberrated frame. MSO -> MSO', MSM -> MSM'
 
 
@@ -325,61 +325,33 @@ def Adjust_For_Aberration(data: pd.DataFrame) -> pd.DataFrame:
     data : pandas.DataFrame
         The input data adjusted as described.
     """
-    new_eph_x_km = []
-    new_eph_y_km = []
-    new_eph_x_radii = []
-    new_eph_y_radii = []
 
-    new_mag_x = []
-    new_mag_y = []
+    # Find only unique days
+    unique_dates = data["date"].dt.floor("D").unique()
+    # Precompute aberration angles as dictionary
+    aberration_angles = {date: trajectory.Get_Aberration_Angle(date) for date in unique_dates}
+    
+    # Map aberration angles back to the dataframe
+    data["Aberration Angle"] = data["date"].dt.floor("D").map(aberration_angles)
 
-    aberration_angle = 0
-    previous_date = dt.datetime(2010, 1, 1)  # arbitrary date before MESSENGER orbit
-    for _, row in data.iterrows():
+    # Get mutlipliers
+    cos_terms = np.cos(data["Aberration Angle"])
+    sin_terms = np.sin(data["Aberration Angle"])
 
-        # check if day has changed and then update mercury distance
-        if (row["date"] - previous_date) > dt.timedelta(days=1):
+    # Rotate MAG vectors
+    data["Bx'"] = data["Bx"] * cos_terms - data["By"] * sin_terms
+    data["By'"] = data["Bx"] * sin_terms - data["By"] * cos_terms
+    data["Bz'"] = data["Bz"]
 
-            aberration_angle = trajectory.Get_Aberration_Angle(row["date"])
-            previous_date = row["date"]
-
-        # Adjust x and y ephemeris and data
-        new_mag = (
-            row["Bx"] * np.cos(aberration_angle) - row["By"] * np.sin(aberration_angle),
-            row["Bx"] * np.sin(aberration_angle) + row["Bx"] * np.cos(aberration_angle),
-        )
-
-        new_ephem_km = (
-            row["X MSM (km)"] * np.cos(aberration_angle)
-            - row["Y MSM (km)"] * np.sin(aberration_angle),
-            row["X MSM (km)"] * np.sin(aberration_angle)
-            + row["Y MSM (km)"] * np.cos(aberration_angle),
-        )
-
-        new_ephem_radii = (
-            row["X MSM (radii)"] * np.cos(aberration_angle)
-            - row["Y MSM (radii)"] * np.sin(aberration_angle),
-            row["X MSM (radii)"] * np.sin(aberration_angle)
-            + row["Y MSM (radii)"] * np.cos(aberration_angle),
-        )
-        new_eph_x_km.append(new_ephem_km[0])
-        new_eph_y_km.append(new_ephem_km[1])
-        new_eph_x_radii.append(new_ephem_radii[0])
-        new_eph_y_radii.append(new_ephem_radii[1])
-
-        new_mag_x.append(new_mag[0])
-        new_mag_y.append(new_mag[1])
-
-    data["X MSM' (km)"] = new_eph_x_km
-    data["Y MSM' (km)"] = new_eph_y_km
+    # Rotate ephemeris coordinates in kilometers
+    data["X MSM' (km)"] = data["X MSM (km)"] * cos_terms - data["Y MSM (km)"] * sin_terms
+    data["Y MSM' (km)"] = data["X MSM (km)"] * sin_terms + data["Y MSM (km)"] * cos_terms
     data["Z MSM' (km)"] = data["Z MSM (km)"]
 
-    data["X MSM' (radii)"] = new_eph_x_radii
-    data["Y MSM' (radii)"] = new_eph_y_radii
+    # Rotate ephemeris coordinates in radii
+    data["X MSM' (radii)"] = data["X MSM (radii)"] * cos_terms - data["Y MSM (radii)"] * sin_terms
+    data["Y MSM' (radii)"] = data["X MSM (radii)"] * sin_terms + data["Y MSM (radii)"] * cos_terms
     data["Z MSM' (radii)"] = data["Z MSM (radii)"]
-
-    data["Bx"] = new_mag_x
-    data["By"] = new_mag_y
 
     return data
 
