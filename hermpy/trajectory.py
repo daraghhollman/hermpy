@@ -531,7 +531,7 @@ def Get_Nearest_Apoapsis(
         return apoapsis_time, apoapsis_altitude
 
 
-def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
+def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: bool = True, verbose: bool = False):
     """
     We find the closest position on the Winslow (2013) average BS and MP model
     Assuming any expansion / compression occurs parallel to the normal vector
@@ -626,7 +626,7 @@ def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
 
     grazing_angle = np.arccos(
                         np.dot(normal_vector, cylindrical_velocity)
-                        / (np.sqrt(np.sum(normal_vector**2)) + np.sqrt( np.sum(cylindrical_velocity ** 2) ))
+                        / (np.sqrt(np.sum(normal_vector**2)) * np.sqrt( np.sum(cylindrical_velocity ** 2) ))
                     )
     grazing_angle = Constants.RADIANS_TO_DEGREES(grazing_angle)
 
@@ -636,6 +636,7 @@ def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
 
     if grazing_angle > 90:
         grazing_angle = 180 - grazing_angle
+        normal_vector = -normal_vector
 
     if verbose:
         print(f"Crossing Start Time: {crossing['Start Time']}")
@@ -645,5 +646,8 @@ def Get_Grazing_Angle(crossing, function="bow shock", verbose=False):
         print(f"Normal Vector (MSM): {normal_vector}")
         print(f"Velocity Vector (MSM): {cylindrical_velocity}")
         print(f"Grazing Angle: {grazing_angle:.3f} deg.")
+
+    if return_vectors:
+        return grazing_angle, normal_vector, cylindrical_velocity
 
     return grazing_angle

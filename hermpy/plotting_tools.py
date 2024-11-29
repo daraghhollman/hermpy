@@ -2,6 +2,9 @@ import datetime as dt
 
 import matplotlib.dates as mpl_dates
 import matplotlib.pyplot as plt
+import matplotlib.patches
+import matplotlib.axes
+import matplotlib.figure
 import matplotlib.ticker as ticker
 import numpy as np
 
@@ -285,6 +288,84 @@ def Plot_Mercury(
             ax.fill_between(
                 x_coords, y_coords, where=y_coords > 0, color="white", interpolate=True
             )
+
+
+def Format_Cylindrical_Plot(ax: matplotlib.axes.Axes,
+                            size: float = 3,
+                            mercury_style: str = "offset",
+) -> None:
+    """Formats matplotlib axes for use as a cylindrical plot.
+
+    Assumes data is in the MSM' coordinate system.
+
+
+    Parameters
+    ----------
+
+    ax : matplotlib.axes.Axes
+        Matplotlib axes to be formatted
+
+    size : float {3}, optional
+        Defines the limits of the plot.
+            X: (- size, size)
+            Y: (0, 2 * size)
+
+    mercury_style : str {offset, centred}, optional
+        Should Mercury be plotted with the North-South MSM asymmetry in mind?
+        i.e. should two outlines be plotted, offset from each other.
+        Or, should Mercury be plotted centred, as one circle with R=1.
+
+
+    Returns
+    -------
+    None
+    
+    """
+
+    # Set aspect
+    ax.set_aspect("equal")
+
+    # Set limits
+    ax.set_xlim(-size, size)
+    ax.set_ylim(0, 2 * size)
+
+    # Set labels
+    ax.set_xlabel(r"$\text{X}_{\text{MSM'}} \quad \left[ \text{R}_\text{M} \right]$")
+    ax.set_ylabel(r"$\left( \text{Y}_{\text{MSM'}}^2 + \text{Z}_{\text{MSM'}}^2 \right)^{0.5} \quad \left[ \text{R}_\text{M} \right]$")
+
+    # Add Mercury
+    match mercury_style:
+
+        case "offset":
+            Plot_Circle(ax, (0, + Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey")
+            Plot_Circle(ax, (0, - Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey")
+
+        case "centred":
+            Plot_Circle(ax, (0, 0), 1, ec="k", fill=False)
+
+
+def Plot_Circle(ax: matplotlib.axes.Axes,
+                centre: tuple[float, float],
+                radius: float = 1,
+                shade_half: bool = True,
+                shade_colour: str = "grey",
+                **kwargs,
+) -> None:
+
+    if shade_half:
+        w1 = matplotlib.patches.Wedge(centre, radius, 90, 180 + 90, fc=shade_colour, **kwargs)
+        w2 = matplotlib.patches.Wedge(centre, radius, 180 + 90, 90, fc="white", **kwargs)
+
+        ax.add_patch(w1)
+        ax.add_patch(w2)
+
+        return
+
+    else:
+        circle = matplotlib.patches.Circle(centre, radius, **kwargs)
+        ax.add_patch(circle)
+
+        return
 
 
 def Add_Tick_Ephemeris(
