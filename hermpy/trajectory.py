@@ -531,7 +531,7 @@ def Get_Nearest_Apoapsis(
         return apoapsis_time, apoapsis_altitude
 
 
-def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: bool = True, verbose: bool = False):
+def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: bool = False, verbose: bool = False):
     """
     We find the closest position on the Winslow (2013) average BS and MP model
     Assuming any expansion / compression occurs parallel to the normal vector
@@ -635,6 +635,9 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
     # i.e. we could be referencing the normal, or the anti-normal.
 
     if grazing_angle > 90:
+
+        # If the angle is greater than 90 degrees, we have the normal vector
+        # the wrong way around.
         grazing_angle = 180 - grazing_angle
         normal_vector = -normal_vector
 
