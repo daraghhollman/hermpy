@@ -333,6 +333,30 @@ def Format_Cylindrical_Plot(ax: matplotlib.axes.Axes,
     ax.set_xlabel(r"$\text{X}_{\text{MSM'}} \quad \left[ \text{R}_\text{M} \right]$")
     ax.set_ylabel(r"$\left( \text{Y}_{\text{MSM'}}^2 + \text{Z}_{\text{MSM'}}^2 \right)^{0.5} \quad \left[ \text{R}_\text{M} \right]$")
 
+    ax.tick_params(
+        which="major",
+        direction="in",
+        length=20,
+        bottom=True,
+        top=True,
+        left=True,
+        right=True,
+    )
+    ax.tick_params(
+        which="minor",
+        direction="in",
+        length=10,
+        bottom=True,
+        top=True,
+        left=True,
+        right=True,
+    )
+
+    minor_locator = 0.5
+
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(minor_locator))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_locator))
+
     # Add Mercury
     match mercury_style:
 
