@@ -122,6 +122,8 @@ def Load_Between_Dates(
         data = Strip_Data(data, start, end)
 
     if aberrate:
+        if verbose:
+            print("Adding aberrated terms")
         data = Add_Aberrated_Terms(data)
 
     return data
