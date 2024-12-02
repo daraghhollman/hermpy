@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Choose index at which to sample the crossing list
-crossing_index = 1584
+crossing_index = 7000
 
 crossings = boundaries.Load_Crossings(User.CROSSING_LISTS["Philpott"], include_data_gaps=False)
 crossing = crossings.iloc[crossing_index]
@@ -41,9 +41,6 @@ else:
 
 # Compute the grazing angle for this crossing
 grazing_angle, boundary_normal, velocity = traj.Get_Grazing_Angle(crossing, function=boundary_function, return_vectors=True)
-
-print(f"Grazing Angle: {grazing_angle}")
-
 
 # Get trajectory for some time susrounding the crossing
 crossing_time_buffer = dt.timedelta(hours=6)
@@ -95,7 +92,16 @@ ax.arrow(crossing_position[0],
 ax.set_xlim(-2, 2)
 ax.set_ylim(0, 3.6)
 hermplot.Plot_Magnetospheric_Boundaries(ax)
-
 hermplot.Format_Cylindrical_Plot(ax)
+
+ax.annotate(
+    f"Crossing: {crossing['Type']}\nStarting: {crossing['Start Time']}\nGrazing Angle: {grazing_angle:.2f}$^\circ$",
+    xy=(1, 1),
+    xycoords="axes fraction",
+    size=10,
+    ha="right",
+    va="top",
+    bbox=dict(boxstyle="round", fc="w"),
+)
 
 plt.show()
