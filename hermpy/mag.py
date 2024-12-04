@@ -15,7 +15,7 @@ import hermpy.trajectory as trajectory
 from hermpy.utils import Constants
 
 
-def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
+def Load_Messenger(file_paths: list[str], verbose=False, included_columns: set = set()) -> pd.DataFrame:
     """Loads a list of MESSENGER MAG files and combines them into one output
 
     Parameters
@@ -35,7 +35,7 @@ def Load_Messenger(file_paths: list[str], verbose=False) -> pd.DataFrame:
 
     with multiprocessing.Pool() as pool:
         for result in tqdm(pool.imap(Extract_Data, file_paths), total=len(file_paths), desc="Extracting Data", disable=not verbose):
-            multi_file_data.append(result)
+            multi_file_data.append(result[list(included_columns)])
 
     multi_file_data = pd.concat(multi_file_data)
 
@@ -52,6 +52,7 @@ def Load_Between_Dates(
     strip: bool = True,
     aberrate: bool = True,
     verbose: bool = False,
+    included_columns: set = set(),
 ):
     """Automatically finds and loads files between a start and end point
 
@@ -86,6 +87,10 @@ def Load_Between_Dates(
 
         Requires a loaded spice kernel
 
+    included_columns : set, optional
+        A set containing the names of the columns the user wishes to load.
+        Defaults to including everything.
+
     Returns
     -------
     data : pandas.DataFrame
@@ -116,7 +121,36 @@ def Load_Between_Dates(
 
         files_to_load.append(file[0])
 
-    data = Load_Messenger(files_to_load, verbose=verbose)
+
+    if included_columns == set():
+        included_columns = {
+            "date",
+
+            "X MSO (km)",
+            "Y MSO (km)",
+            "Z MSO (km)",
+
+            "X MSO (radii)",
+            "Y MSO (radii)",
+            "Z MSO (radii)",
+
+            "X MSM (km)",
+            "Y MSM (km)",
+            "Z MSM (km)",
+
+            "X MSM (radii)",
+            "Y MSM (radii)",
+            "Z MSM (radii)",
+
+            "range (MSO)",
+
+            "Bx",
+            "By",
+            "Bz",
+            "|B|",
+        }
+
+    data = Load_Messenger(files_to_load, verbose=verbose, included_columns=included_columns)
 
     if strip:
         data = Strip_Data(data, start, end)
