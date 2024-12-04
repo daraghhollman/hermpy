@@ -532,13 +532,47 @@ def Get_Nearest_Apoapsis(
 
 
 def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: bool = False, verbose: bool = False):
-    """
+    """Determine the grazing angle for a given boundary crossing
+
+    We determine the grazing angle by comparing the velocity vector of
+    MESSENGER, to the surface normal of the boundary for that crossing. The
+    surface normal is determined in the following way:
+
     We find the closest position on the Winslow (2013) average BS and MP model
     Assuming any expansion / compression occurs parallel to the normal vector
-    of the curve, the vector to the closest point on the bow shock to MESSENGER
-    is parallel with the bow shock normal at that closest point
+    of the curve, the vector to the closest point on the BS / MP to MESSENGER
+    is parallel with the bow shock normal at that closest point.
 
-    We then compare this vector, with the velocity vector of the spacecraft.
+    These two vectors are determined in the MSM' cylindrical coordinate system
+    (X MSM', sqrt( (Y MSM')^2 + (Z MSM')^2 )).
+
+
+    Parameters
+    ----------
+    crossing : pandas.core.series.Series
+        Crossing object as loaded using
+        hermpy.boundary_crossings.Load_Crossings()
+
+        Must contain columns matching:
+        'Start Time'
+        'End Time'
+        'Type'
+
+    function : str {bow shock, magnetopause}
+        Which boundary function to compare against
+
+    return_vectors : bool {False, True}, optional
+        Returns also the normal and velocity vectors along with the
+        grazing angle.
+
+    verbose : bool {False, True}, optional
+        Prints extra information to terminal
+
+
+    Returns
+    -------
+    grazing_angle : float
+        The grazing angle in degrees for that crossing
     """
 
     start_position = (
@@ -572,7 +606,6 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
 
     match function:
         case "bow shock":
-            # Winslow+ (2013) parameters
             initial_x = 0.5
             psi = 1.04
             p = 2.75
@@ -591,9 +624,7 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
             ).T
 
         case "magnetopause":
-            # Winslow+ (2013) parameters
-
-            sub_solar_point = 1.45  # radii
+            sub_solar_point = 1.45
             alpha = 0.5
 
             phi = np.linspace(0, 2 * np.pi, 10000)
@@ -611,15 +642,18 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
             raise ValueError( f"Invalid function choice: {function}. Options are 'bow shock', 'magnetopause'.")
 
 
-    # This is setup is faster than iterrating through the points.
+    # We need to determine which point on the boundary curve is closest to the spacecraft
+    # This method, utilising a k-d tree is computationally faster than iterrating through
+    # the points and determining the distance.
     # O(logN) vs O(N)
     kd_tree = scipy.spatial.KDTree(boundary_positions)
     
-    _, index = kd_tree.query(cylindrical_start_position)
-    closest_position = index
+    _, closest_position = kd_tree.query(cylindrical_start_position)
 
     # Get the normal vector of the BS at this point
-    # This is just the normalised vector between the spacecraft and the closest point
+    # This is just the normalised vector between the spacecraft and the closest point,
+    # as the vector between an arbitrary point and the closest point on an arbitrary
+    # curve is parallel to the normal vector of that curve at that closest point.
     normal_vector = boundary_positions[closest_position] - cylindrical_start_position
 
     normal_vector = normal_vector / np.sqrt(np.sum(normal_vector**2))
@@ -633,11 +667,9 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
     # If the grazing angle is greater than 90, then we take 180 - angle as its from the other side
     # This occurs as we don't make an assumption as to what side of the model boundary we are.
     # i.e. we could be referencing the normal, or the anti-normal.
-
     if grazing_angle > 90:
-
         # If the angle is greater than 90 degrees, we have the normal vector
-        # the wrong way around.
+        # the wrong way around. i.e. the inward pointing normal.
         grazing_angle = 180 - grazing_angle
         normal_vector = -normal_vector
 
