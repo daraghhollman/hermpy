@@ -8,7 +8,9 @@ import matplotlib.figure
 import matplotlib.ticker as ticker
 import numpy as np
 
-from .utils import Constants
+import spiceypy as spice
+
+from .utils import User, Constants
 
 
 def Plot_Magnetospheric_Boundaries(
@@ -417,106 +419,107 @@ def Add_Tick_Ephemeris(
     tick_locations = ax.get_xticks()
 
     new_tick_labels = []
-    for loc in tick_locations:
-        # Matplotlib stores dates as days since 1970-01-01T00:00:00
-        # source: https://matplotlib.org/stable/gallery/text_labels_and_annotations/date.html
-        # This can be converted to a datetime object
-        date = mpl_dates.num2date(loc)
+    with spice.KernelPool(User.METAKERNEL): 
+        for loc in tick_locations:
+            # Matplotlib stores dates as days since 1970-01-01T00:00:00
+            # source: https://matplotlib.org/stable/gallery/text_labels_and_annotations/date.html
+            # This can be converted to a datetime object
+            date = mpl_dates.num2date(loc)
 
-        tick_format: str = ""
+            tick_format: str = ""
 
+            if "date" in include:
+                tick_format += date.strftime("%Y-%m-%d")
+
+            if "hours" in include:
+                tick_format += "\n" + date.strftime("%H")
+            if "minutes" in include:
+                tick_format += date.strftime(":%M")
+            if "seconds" in include:
+                tick_format += date.strftime(":%S")
+
+            if "range" in include:
+                position = trajectory.Get_Position("MESSENGER", date)
+                distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+                # Convert from km to radii
+                distance /= Constants.MERCURY_RADIUS_KM
+
+                tick_format += "\n" + f"{distance:.2f}"
+
+            if "longitude" in include:
+                position = trajectory.Get_Position("MESSENGER", date)
+
+                longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
+
+                if longitude < 0:
+                    longitude += 360
+
+                tick_format += "\n" + f"{longitude:.2f}"
+
+            if "latitude" in include:
+                position = trajectory.Get_Position("MESSENGER", date)
+
+                latitude = np.arctan2(
+                    position[2], np.sqrt(position[0] ** 2 + position[1] ** 2)
+                )
+
+                # convert from radians to degrees
+                latitude *= 180 / np.pi
+
+                tick_format += "\n" + f"{latitude:.2f}"
+
+            if "MLat" in include:
+                position = trajectory.Get_Position("MESSENGER", date)
+
+                mlat = np.arctan2(
+                    position[2] - Constants.DIPOLE_OFFSET_KM, np.sqrt(position[0] ** 2 + position[1] ** 2)
+                )
+
+                # convert from radians to degrees
+                mlat *= 180 / np.pi
+
+                tick_format += "\n" + f"{mlat:.2f}"
+
+            if "local time" in include:
+                position = trajectory.Get_Position("MESSENGER", date)
+
+                longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
+
+                if longitude < 0:
+                    longitude += 360
+
+                local_time = ((longitude + 180) * 24 / 360) % 24
+                hours = int(local_time)
+                minutes = int((local_time * 60) % 60)
+                datetime = dt.datetime(year=1, month=1, day=1, hour=hours, minute=minutes)
+                tick_format += "\n" + f"{datetime:%H:%M}"
+
+            new_tick_labels.append(tick_format)
+
+        first_tick_format: str = ""
         if "date" in include:
-            tick_format += date.strftime("%Y-%m-%d")
+            first_tick_format += "YYYY-MM-DD"
 
         if "hours" in include:
-            tick_format += "\n" + date.strftime("%H")
+            first_tick_format += "\nHH"
         if "minutes" in include:
-            tick_format += date.strftime(":%M")
+            first_tick_format += ":MM"
         if "seconds" in include:
-            tick_format += date.strftime(":%S")
+            first_tick_format += ":SS"
 
         if "range" in include:
-            position = trajectory.Get_Position("MESSENGER", date)
-            distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
-            # Convert from km to radii
-            distance /= Constants.MERCURY_RADIUS_KM
-
-            tick_format += "\n" + f"{distance:.2f}"
+            first_tick_format += "\n" + r"$R_{\text{MSO}}$ [$R_\text{M}$]"
 
         if "longitude" in include:
-            position = trajectory.Get_Position("MESSENGER", date)
-
-            longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
-
-            if longitude < 0:
-                longitude += 360
-
-            tick_format += "\n" + f"{longitude:.2f}"
-
+            first_tick_format += "\nLon. " + r"[$^\circ$]"
         if "latitude" in include:
-            position = trajectory.Get_Position("MESSENGER", date)
-
-            latitude = np.arctan2(
-                position[2], np.sqrt(position[0] ** 2 + position[1] ** 2)
-            )
-
-            # convert from radians to degrees
-            latitude *= 180 / np.pi
-
-            tick_format += "\n" + f"{latitude:.2f}"
-
+            first_tick_format += "\nLat. " + r"[$^\circ$]"
         if "MLat" in include:
-            position = trajectory.Get_Position("MESSENGER", date)
-
-            mlat = np.arctan2(
-                position[2] - Constants.DIPOLE_OFFSET_KM, np.sqrt(position[0] ** 2 + position[1] ** 2)
-            )
-
-            # convert from radians to degrees
-            mlat *= 180 / np.pi
-
-            tick_format += "\n" + f"{mlat:.2f}"
+            first_tick_format += "\nMLat. " + r"[$^\circ$]"
 
         if "local time" in include:
-            position = trajectory.Get_Position("MESSENGER", date)
+            first_tick_format += "\nLT"
 
-            longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
+        new_tick_labels[0] = first_tick_format
 
-            if longitude < 0:
-                longitude += 360
-
-            local_time = ((longitude + 180) * 24 / 360) % 24
-            hours = int(local_time)
-            minutes = int((local_time * 60) % 60)
-            datetime = dt.datetime(year=1, month=1, day=1, hour=hours, minute=minutes)
-            tick_format += "\n" + f"{datetime:%H:%M}"
-
-        new_tick_labels.append(tick_format)
-
-    first_tick_format: str = ""
-    if "date" in include:
-        first_tick_format += "YYYY-MM-DD"
-
-    if "hours" in include:
-        first_tick_format += "\nHH"
-    if "minutes" in include:
-        first_tick_format += ":MM"
-    if "seconds" in include:
-        first_tick_format += ":SS"
-
-    if "range" in include:
-        first_tick_format += "\n" + r"$R_{\text{MSO}}$ [$R_\text{M}$]"
-
-    if "longitude" in include:
-        first_tick_format += "\nLon. " + r"[$^\circ$]"
-    if "latitude" in include:
-        first_tick_format += "\nLat. " + r"[$^\circ$]"
-    if "MLat" in include:
-        first_tick_format += "\nMLat. " + r"[$^\circ$]"
-
-    if "local time" in include:
-        first_tick_format += "\nLT"
-
-    new_tick_labels[0] = first_tick_format
-
-    ax.set_xticks(tick_locations, new_tick_labels)
+        ax.set_xticks(tick_locations, new_tick_labels)
