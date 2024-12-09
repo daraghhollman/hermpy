@@ -315,7 +315,7 @@ def Remove_Spikes(
 
     for peak_index in peaks:
         for component in components:
-            data.iloc[peak_index - padding : peak_index + padding][component] = np.nan
+            data[component].iloc[peak_index - padding : peak_index + padding] = np.nan
 
     return
 
