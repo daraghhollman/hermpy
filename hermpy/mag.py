@@ -17,7 +17,10 @@ from hermpy.utils import Constants
 
 
 def Load_Messenger(
-    file_paths: list[str], verbose=False, included_columns: set = set()
+    file_paths: list[str],
+    verbose=False,
+    included_columns: set = set(),
+    multiprocess: bool = False,
 ) -> pd.DataFrame:
     """Loads a list of MESSENGER MAG files and combines them into one output
 
@@ -36,14 +39,24 @@ def Load_Messenger(
     multi_file_data = []
     # Load and concatonate into one dataframe
 
-    with multiprocessing.Pool() as pool:
-        for result in tqdm(
-            pool.imap(Extract_Data, file_paths),
+    if multiprocess:
+        with multiprocessing.Pool() as pool:
+            for result in tqdm(
+                pool.imap(Extract_Data, file_paths),
+                total=len(file_paths),
+                desc="Extracting Data",
+                disable=not verbose,
+            ):
+                multi_file_data.append(result[list(included_columns)])
+
+    else:
+        for path in tqdm(
+            file_paths,
             total=len(file_paths),
             desc="Extracting Data",
             disable=not verbose,
         ):
-            multi_file_data.append(result[list(included_columns)])
+            multi_file_data.append(Extract_Data(path)[list(included_columns)])
 
     multi_file_data = pd.concat(multi_file_data)
 
@@ -61,6 +74,7 @@ def Load_Between_Dates(
     aberrate: bool = True,
     verbose: bool = False,
     included_columns: set = set(),
+    multiprocess: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
 
@@ -159,7 +173,10 @@ def Load_Between_Dates(
         }
 
     data = Load_Messenger(
-        files_to_load, verbose=verbose, included_columns=included_columns
+        files_to_load,
+        verbose=verbose,
+        included_columns=included_columns,
+        multiprocess=multiprocess,
     )
 
     if strip:
