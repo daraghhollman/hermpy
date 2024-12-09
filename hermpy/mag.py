@@ -9,13 +9,16 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+import scipy.signal
 from tqdm import tqdm
 
 import hermpy.trajectory as trajectory
 from hermpy.utils import Constants
 
 
-def Load_Messenger(file_paths: list[str], verbose=False, included_columns: set = set()) -> pd.DataFrame:
+def Load_Messenger(
+    file_paths: list[str], verbose=False, included_columns: set = set()
+) -> pd.DataFrame:
     """Loads a list of MESSENGER MAG files and combines them into one output
 
     Parameters
@@ -34,7 +37,12 @@ def Load_Messenger(file_paths: list[str], verbose=False, included_columns: set =
     # Load and concatonate into one dataframe
 
     with multiprocessing.Pool() as pool:
-        for result in tqdm(pool.imap(Extract_Data, file_paths), total=len(file_paths), desc="Extracting Data", disable=not verbose):
+        for result in tqdm(
+            pool.imap(Extract_Data, file_paths),
+            total=len(file_paths),
+            desc="Extracting Data",
+            disable=not verbose,
+        ):
             multi_file_data.append(result[list(included_columns)])
 
     multi_file_data = pd.concat(multi_file_data)
@@ -107,7 +115,12 @@ def Load_Between_Dates(
     ]
 
     files_to_load: list[str] = []
-    for date in tqdm(dates_to_load, total=len(dates_to_load), desc="Loading Files", disable= not verbose):
+    for date in tqdm(
+        dates_to_load,
+        total=len(dates_to_load),
+        desc="Loading Files",
+        disable=not verbose,
+    ):
         file: list[str] = glob(
             root_dir
             + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
@@ -116,41 +129,38 @@ def Load_Between_Dates(
         if len(file) > 1:
             raise ValueError("ERROR: There are duplicate data files being loaded.")
         elif len(file) == 0:
-            warnings.warn(f"WARNING: The data trying to be loaded doesn't exist at filepath: {f'{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB'}")
+            warnings.warn(
+                f"WARNING: The data trying to be loaded doesn't exist at filepath: {f'{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB'}"
+            )
             continue
 
         files_to_load.append(file[0])
 
-
     if included_columns == set():
         included_columns = {
             "date",
-
             "X MSO (km)",
             "Y MSO (km)",
             "Z MSO (km)",
-
             "X MSO (radii)",
             "Y MSO (radii)",
             "Z MSO (radii)",
-
             "X MSM (km)",
             "Y MSM (km)",
             "Z MSM (km)",
-
             "X MSM (radii)",
             "Y MSM (radii)",
             "Z MSM (radii)",
-
             "range (MSO)",
-
             "Bx",
             "By",
             "Bz",
             "|B|",
         }
 
-    data = Load_Messenger(files_to_load, verbose=verbose, included_columns=included_columns)
+    data = Load_Messenger(
+        files_to_load, verbose=verbose, included_columns=included_columns
+    )
 
     if strip:
         data = Strip_Data(data, start, end)
@@ -161,6 +171,7 @@ def Load_Between_Dates(
         data = Add_Aberrated_Terms(data)
 
     return data
+
 
 def Extract_Data(path):
     # Read file
@@ -194,33 +205,31 @@ def Extract_Data(path):
             "X MSO (km)": ephemeris[0],
             "Y MSO (km)": ephemeris[1],
             "Z MSO (km)": ephemeris[2],
-
             "X MSO (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
             "Y MSO (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
             "Z MSO (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
-
             "X MSM (km)": ephemeris[0],
             "Y MSM (km)": ephemeris[1],
             "Z MSM (km)": ephemeris[2] - Constants.DIPOLE_OFFSET_KM,
-
             "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
             "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
-            "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM) - Constants.DIPOLE_OFFSET_RADII,
-
+            "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM)
+            - Constants.DIPOLE_OFFSET_RADII,
             "range (MSO)": np.sqrt(
                 ephemeris[0] ** 2 + ephemeris[1] ** 2 + ephemeris[2] ** 2
-            ) / Constants.MERCURY_RADIUS_KM,
-
+            )
+            / Constants.MERCURY_RADIUS_KM,
             "Bx": magnetic_field[0],
             "By": magnetic_field[1],
             "Bz": magnetic_field[2],
-            "|B|": np.sqrt( magnetic_field[0] ** 2
-                   + magnetic_field[1] ** 2
-                   + magnetic_field[2] ** 2),
+            "|B|": np.sqrt(
+                magnetic_field[0] ** 2 + magnetic_field[1] ** 2 + magnetic_field[2] ** 2
+            ),
         }
     )
 
     return df
+
 
 def Strip_Data(
     data: pd.DataFrame, start: dt.datetime, end: dt.datetime
@@ -255,18 +264,24 @@ def Strip_Data(
     return stripped_data
 
 
-def Remove_Spikes(data: pd.DataFrame, threshold: int = 1_000) -> None:
-    """Removes non-physical large spikes (> 1 μT) in the data
+def Remove_Spikes(
+    data: pd.DataFrame, threshold: int = 10_000, padding: int = 90
+) -> None:
+    """Removes non-physical large spikes in the data
 
-    Replaces values above 1,000 nT with np.nan
+    Replaces values surrounding peaks above 10,000 nT with np.nan
 
     Parameters
     ----------
     data : pandas.DataFrame
         Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
 
-    threshold : float {1,000} optional,
+    threshold : int {10,000}, optional
         Threshold at which to start removing values.
+
+    padding : int {90}, optional
+        The number of seconds padding on the peak of the data spike.
+        From observations, no less than 60 seconds should be used here.
 
 
     Returns
@@ -278,9 +293,12 @@ def Remove_Spikes(data: pd.DataFrame, threshold: int = 1_000) -> None:
 
     components = ["|B|", "Bx", "By", "Bz"]
 
-    for component in components:
+    # First find the peaks in the data
+    peaks, _ = scipy.signal.find_peaks(data["|B|"], height=threshold, distance=padding)
 
-        data.loc[abs(data[component]) > threshold, component] = np.nan
+    for peak_index in peaks:
+        for component in components:
+            data.iloc[peak_index - padding : peak_index + padding][component] = np.nan
 
     return
 
@@ -365,8 +383,10 @@ def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
     # Find only unique days
     unique_dates = data["date"].dt.floor("D").unique()
     # Precompute aberration angles as dictionary
-    aberration_angles = {date: trajectory.Get_Aberration_Angle(date) for date in unique_dates}
-    
+    aberration_angles = {
+        date: trajectory.Get_Aberration_Angle(date) for date in unique_dates
+    }
+
     # Map aberration angles back to the dataframe
     data["Aberration Angle"] = data["date"].dt.floor("D").map(aberration_angles)
 
@@ -380,13 +400,21 @@ def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
     data["Bz'"] = data["Bz"]
 
     # Rotate ephemeris coordinates in kilometers
-    data["X MSM' (km)"] = data["X MSM (km)"] * cos_terms - data["Y MSM (km)"] * sin_terms
-    data["Y MSM' (km)"] = data["X MSM (km)"] * sin_terms + data["Y MSM (km)"] * cos_terms
+    data["X MSM' (km)"] = (
+        data["X MSM (km)"] * cos_terms - data["Y MSM (km)"] * sin_terms
+    )
+    data["Y MSM' (km)"] = (
+        data["X MSM (km)"] * sin_terms + data["Y MSM (km)"] * cos_terms
+    )
     data["Z MSM' (km)"] = data["Z MSM (km)"]
 
     # Rotate ephemeris coordinates in radii
-    data["X MSM' (radii)"] = data["X MSM (radii)"] * cos_terms - data["Y MSM (radii)"] * sin_terms
-    data["Y MSM' (radii)"] = data["X MSM (radii)"] * sin_terms + data["Y MSM (radii)"] * cos_terms
+    data["X MSM' (radii)"] = (
+        data["X MSM (radii)"] * cos_terms - data["Y MSM (radii)"] * sin_terms
+    )
+    data["Y MSM' (radii)"] = (
+        data["X MSM (radii)"] * sin_terms + data["Y MSM (radii)"] * cos_terms
+    )
     data["Z MSM' (radii)"] = data["Z MSM (radii)"]
 
     return data
