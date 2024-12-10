@@ -282,7 +282,7 @@ def Strip_Data(
 
 
 def Remove_Spikes(
-    data: pd.DataFrame, threshold: int = 10_000, padding: int = 90
+    data: pd.DataFrame, threshold: int = 10_000, padding: int = 120
 ) -> None:
     """Removes non-physical large spikes in the data
 
@@ -311,11 +311,11 @@ def Remove_Spikes(
     components = ["|B|", "Bx", "By", "Bz"]
 
     # First find the peaks in the data
-    peaks, _ = scipy.signal.find_peaks(data["|B|"], height=threshold, distance=padding)
+    peaks, _ = scipy.signal.find_peaks(data["|B|"], height=threshold, distance=padding / 2)
 
     for peak_index in peaks:
         for component in components:
-            data[component].iloc[peak_index - padding : peak_index + padding] = np.nan
+            data.loc[peak_index - padding : peak_index + padding, component] = np.nan
 
     return
 
