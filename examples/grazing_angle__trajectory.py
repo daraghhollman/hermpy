@@ -5,9 +5,9 @@ Script to take an input crossing from a crossing list, plot the surrouding traje
 import datetime as dt
 
 from hermpy.utils import User, Constants
-import hermpy.boundary_crossings as boundaries
+import hermpy.boundaries as boundaries
 import hermpy.trajectory as traj
-import hermpy.plotting_tools as hermplot
+import hermpy.plotting as hermplot
 import hermpy.mag as mag
 
 import matplotlib.pyplot as plt

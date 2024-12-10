@@ -10,7 +10,7 @@ import numpy as np
 
 import spiceypy as spice
 
-from .utils import User, Constants
+from hermpy.utils import User, Constants
 
 
 def Plot_Magnetospheric_Boundaries(

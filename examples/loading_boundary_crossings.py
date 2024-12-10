@@ -4,13 +4,12 @@ import spiceypy as spice
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from hermpy import boundary_crossings, mag, plotting_tools
+from hermpy import boundaries, mag, plotting
 
 mpl.rcParams["font.size"] = 14
 
 
-#sun_crossings = boundary_crossings.Load_Crossings("../../sun_crossings.p")
-philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
+philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
 
 
 ### This section as shown in mag_example.py
@@ -35,13 +34,13 @@ ax.tick_params(which="major", direction="out", length=16, width=1.5)
 ax.tick_params(which="minor", direction="out", length=8, width=1)
 
 # Plotting crossing intervals as axvlines
-boundary_crossings.Plot_Crossing_Intervals(ax, start, end, philpott_crossings)
+boundaries.Plot_Crossing_Intervals(ax, start, end, philpott_crossings)
 
 # Plotting ephemeris information
 # We need a metakernel to retrieve ephemeris information
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
-plotting_tools.Add_Tick_Ephemeris(ax, include={
+plotting.Add_Tick_Ephemeris(ax, include={
     "date", "hours", "minutes", "range", "latitude", "local time" 
 })
 

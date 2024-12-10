@@ -3,17 +3,16 @@ import datetime as dt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from glob import glob
 import spiceypy as spice
 
-from hermpy import mag, plotting_tools, trajectory, boundary_crossings
+from hermpy import mag, plotting, trajectory, boundaries
 
 mpl.rcParams["font.size"] = 14
 
 
 ###################### MAG #########################
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
-philpott_crossings = boundary_crossings.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
+philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
 
 # We need a metakernel to retrieve ephemeris information
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
@@ -57,13 +56,13 @@ for i, ax in enumerate(mag_axes):
     ax.tick_params("x", which="minor", direction="inout", length=8, width=0.8)
 
     # Plotting crossing intervals as axvlines
-    boundary_crossings.Plot_Crossing_Intervals(ax, start, end, philpott_crossings, label=True)
+    boundaries.Plot_Crossing_Intervals(ax, start, end, philpott_crossings, label=True)
 
     ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(10))
 
 
 # Plotting ephemeris information to the last panel
-plotting_tools.Add_Tick_Ephemeris(
+plotting.Add_Tick_Ephemeris(
     mag_axes[-1],
     include={"date", "hours", "minutes", "range", "latitude", "local time"},
 )
@@ -108,12 +107,12 @@ trajectory_axes[2].plot(padded_positions[:, 1], padded_positions[:, 2], color="g
 
 planes = ["xy", "xz", "yz"]
 for i, ax in enumerate(trajectory_axes):
-    plotting_tools.Plot_Mercury(
+    plotting.Plot_Mercury(
         ax, shaded_hemisphere="left", plane=planes[i], frame=frame
     )
-    plotting_tools.Add_Labels(ax, planes[i], frame=frame, aberrate=True)
-    plotting_tools.Plot_Magnetospheric_Boundaries(ax, plane=planes[i], add_legend=True)
-    plotting_tools.Square_Axes(ax, 4)
+    plotting.Add_Labels(ax, planes[i], frame=frame)
+    plotting.Plot_Magnetospheric_Boundaries(ax, plane=planes[i], add_legend=True)
+    plotting.Square_Axes(ax, 4)
 
 trajectory_axes[1].legend(bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5)
 

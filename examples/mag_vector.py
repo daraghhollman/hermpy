@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import spiceypy as spice
 
 import hermpy.mag as mag
-import hermpy.boundary_crossings as boundaries
+import hermpy.boundaries as boundaries
 import hermpy.plotting_tools as hermplot
 
 # Define some paths we'll need later

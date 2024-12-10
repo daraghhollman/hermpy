@@ -7,7 +7,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import spiceypy as spice
 
-from hermpy import boundary_crossings, mag, plotting_tools, trajectory, utils
+from hermpy import boundaries, mag, plotting, trajectory, utils
 
 mpl.rcParams["font.size"] = 18
 
@@ -20,7 +20,7 @@ root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
 
-philpott_crossings = boundary_crossings.Load_Crossings(
+philpott_crossings = boundaries.Load_Crossings(
     "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
 )
 
@@ -151,7 +151,7 @@ for i, orbit_data in enumerate(data_groups):
         transform=ax.transAxes,
     )
 
-    boundary_crossings.Plot_Crossings_As_Minutes_Before(
+    boundaries.Plot_Crossings_As_Minutes_Before(
         ax,
         philpott_crossings,
         orbit_data["date"].iloc[0],
@@ -234,12 +234,12 @@ trajectory_axes[2].plot(padded_positions[:, 1], padded_positions[:, 2], color="g
 planes = ["xy", "xz", "yz"]
 shaded = ["left", "left", "none"]
 for i, ax in enumerate(trajectory_axes):
-    plotting_tools.Plot_Mercury(
+    plotting.Plot_Mercury(
         ax, shaded_hemisphere=shaded[i], plane=planes[i], frame=frame
     )
-    plotting_tools.Add_Labels(ax, planes[i], frame=frame, aberrate=True)
-    plotting_tools.Plot_Magnetospheric_Boundaries(ax, plane=planes[i], add_legend=True)
-    plotting_tools.Square_Axes(ax, 4)
+    plotting.Add_Labels(ax, planes[i], frame=frame)
+    plotting.Plot_Magnetospheric_Boundaries(ax, plane=planes[i], add_legend=True)
+    plotting.Square_Axes(ax, 4)
 
 trajectory_axes[1].legend(
     bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5

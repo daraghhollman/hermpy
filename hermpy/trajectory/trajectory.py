@@ -5,11 +5,10 @@ import numpy as np
 import scipy.signal
 import scipy.spatial
 import spiceypy as spice
-from tqdm import tqdm
 
 import hermpy.trajectory as traj
 
-from .utils import Constants, User
+from hermpy.utils import Constants, User
 
 
 def Get_Heliocentric_Distance(date: dt.datetime | dt.date) -> float:
@@ -551,7 +550,7 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
     ----------
     crossing : pandas.core.series.Series
         Crossing object as loaded using
-        hermpy.boundary_crossings.Load_Crossings()
+        hermpy.boundaries.Load_Crossings()
 
         Must contain columns matching:
         'Start Time'

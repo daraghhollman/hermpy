@@ -2,7 +2,7 @@ import datetime as dt
 
 import matplotlib.pyplot as plt
 
-from hermpy import mag, plotting_tools, boundary_crossings
+from hermpy import mag, plotting
 
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 
@@ -24,6 +24,6 @@ ax.set_ylabel("|B|")
 
 # Plotting ephemeris information
 # We need a metakernel to retrieve ephemeris information
-plotting_tools.Add_Tick_Ephemeris(ax)
+plotting.Add_Tick_Ephemeris(ax)
 
 plt.show()
