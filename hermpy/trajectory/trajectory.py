@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import Iterable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +8,6 @@ import scipy.spatial
 import spiceypy as spice
 
 import hermpy.trajectory as traj
-
 from hermpy.utils import Constants, User
 
 
@@ -64,14 +64,21 @@ def Latitude(position: list[float]) -> float:
 
 def Magnetic_Latitude(position: list[float]) -> float:
 
-    magnetic_latitude = np.arctan2(position[2] - Constants.DIPOLE_OFFSET_RADII,
-                                   np.sqrt(position[0] ** 2 + position[1] ** 2))
+    magnetic_latitude = np.arctan2(
+        position[2] - Constants.DIPOLE_OFFSET_RADII,
+        np.sqrt(position[0] ** 2 + position[1] ** 2),
+    )
     magnetic_latitude = Constants.RADIANS_TO_DEGREES(magnetic_latitude)
 
     return magnetic_latitude
 
 
-def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrate=True):
+def Get_Position(
+    spacecraft: str,
+    date: dt.datetime | Iterable[dt.datetime],
+    frame: str = "MSO",
+    aberrate=True,
+):
     """Returns spacecraft position at a given time
 
     Uses SPICE to find the position of an input spacecraft
@@ -97,7 +104,15 @@ def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrat
     """
 
     with spice.KernelPool(User.METAKERNEL):
-        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+
+        if type(date) == dt.datetime:
+            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+
+        elif type(date) == list:
+            et = spice.datetime2et(date)
+
+        else:
+            raise ValueError("Input date of incorrect type!")
 
         # There are data gaps in the kernels?
         # We need to test for this
@@ -112,7 +127,27 @@ def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrat
                     position[2] -= Constants.DIPOLE_OFFSET_KM
 
             if aberrate:
-                position = Aberrate_Position(position, date.date())
+                if isinstance(date, Iterable):
+                    # Precompute aberration angles
+                    aberration_angles = np.array(
+                        [Get_Aberration_Angle(date.date()) for date in date]
+                    )
+
+                    # Create rotation matrices
+                    cos_angles = np.cos(aberration_angles)
+                    sin_angles = np.sin(aberration_angles)
+
+                    rotation_matrices = np.array(
+                        [
+                            [[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]]
+                            for cos, sin in zip(cos_angles, sin_angles)
+                        ]
+                    )
+
+                    position = np.einsum("ijk,ik->ij", rotation_matrices, position)
+
+                elif isinstance(date, dt.datetime):
+                    position = Aberrate_Position(position, date.date())
 
             return position
 
@@ -122,7 +157,7 @@ def Get_Position(spacecraft: str, date: dt.datetime, frame: str = "MSO", aberrat
 
 def Get_Trajectory(
     spacecraft: str,
-    dates: list[dt.datetime],
+    dates: Iterable[dt.datetime],
     steps: int = 100,
     frame: str = "MSM",
     aberrate: bool = True,
@@ -172,27 +207,32 @@ def Get_Trajectory(
     with spice.KernelPool(User.METAKERNEL):
 
         dates = [dates[0] + (t * (dates[1] - dates[0]) / steps) for t in range(steps)]
-        spice_times = spice.str2et([date.strftime("%Y-%m-%d %H:%M:%S") for date in dates])
+        spice_times = spice.str2et(
+            [date.strftime("%Y-%m-%d %H:%M:%S") for date in dates]
+        )
 
-        positions, _ = spice.spkpos(spacecraft, spice_times, "BC_MSO", "NONE", "MERCURY")
+        positions, _ = spice.spkpos(
+            spacecraft, spice_times, "BC_MSO", "NONE", "MERCURY"
+        )
 
         if aberrate:
             # Precompute aberration angles
-            aberration_angles = np.array([Get_Aberration_Angle(date.date()) for date in dates])
+            aberration_angles = np.array(
+                [Get_Aberration_Angle(date.date()) for date in dates]
+            )
 
             # Create rotation matrices
             cos_angles = np.cos(aberration_angles)
             sin_angles = np.sin(aberration_angles)
 
-            rotation_matrices = np.array([
-                [[cos, -sin, 0],
-                 [sin,  cos, 0],
-                 [0,      0, 1]]
-                for cos, sin in zip(cos_angles, sin_angles)
-            ])
+            rotation_matrices = np.array(
+                [
+                    [[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]]
+                    for cos, sin in zip(cos_angles, sin_angles)
+                ]
+            )
 
-
-            positions = np.einsum('ijk,ik->ij', rotation_matrices, positions)
+            positions = np.einsum("ijk,ik->ij", rotation_matrices, positions)
 
         match frame:
             case "MSO":
@@ -205,7 +245,9 @@ def Get_Trajectory(
         return positions
 
 
-def Aberrate_Position(position: list[float], date: dt.datetime | dt.date, verbose=False):
+def Aberrate_Position(
+    position: list[float], date: dt.datetime | dt.date, verbose=False
+):
     """Rotate the spacecraft coordinates into the aberrated coordinate system.
 
 
@@ -265,7 +307,9 @@ def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
     """
 
     if type(date) == dt.datetime:
-        mercury_distance = Get_Heliocentric_Distance(date.date()) * 1000 # convert to meters
+        mercury_distance = (
+            Get_Heliocentric_Distance(date.date()) * 1000
+        )  # convert to meters
 
     else:
         mercury_distance = Get_Heliocentric_Distance(date) * 1000
@@ -280,11 +324,10 @@ def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
     # Aberration angle is related to the orbital velocity and the solar wind speed
     # Solar wind speed is assumed to be 400 km/s
     # Angle is minus as y in the coordinate system points away from the orbital velocity
-    aberration_angle = np.arctan(
-        orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG
-    )
+    aberration_angle = np.arctan(orbital_velocity / Constants.SOLAR_WIND_SPEED_AVG)
 
     return aberration_angle
+
 
 def Get_Range_From_Date(
     spacecraft: str, dates: list[dt.datetime] | dt.datetime
@@ -530,7 +573,12 @@ def Get_Nearest_Apoapsis(
         return apoapsis_time, apoapsis_altitude
 
 
-def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: bool = False, verbose: bool = False):
+def Get_Grazing_Angle(
+    crossing,
+    function: str = "bow shock",
+    return_vectors: bool = False,
+    verbose: bool = False,
+):
     """Determine the grazing angle for a given boundary crossing
 
     We determine the grazing angle by comparing the velocity vector of
@@ -577,7 +625,8 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
     start_position = (
         traj.Get_Position(
             "MESSENGER",
-            crossing["Start Time"] + (crossing["End Time"] - crossing["Start Time"]) / 2,
+            crossing["Start Time"]
+            + (crossing["End Time"] - crossing["Start Time"]) / 2,
             frame="MSM",
             aberrate=True,
         )
@@ -587,21 +636,26 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
     next_position = (
         traj.Get_Position(
             "MESSENGER",
-            crossing["Start Time"] + (crossing["End Time"] - crossing["Start Time"]) / 2
-                                   + dt.timedelta(seconds=1),
+            crossing["Start Time"]
+            + (crossing["End Time"] - crossing["Start Time"]) / 2
+            + dt.timedelta(seconds=1),
             frame="MSM",
             aberrate=True,
         )
         / Constants.MERCURY_RADIUS_KM
     )
 
-    cylindrical_start_position = np.array([start_position[0], np.sqrt(start_position[1] ** 2 + start_position[2] ** 2)])
-    cylindrical_next_position = np.array([next_position[0], np.sqrt(next_position[1] ** 2 + next_position[2] ** 2)])
+    cylindrical_start_position = np.array(
+        [start_position[0], np.sqrt(start_position[1] ** 2 + start_position[2] ** 2)]
+    )
+    cylindrical_next_position = np.array(
+        [next_position[0], np.sqrt(next_position[1] ** 2 + next_position[2] ** 2)]
+    )
 
     cylindrical_velocity = cylindrical_next_position - cylindrical_start_position
 
     # normalise velocity
-    cylindrical_velocity /= np.sqrt( np.sum(cylindrical_velocity ** 2) )
+    cylindrical_velocity /= np.sqrt(np.sum(cylindrical_velocity**2))
 
     match function:
         case "bow shock":
@@ -618,9 +672,7 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
             bow_shock_x_coords = initial_x + rho * np.cos(phi)
             bow_shock_r_coords = rho * np.sin(phi)
 
-            boundary_positions = np.array(
-                [bow_shock_x_coords, bow_shock_r_coords]
-            ).T
+            boundary_positions = np.array([bow_shock_x_coords, bow_shock_r_coords]).T
 
         case "magnetopause":
             sub_solar_point = 1.45
@@ -638,15 +690,16 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
             ).T
 
         case _:
-            raise ValueError( f"Invalid function choice: {function}. Options are 'bow shock', 'magnetopause'.")
-
+            raise ValueError(
+                f"Invalid function choice: {function}. Options are 'bow shock', 'magnetopause'."
+            )
 
     # We need to determine which point on the boundary curve is closest to the spacecraft
     # This method, utilising a k-d tree is computationally faster than iterrating through
     # the points and determining the distance.
     # O(logN) vs O(N)
     kd_tree = scipy.spatial.KDTree(boundary_positions)
-    
+
     _, closest_position = kd_tree.query(cylindrical_start_position)
 
     # Get the normal vector of the BS at this point
@@ -658,9 +711,9 @@ def Get_Grazing_Angle(crossing, function: str = "bow shock", return_vectors: boo
     normal_vector = normal_vector / np.sqrt(np.sum(normal_vector**2))
 
     grazing_angle = np.arccos(
-                        np.dot(normal_vector, cylindrical_velocity)
-                        / (np.sqrt(np.sum(normal_vector**2)) * np.sqrt( np.sum(cylindrical_velocity ** 2) ))
-                    )
+        np.dot(normal_vector, cylindrical_velocity)
+        / (np.sqrt(np.sum(normal_vector**2)) * np.sqrt(np.sum(cylindrical_velocity**2)))
+    )
     grazing_angle = Constants.RADIANS_TO_DEGREES(grazing_angle)
 
     # If the grazing angle is greater than 90, then we take 180 - angle as its from the other side
