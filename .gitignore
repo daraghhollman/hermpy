@@ -2,4 +2,4 @@ hermpy/__pycache__/
 hermpy/version.py
 hermpy.egg-info/
 build/
-
+*.pyc
