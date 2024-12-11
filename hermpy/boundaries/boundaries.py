@@ -33,7 +33,7 @@ def Load_Crossings(path: str, backend: str = "Philpott", include_data_gaps=True)
         crossings = Reformat_Philpott(path, include_data_gaps=include_data_gaps)
 
     else:
-        raise Exception(f"Unknown backend: {backend}")
+        raise ValueError(f"Unknown backend: {backend}, options are (philpott, sun)")
 
     # Flatten multi-index
     crossings.columns = [" ".join(col).strip() for col in crossings.columns.values]
