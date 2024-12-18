@@ -105,10 +105,10 @@ def Get_Position(
 
     with spice.KernelPool(User.METAKERNEL):
 
-        if type(date) == dt.datetime:
+        if isinstance(date, dt.datetime):
             et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        elif type(date) == list:
+        elif isinstance(date, list):
             et = spice.datetime2et(date)
 
         else:
