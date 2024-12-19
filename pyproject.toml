@@ -16,10 +16,11 @@ license = {file = "LICENSE"}
 dependencies = [
     "numpy",
     "matplotlib",
-    "ephem",
     "spiceypy",
     "pandas",
-    "tqdm"
+    "tqdm",
+    "scipy",
+    "requests"
 ]
 dynamic = ["version"]
 
