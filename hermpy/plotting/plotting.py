@@ -22,7 +22,7 @@ def Plot_Magnetospheric_Boundaries(
     p: float = 2.75,
     initial_x: float = 0.5,
     add_legend: bool = False,
-    zorder: int = 0
+    zorder: int = 0,
 ) -> None:
     """Add average magnetopause and bow shock locations based on
     Winslow et al. (2013).
@@ -215,7 +215,8 @@ def Plot_Mercury(
     shaded_hemisphere: str = "none",
     plane: str = "xy",
     frame: str = "MSO",
-    border_colour: str = "black"
+    border_colour: str = "black",
+    alpha=1,
 ) -> None:
     """Adds a circle represting Mercury.
 
@@ -249,7 +250,7 @@ def Plot_Mercury(
     """
     offset: list[float] = [0, 0]
 
-    if frame == "MSM" and (plane == "xz" or plane == "yz"):
+    if (frame == "MSM" or frame == "MSM'") and (plane == "xz" or plane == "yz"):
         offset[1] -= Constants.DIPOLE_OFFSET_RADII
 
     angles = np.linspace(0, 2 * np.pi, 1000)
@@ -261,40 +262,81 @@ def Plot_Mercury(
     match shaded_hemisphere:
         case "left":
             ax.fill_between(
-                x_coords, y_coords, where=x_coords < 0, color="black", interpolate=True
+                x_coords,
+                y_coords,
+                where=x_coords < 0,
+                color="black",
+                interpolate=True,
+                alpha=alpha,
             )
             ax.fill_between(
-                x_coords, y_coords, where=x_coords > 0, color="white", interpolate=True
+                x_coords,
+                y_coords,
+                where=x_coords > 0,
+                color="white",
+                interpolate=True,
+                alpha=alpha,
             )
 
         case "right":
             ax.fill_between(
-                x_coords, y_coords, where=x_coords > 0, color="black", interpolate=True
+                x_coords,
+                y_coords,
+                where=x_coords > 0,
+                color="black",
+                interpolate=True,
+                alpha=alpha,
             )
             ax.fill_between(
-                x_coords, y_coords, where=x_coords < 0, color="white", interpolate=True
+                x_coords,
+                y_coords,
+                where=x_coords < 0,
+                color="white",
+                interpolate=True,
+                alpha=alpha,
             )
 
         case "top":
             ax.fill_between(
-                x_coords, y_coords, where=y_coords > 0, color="black", interpolate=True
+                x_coords,
+                y_coords,
+                where=y_coords > 0,
+                color="black",
+                interpolate=True,
+                alpha=alpha,
             )
             ax.fill_between(
-                x_coords, y_coords, where=y_coords < 0, color="white", interpolate=True
+                x_coords,
+                y_coords,
+                where=y_coords < 0,
+                color="white",
+                interpolate=True,
+                alpha=alpha,
             )
 
         case "bottom":
             ax.fill_between(
-                x_coords, y_coords, where=y_coords < 0, color="black", interpolate=True
+                x_coords,
+                y_coords,
+                where=y_coords < 0,
+                color="black",
+                interpolate=True,
+                alpha=alpha,
             )
             ax.fill_between(
-                x_coords, y_coords, where=y_coords > 0, color="white", interpolate=True
+                x_coords,
+                y_coords,
+                where=y_coords > 0,
+                color="white",
+                interpolate=True,
+                alpha=alpha,
             )
 
 
-def Format_Cylindrical_Plot(ax: matplotlib.axes.Axes,
-                            size: float = 3,
-                            mercury_style: str = "offset",
+def Format_Cylindrical_Plot(
+    ax: matplotlib.axes.Axes,
+    size: float = 3,
+    mercury_style: str = "offset",
 ) -> None:
     """Formats matplotlib axes for use as a cylindrical plot.
 
@@ -321,7 +363,7 @@ def Format_Cylindrical_Plot(ax: matplotlib.axes.Axes,
     Returns
     -------
     None
-    
+
     """
 
     # Set aspect
@@ -333,7 +375,9 @@ def Format_Cylindrical_Plot(ax: matplotlib.axes.Axes,
 
     # Set labels
     ax.set_xlabel(r"$\text{X}_{\text{MSM'}} \quad \left[ \text{R}_\text{M} \right]$")
-    ax.set_ylabel(r"$\left( \text{Y}_{\text{MSM'}}^2 + \text{Z}_{\text{MSM'}}^2 \right)^{0.5} \quad \left[ \text{R}_\text{M} \right]$")
+    ax.set_ylabel(
+        r"$\left( \text{Y}_{\text{MSM'}}^2 + \text{Z}_{\text{MSM'}}^2 \right)^{0.5} \quad \left[ \text{R}_\text{M} \right]$"
+    )
 
     ax.tick_params(
         which="major",
@@ -363,24 +407,33 @@ def Format_Cylindrical_Plot(ax: matplotlib.axes.Axes,
     match mercury_style:
 
         case "offset":
-            Plot_Circle(ax, (0, + Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey")
-            Plot_Circle(ax, (0, - Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey")
+            Plot_Circle(
+                ax, (0, +Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey"
+            )
+            Plot_Circle(
+                ax, (0, -Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey"
+            )
 
         case "centred":
             Plot_Circle(ax, (0, 0), 1, ec="k", fill=False)
 
 
-def Plot_Circle(ax: matplotlib.axes.Axes,
-                centre: tuple[float, float],
-                radius: float = 1,
-                shade_half: bool = True,
-                shade_colour: str = "grey",
-                **kwargs,
+def Plot_Circle(
+    ax: matplotlib.axes.Axes,
+    centre: tuple[float, float],
+    radius: float = 1,
+    shade_half: bool = True,
+    shade_colour: str = "grey",
+    **kwargs,
 ) -> None:
 
     if shade_half:
-        w1 = matplotlib.patches.Wedge(centre, radius, 90, 180 + 90, fc=shade_colour, **kwargs)
-        w2 = matplotlib.patches.Wedge(centre, radius, 180 + 90, 90, fc="white", **kwargs)
+        w1 = matplotlib.patches.Wedge(
+            centre, radius, 90, 180 + 90, fc=shade_colour, **kwargs
+        )
+        w2 = matplotlib.patches.Wedge(
+            centre, radius, 180 + 90, 90, fc="white", **kwargs
+        )
 
         ax.add_patch(w1)
         ax.add_patch(w2)
@@ -396,7 +449,16 @@ def Plot_Circle(ax: matplotlib.axes.Axes,
 
 def Add_Tick_Ephemeris(
     ax: plt.Axes,
-    include: set = {"date", "hours", "minutes", "seconds", "range", "latitude", "MLat", "local time"},
+    include: set = {
+        "date",
+        "hours",
+        "minutes",
+        "seconds",
+        "range",
+        "latitude",
+        "MLat",
+        "local time",
+    },
 ) -> None:
     """Adds ephemeris to tick labels
 
@@ -419,7 +481,7 @@ def Add_Tick_Ephemeris(
     tick_locations = ax.get_xticks()
 
     new_tick_labels = []
-    with spice.KernelPool(User.METAKERNEL): 
+    with spice.KernelPool(User.METAKERNEL):
         for loc in tick_locations:
             # Matplotlib stores dates as days since 1970-01-01T00:00:00
             # source: https://matplotlib.org/stable/gallery/text_labels_and_annotations/date.html
@@ -440,7 +502,9 @@ def Add_Tick_Ephemeris(
 
             if "range" in include:
                 position = trajectory.Get_Position("MESSENGER", date)
-                distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+                distance = np.sqrt(
+                    position[0] ** 2 + position[1] ** 2 + position[2] ** 2
+                )
                 # Convert from km to radii
                 distance /= Constants.MERCURY_RADIUS_KM
 
@@ -472,7 +536,8 @@ def Add_Tick_Ephemeris(
                 position = trajectory.Get_Position("MESSENGER", date)
 
                 mlat = np.arctan2(
-                    position[2] - Constants.DIPOLE_OFFSET_KM, np.sqrt(position[0] ** 2 + position[1] ** 2)
+                    position[2] - Constants.DIPOLE_OFFSET_KM,
+                    np.sqrt(position[0] ** 2 + position[1] ** 2),
                 )
 
                 # convert from radians to degrees
@@ -491,7 +556,9 @@ def Add_Tick_Ephemeris(
                 local_time = ((longitude + 180) * 24 / 360) % 24
                 hours = int(local_time)
                 minutes = int((local_time * 60) % 60)
-                datetime = dt.datetime(year=1, month=1, day=1, hour=hours, minute=minutes)
+                datetime = dt.datetime(
+                    year=1, month=1, day=1, hour=hours, minute=minutes
+                )
                 tick_format += "\n" + f"{datetime:%H:%M}"
 
             new_tick_labels.append(tick_format)
