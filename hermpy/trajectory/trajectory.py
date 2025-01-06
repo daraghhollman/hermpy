@@ -108,7 +108,7 @@ def Get_Position(
         if isinstance(date, dt.datetime):
             et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        elif isinstance(date, list):
+        elif isinstance(date, Iterable):
 
             et = spice.datetime2et(date)
 
