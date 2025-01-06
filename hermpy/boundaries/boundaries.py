@@ -6,9 +6,13 @@ import numpy as np
 import pandas as pd
 
 from hermpy.utils import Constants
+import hermpy.trajectory as trajectory
+from hermpy.utils.utils import User
 
 
-def Load_Crossings(path: str, backend: str = "Philpott", include_data_gaps=True) -> pd.DataFrame:
+def Load_Crossings(
+    path: str, backend: str = "Philpott", include_data_gaps=True
+) -> pd.DataFrame:
     """Loads a pandas DataFrame from
 
     Parameters
@@ -29,8 +33,11 @@ def Load_Crossings(path: str, backend: str = "Philpott", include_data_gaps=True)
     Crossings Data : pandas.DataFrame
     """
 
-    if backend == "Philpott":
+    if backend.lower() == "philpott":
         crossings = Reformat_Philpott(path, include_data_gaps=include_data_gaps)
+
+    elif backend.lower() == "sun":
+        crossings = Reformat_Sun(path)
 
     else:
         raise ValueError(f"Unknown backend: {backend}, options are (philpott, sun)")
@@ -274,7 +281,9 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
         input_directory + file_name for file_name in os.listdir(input_directory)
     ]:
 
-        file_data_numeric = np.genfromtxt(path, dtype=float, usecols=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+        file_data_numeric = np.genfromtxt(
+            path, dtype=float, usecols=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+        )
         file_data_letters = np.genfromtxt(path, dtype=str, usecols=(12, 13))
 
         start_year = file_data_numeric[:, 0].astype(int)
@@ -282,9 +291,9 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
         start_day = file_data_numeric[:, 2].astype(int)
         start_hour = file_data_numeric[:, 3].astype(int)
         start_minute = file_data_numeric[:, 4].astype(int)
-        start_second = abs(
-            file_data_numeric[:, 5]
-        )  # ABOSULTE VALUE IS NEEDED AS THERE ARE NEGATIVE??? SECONDS
+        start_second = file_data_numeric[:, 5].astype(int)
+
+        start_error_rows = start_second < 0
 
         start_times = []
 
@@ -315,9 +324,9 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
         end_day = file_data_numeric[:, 8].astype(int)
         end_hour = file_data_numeric[:, 9].astype(int)
         end_minute = file_data_numeric[:, 10].astype(int)
-        end_second = abs(
-            file_data_numeric[:, 11]
-        )  # ABOSULTE VALUE IS NEEDED AS THERE ARE NEGATIVE??? SECONDS
+        end_second = file_data_numeric[:, 11].astype(int)
+
+        end_error_rows = start_second < 0
 
         end_times = []
 
@@ -363,6 +372,13 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
 
         boundary_ids = [new_boundary_id for _ in range(len(file_data_numeric))]
 
+        # Total error rows marks with 1. Hence to remove from our list, we slice using the inverse
+        total_error_rows = start_error_rows | end_error_rows
+
+        start_times = np.array(start_times)[~total_error_rows]
+        end_times = np.array(end_times)[~total_error_rows]
+        boundary_ids = np.array(boundary_ids)[~total_error_rows]
+
         sub_crossings_list = pd.DataFrame(
             {
                 "start": start_times,
@@ -379,6 +395,132 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
     full_list.reset_index(drop=True, inplace=True)
 
     # Now that we have the full list, we can add on the extra columns we need!
+
+    # Finding position
+    start_position_mso_km = trajectory.Get_Position(
+        "MESSENGER", full_list["start"], frame="MSO", aberrate=False
+    )
+    end_position_mso_km = trajectory.Get_Position(
+        "MESSENGER", full_list["end"], frame="MSO", aberrate=False
+    )
+
+    start_x_mso_km = start_position_mso_km[:, 0]
+    start_y_mso_km = start_position_mso_km[:, 1]
+    start_z_mso_km = start_position_mso_km[:, 2]
+
+    end_x_mso_km = end_position_mso_km[:, 0]
+    end_y_mso_km = end_position_mso_km[:, 1]
+    end_z_mso_km = end_position_mso_km[:, 2]
+
+    start_x_mso_radii = start_x_mso_km / Constants.MERCURY_RADIUS_KM
+    start_y_mso_radii = start_y_mso_km / Constants.MERCURY_RADIUS_KM
+    start_z_mso_radii = start_z_mso_km / Constants.MERCURY_RADIUS_KM
+
+    end_x_mso_radii = end_x_mso_km / Constants.MERCURY_RADIUS_KM
+    end_y_mso_radii = end_y_mso_km / Constants.MERCURY_RADIUS_KM
+    end_z_mso_radii = end_z_mso_km / Constants.MERCURY_RADIUS_KM
+
+    # Format this as a dictionary
+    list_data = {
+        "Interval Type": full_list["type"],
+        "Interval Start": full_list["start"],
+        "Interval End": full_list["end"],
+        "X MSO Start (radii)": start_x_mso_radii,
+        "Y MSO Start (radii)": start_y_mso_radii,
+        "Z MSO Start (radii)": start_z_mso_radii,
+        "X MSO End (radii)": end_x_mso_radii,
+        "Y MSO End (radii)": end_y_mso_radii,
+        "Z MSO End (radii)": end_z_mso_radii,
+        "X MSO Start (km)": start_x_mso_km,
+        "Y MSO Start (km)": start_y_mso_km,
+        "Z MSO Start (km)": start_z_mso_km,
+        "X MSO End (km)": end_x_mso_km,
+        "Y MSO End (km)": end_y_mso_km,
+        "Z MSO End (km)": end_z_mso_km,
+        "X MSM Start (radii)": start_x_mso_radii,
+        "Y MSM Start (radii)": start_y_mso_radii,
+        "Z MSM Start (radii)": [
+            z - Constants.DIPOLE_OFFSET_RADII for z in start_z_mso_radii
+        ],
+        "X MSM End (radii)": end_x_mso_radii,
+        "Y MSM End (radii)": end_y_mso_radii,
+        "Z MSM End (radii)": [
+            z - Constants.DIPOLE_OFFSET_RADII for z in end_z_mso_radii
+        ],
+        "X MSM Start (km)": start_x_mso_km,
+        "Y MSM Start (km)": start_y_mso_km,
+        "Z MSM Start (km)": [z - Constants.DIPOLE_OFFSET_RADII for z in start_z_mso_km],
+        "X MSM End (km)": end_x_mso_km,
+        "Y MSM End (km)": end_y_mso_km,
+        "Z MSM End (km)": [z - Constants.DIPOLE_OFFSET_RADII for z in end_z_mso_km],
+    }
+
+    multi_index_columns = pd.MultiIndex.from_tuples(
+        [
+            ("Type", "", ""),
+            ("Start", "Time", ""),
+            ("Start", "MSO", "X (radii)"),
+            ("Start", "MSO", "Y (radii)"),
+            ("Start", "MSO", "Z (radii)"),
+            ("Start", "MSO", "X (km)"),
+            ("Start", "MSO", "Y (km)"),
+            ("Start", "MSO", "Z (km)"),
+            ("Start", "MSM", "X (radii)"),
+            ("Start", "MSM", "Y (radii)"),
+            ("Start", "MSM", "Z (radii)"),
+            ("Start", "MSM", "X (km)"),
+            ("Start", "MSM", "Y (km)"),
+            ("Start", "MSM", "Z (km)"),
+            ("End", "Time", ""),
+            ("End", "MSO", "X (radii)"),
+            ("End", "MSO", "Y (radii)"),
+            ("End", "MSO", "Z (radii)"),
+            ("End", "MSO", "X (km)"),
+            ("End", "MSO", "Y (km)"),
+            ("End", "MSO", "Z (km)"),
+            ("End", "MSM", "X (radii)"),
+            ("End", "MSM", "Y (radii)"),
+            ("End", "MSM", "Z (radii)"),
+            ("End", "MSM", "X (km)"),
+            ("End", "MSM", "Y (km)"),
+            ("End", "MSM", "Z (km)"),
+        ]
+    )
+
+    multi_index_data = [
+        list_data["Interval Type"],
+        list_data["Interval Start"],
+        list_data["X MSO Start (radii)"],
+        list_data["Y MSO Start (radii)"],
+        list_data["Z MSO Start (radii)"],
+        list_data["X MSO Start (km)"],
+        list_data["Y MSO Start (km)"],
+        list_data["Z MSO Start (km)"],
+        list_data["X MSM Start (radii)"],
+        list_data["Y MSM Start (radii)"],
+        list_data["Z MSM Start (radii)"],
+        list_data["X MSM Start (km)"],
+        list_data["Y MSM Start (km)"],
+        list_data["Z MSM Start (km)"],
+        list_data["Interval End"],
+        list_data["X MSO End (radii)"],
+        list_data["Y MSO End (radii)"],
+        list_data["Z MSO End (radii)"],
+        list_data["X MSO End (km)"],
+        list_data["Y MSO End (km)"],
+        list_data["Z MSO End (km)"],
+        list_data["X MSM End (radii)"],
+        list_data["Y MSM End (radii)"],
+        list_data["Z MSM End (radii)"],
+        list_data["X MSM End (km)"],
+        list_data["Y MSM End (km)"],
+        list_data["Z MSM End (km)"],
+    ]
+
+    # Create a pandas dataframe with this information
+    df = pd.DataFrame(data=dict(zip(multi_index_columns, multi_index_data)))
+
+    return df
 
 
 def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
@@ -451,7 +593,9 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
                     types.append("DATA_GAP")
 
                 case _:
-                    raise ValueError(f"Unrecognised boundary number in Philpott list: {row['Boundary number']}")
+                    raise ValueError(
+                        f"Unrecognised boundary number in Philpott list: {row['Boundary number']}"
+                    )
 
             start_string = f"{row['Year']}{row['Day of year']}{row['Hour']}{row['Minute']}{row['Second']}"
             start_time = dt.datetime.strptime(start_string, "%Y.0%j.0%H.0%M.0%S.%f")
@@ -464,7 +608,6 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
             start_x_mso_km.append(row["X_MSO (km)"])
             start_y_mso_km.append(row["Y_MSO (km)"])
             start_z_mso_km.append(row["Z_MSO (km)"])
-
 
             next_row = philpott_csv.iloc[i + 1]
             # Next row boundary number should always be even
@@ -489,35 +632,31 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
         "Interval Type": types,
         "Interval Start": start_times,
         "Interval End": end_times,
-
         "X MSO Start (radii)": start_x_mso_radii,
         "Y MSO Start (radii)": start_y_mso_radii,
         "Z MSO Start (radii)": start_z_mso_radii,
-
         "X MSO End (radii)": end_x_mso_radii,
         "Y MSO End (radii)": end_y_mso_radii,
         "Z MSO End (radii)": end_z_mso_radii,
-
         "X MSO Start (km)": start_x_mso_km,
         "Y MSO Start (km)": start_y_mso_km,
         "Z MSO Start (km)": start_z_mso_km,
-
         "X MSO End (km)": end_x_mso_km,
         "Y MSO End (km)": end_y_mso_km,
         "Z MSO End (km)": end_z_mso_km,
-
         "X MSM Start (radii)": start_x_mso_radii,
         "Y MSM Start (radii)": start_y_mso_radii,
-        "Z MSM Start (radii)": [ z - Constants.DIPOLE_OFFSET_RADII for z in start_z_mso_radii ],
-
+        "Z MSM Start (radii)": [
+            z - Constants.DIPOLE_OFFSET_RADII for z in start_z_mso_radii
+        ],
         "X MSM End (radii)": end_x_mso_radii,
         "Y MSM End (radii)": end_y_mso_radii,
-        "Z MSM End (radii)": [ z - Constants.DIPOLE_OFFSET_RADII for z in end_z_mso_radii ],
-
+        "Z MSM End (radii)": [
+            z - Constants.DIPOLE_OFFSET_RADII for z in end_z_mso_radii
+        ],
         "X MSM Start (km)": start_x_mso_km,
         "Y MSM Start (km)": start_y_mso_km,
         "Z MSM Start (km)": [z - Constants.DIPOLE_OFFSET_RADII for z in start_z_mso_km],
-
         "X MSM End (km)": end_x_mso_km,
         "Y MSM End (km)": end_y_mso_km,
         "Z MSM End (km)": [z - Constants.DIPOLE_OFFSET_RADII for z in end_z_mso_km],
@@ -527,36 +666,28 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
         [
             ("Type", "", ""),
             ("Start", "Time", ""),
-            
             ("Start", "MSO", "X (radii)"),
             ("Start", "MSO", "Y (radii)"),
             ("Start", "MSO", "Z (radii)"),
-
             ("Start", "MSO", "X (km)"),
             ("Start", "MSO", "Y (km)"),
             ("Start", "MSO", "Z (km)"),
-
             ("Start", "MSM", "X (radii)"),
             ("Start", "MSM", "Y (radii)"),
             ("Start", "MSM", "Z (radii)"),
-
             ("Start", "MSM", "X (km)"),
             ("Start", "MSM", "Y (km)"),
             ("Start", "MSM", "Z (km)"),
-
             ("End", "Time", ""),
             ("End", "MSO", "X (radii)"),
             ("End", "MSO", "Y (radii)"),
             ("End", "MSO", "Z (radii)"),
-
             ("End", "MSO", "X (km)"),
             ("End", "MSO", "Y (km)"),
             ("End", "MSO", "Z (km)"),
-
             ("End", "MSM", "X (radii)"),
             ("End", "MSM", "Y (radii)"),
             ("End", "MSM", "Z (radii)"),
-
             ("End", "MSM", "X (km)"),
             ("End", "MSM", "Y (km)"),
             ("End", "MSM", "Z (km)"),
@@ -565,37 +696,29 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
 
     multi_index_data = [
         list_data["Interval Type"],
-
         list_data["Interval Start"],
         list_data["X MSO Start (radii)"],
         list_data["Y MSO Start (radii)"],
         list_data["Z MSO Start (radii)"],
-
         list_data["X MSO Start (km)"],
         list_data["Y MSO Start (km)"],
         list_data["Z MSO Start (km)"],
-
         list_data["X MSM Start (radii)"],
         list_data["Y MSM Start (radii)"],
         list_data["Z MSM Start (radii)"],
-
         list_data["X MSM Start (km)"],
         list_data["Y MSM Start (km)"],
         list_data["Z MSM Start (km)"],
-
         list_data["Interval End"],
         list_data["X MSO End (radii)"],
         list_data["Y MSO End (radii)"],
         list_data["Z MSO End (radii)"],
-
         list_data["X MSO End (km)"],
         list_data["Y MSO End (km)"],
         list_data["Z MSO End (km)"],
-
         list_data["X MSM End (radii)"],
         list_data["Y MSM End (radii)"],
         list_data["Z MSM End (radii)"],
-
         list_data["X MSM End (km)"],
         list_data["Y MSM End (km)"],
         list_data["Z MSM End (km)"],
@@ -605,7 +728,6 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
     df = pd.DataFrame(data=dict(zip(multi_index_columns, multi_index_data)))
 
     if include_data_gaps is False:
-        df = df.loc[ df["Type"] != "DATA_GAP" ]
-
+        df = df.loc[df["Type"] != "DATA_GAP"]
 
     return df

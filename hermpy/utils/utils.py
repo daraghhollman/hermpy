@@ -15,7 +15,8 @@ class User:
         "FIPS": "/home/daraghhollman/Main/data/mercury/messenger/FIPS/",
     }
     CROSSING_LISTS = {
-        "Philpott": "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
+        "Philpott": "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx",
+        "Sun": "/home/daraghhollman/Main/Work/mercury/DataSets/sun_crossing_lists/"
     }
 
 class Constants:

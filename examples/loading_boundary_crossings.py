@@ -5,11 +5,12 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from hermpy import boundaries, mag, plotting
+from hermpy.utils import User
 
 mpl.rcParams["font.size"] = 14
 
 
-philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
+philpott_crossings = boundaries.Load_Crossings(User.CROSSING_LISTS["Sun"], backend="sun")
 
 
 ### This section as shown in mag_example.py
