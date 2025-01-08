@@ -3,6 +3,7 @@ from typing import Iterable
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.signal
 import scipy.spatial
 import spiceypy as spice
@@ -77,7 +78,7 @@ def Get_Position(
     spacecraft: str,
     date: dt.datetime | Iterable[dt.datetime],
     frame: str = "MSO",
-    aberrate=True,
+    aberrate: bool | str = True,
 ):
     """Returns spacecraft position at a given time
 
@@ -96,12 +97,17 @@ def Get_Position(
     frame : str {"MSO", "MSM"}, optional
         The SPICE frame to load
 
+    aberrate : bool | str {True, False, "average"}
+
 
     Returns
     -------
     position : list[float]
         The position in the MSO / MSM coordinate frame. In km.
     """
+
+    if aberrate == "average":
+        Get_Avg_Aberrated_Position(spacecraft, date, frame)
 
     with spice.KernelPool(User.METAKERNEL):
 
@@ -149,6 +155,62 @@ def Get_Position(
 
                 elif isinstance(date, dt.datetime):
                     position = Aberrate_Position(position, date.date())
+
+            return position
+
+        except:
+            raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
+
+
+def Get_Avg_Aberrated_Position(
+    spacecraft: str, date: dt.datetime | Iterable[dt.datetime], frame: str = "MSM"
+):
+    """Returns spacecraft position at a given time
+
+    Position is aberrated by 6.7523 degrees
+
+
+    Parameters
+    ----------
+    spacecraft : str
+        The name of the spacecraft to query. i.e. 'MESSENGER'.
+
+    date : datetime.datetime
+        The date and time to query at.
+
+    frame : str {"MSM", "MSO"}, optional
+        The SPICE frame to load
+
+
+    Returns
+    -------
+    position : list[float]
+        The position in the MSO / MSM coordinate frame. In km.
+    """
+
+    with spice.KernelPool(User.METAKERNEL):
+
+        if isinstance(date, dt.datetime):
+            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+
+        elif isinstance(date, Iterable):
+
+            et = spice.datetime2et(date)
+
+        else:
+            raise ValueError("Input date of incorrect type!")
+
+        # There are data gaps in the kernels?
+        # We need to test for this
+        try:
+            position, _ = spice.spkpos(spacecraft, et, "BC_MSO_AB", "NONE", "MERCURY")
+
+            match frame:
+                case "MSO":
+                    pass
+
+                case "MSM":
+                    position[2] -= Constants.DIPOLE_OFFSET_KM
 
             return position
 
@@ -578,6 +640,7 @@ def Get_Grazing_Angle(
     crossing,
     function: str = "bow shock",
     return_vectors: bool = False,
+    aberrate: bool | str = True,
     verbose: bool = False,
 ):
     """Determine the grazing angle for a given boundary crossing
@@ -613,6 +676,8 @@ def Get_Grazing_Angle(
         Returns also the normal and velocity vectors along with the
         grazing angle.
 
+    aberrate : bool | str {True, False, "average"}
+
     verbose : bool {False, True}, optional
         Prints extra information to terminal
 
@@ -623,13 +688,19 @@ def Get_Grazing_Angle(
         The grazing angle in degrees for that crossing
     """
 
+    if isinstance(crossing, Iterable):
+        print("Using vectorised grazing angle calculation")
+        return Get_Grazing_Angle_Vectorised(
+            crossing, function, return_vectors, aberrate, verbose
+        )
+
     start_position = (
         traj.Get_Position(
             "MESSENGER",
             crossing["Start Time"]
             + (crossing["End Time"] - crossing["Start Time"]) / 2,
             frame="MSM",
-            aberrate=True,
+            aberrate=aberrate,
         )
         / Constants.MERCURY_RADIUS_KM
     )
@@ -641,7 +712,7 @@ def Get_Grazing_Angle(
             + (crossing["End Time"] - crossing["Start Time"]) / 2
             + dt.timedelta(seconds=1),
             frame="MSM",
-            aberrate=True,
+            aberrate=aberrate,
         )
         / Constants.MERCURY_RADIUS_KM
     )
@@ -739,3 +810,146 @@ def Get_Grazing_Angle(
         return grazing_angle, normal_vector, cylindrical_velocity
 
     return grazing_angle
+
+
+def Get_Grazing_Angle_Vectorised(
+    crossings,
+    function: str = "bow shock",
+    return_vectors: bool = False,
+    aberrate: bool | str = True,
+    verbose: bool = False,
+):
+
+    mid_crossing_times = (
+        crossings["Start Time"] + (crossings["End Time"] - crossings["Start Time"]) / 2
+    )
+    next_times = mid_crossing_times + pd.Timedelta(seconds=1)
+
+    mid_crossing_times = mid_crossing_times.tolist()
+    next_times = next_times.tolist()
+
+    print("Determined times")
+
+    start_positions = (
+        np.array(
+            [
+                traj.Get_Position(
+                    "MESSENGER",
+                    mid_crossing_times,
+                    frame="MSM",
+                    aberrate=aberrate,
+                )
+            ]
+        )
+        / Constants.MERCURY_RADIUS_KM
+    )
+
+    next_positions = (
+        np.array(
+            [
+                traj.Get_Position(
+                    "MESSENGER",
+                    next_times,
+                    frame="MSM",
+                    aberrate=aberrate,
+                )
+            ]
+        )
+        / Constants.MERCURY_RADIUS_KM
+    )
+
+    print("Found positions")
+
+    cylindrical_start_positions = np.column_stack(
+        [
+            start_positions[:, 0],
+            np.sqrt(start_positions[:, 1] ** 2 + start_positions[:, 2] ** 2),
+        ]
+    )
+    cylindrical_next_positions = np.column_stack(
+        [
+            next_positions[:, 0],
+            np.sqrt(next_positions[:, 1] ** 2 + next_positions[:, 2] ** 2),
+        ]
+    )
+
+    cylindrical_velocities = cylindrical_next_positions - cylindrical_start_positions
+    cylindrical_velocities /= np.linalg.norm(cylindrical_velocities, axis=1)[:, None]
+
+    print("Determined velocities")
+
+    match function:
+        case "bow shock":
+            initial_x = 0.5
+            psi = 1.04
+            p = 2.75
+
+            L = psi * p
+
+            phi = np.linspace(0, 2 * np.pi, 10000)
+            rho = L / (1 + psi * np.cos(phi))
+
+            # Cylindrical coordinates (X, R)
+            bow_shock_x_coords = initial_x + rho * np.cos(phi)
+            bow_shock_r_coords = rho * np.sin(phi)
+
+            boundary_positions = np.array([bow_shock_x_coords, bow_shock_r_coords]).T
+
+        case "magnetopause":
+            sub_solar_point = 1.45
+            alpha = 0.5
+
+            phi = np.linspace(0, 2 * np.pi, 10000)
+            rho = sub_solar_point * (2 / (1 + np.cos(phi))) ** alpha
+
+            # Cylindrical coordinates (X, R)
+            magnetopause_x_coords = rho * np.cos(phi)
+            magnetopause_r_coords = rho * np.sin(phi)
+
+            boundary_positions = np.array(
+                [magnetopause_x_coords, magnetopause_r_coords]
+            ).T
+
+        case _:
+            raise ValueError(
+                f"Invalid function choice: {function}. Options are 'bow shock', 'magnetopause'."
+            )
+
+    # We need to determine which point on the boundary curve is closest to the spacecraft
+    # This method, utilising a k-d tree is computationally faster than iterrating through
+    # the points and determining the distance.
+    # O(logN) vs O(N)
+    kd_tree = scipy.spatial.KDTree(boundary_positions)
+
+    print("Made KDTree")
+
+    _, closest_indices = kd_tree.query(cylindrical_start_positions)
+
+    print("Found closest points")
+
+    # Get the normal vector of the BS at this point
+    # This is just the normalised vector between the spacecraft and the closest point,
+    # as the vector between an arbitrary point and the closest point on an arbitrary
+    # curve is parallel to the normal vector of that curve at that closest point.
+    normal_vectors = boundary_positions[closest_indices] - cylindrical_start_positions
+    normal_vectors /= np.linalg.norm(normal_vectors, axis=1)[:, None]
+
+    print("Found boundary normals")
+
+    dot_products = np.sum(normal_vectors * cylindrical_velocities, axis=1)
+
+    grazing_angles = np.arccos(dot_products)
+    grazing_angles = np.degrees(grazing_angles)  # convert to degrees
+
+    print("Found grazing angles")
+
+    # If the grazing angle is greater than 90, then we take 180 - angle as its from the other side
+    # This occurs as we don't make an assumption as to what side of the model boundary we are.
+    # i.e. we could be referencing the normal, or the anti-normal.
+    grazing_angles = np.where(grazing_angles > 90, 180 - grazing_angles, grazing_angles)
+    normal_vectors = np.where(grazing_angles > 90, -normal_vectors, normal_vectors)
+
+    if return_vectors:
+        return grazing_angles, normal_vectors, cylindrical_velocities
+
+    return grazing_angles
