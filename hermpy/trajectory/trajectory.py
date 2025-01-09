@@ -107,7 +107,7 @@ def Get_Position(
     """
 
     if aberrate == "average":
-        Get_Avg_Aberrated_Position(spacecraft, date, frame)
+        return Get_Avg_Aberrated_Position(spacecraft, date, frame)
 
     with spice.KernelPool(User.METAKERNEL):
 
@@ -636,9 +636,37 @@ def Get_Nearest_Apoapsis(
         return apoapsis_time, apoapsis_altitude
 
 
+def Get_Bow_Shock_Grazing_Angle(
+    crossing,
+    return_vectors: bool = False,
+    aberrate: bool | str = True,
+    verbose: bool = False,
+):
+    return Get_Grazing_Angle(
+        crossing,
+        function="bow shock",
+        return_vectors=return_vectors,
+        aberrate=aberrate,
+        verbose=verbose,
+    )
+
+def Get_Magnetopause_Grazing_Angle(
+    crossing,
+    return_vectors: bool = False,
+    aberrate: bool | str = True,
+    verbose: bool = False,
+):
+    return Get_Grazing_Angle(
+        crossing,
+        function="magnetopause",
+        return_vectors=return_vectors,
+        aberrate=aberrate,
+        verbose=verbose,
+    )
+
 def Get_Grazing_Angle(
     crossing,
-    function: str = "bow shock",
+    function: str = "unset",
     return_vectors: bool = False,
     aberrate: bool | str = True,
     verbose: bool = False,
@@ -688,7 +716,7 @@ def Get_Grazing_Angle(
         The grazing angle in degrees for that crossing
     """
 
-    if isinstance(crossing, Iterable):
+    if isinstance(crossing, Iterable) and not isinstance(crossing, pd.Series):
         print("Using vectorised grazing angle calculation")
         return Get_Grazing_Angle_Vectorised(
             crossing, function, return_vectors, aberrate, verbose
@@ -817,48 +845,39 @@ def Get_Grazing_Angle_Vectorised(
     function: str = "bow shock",
     return_vectors: bool = False,
     aberrate: bool | str = True,
-    verbose: bool = False,
+    verbose: bool | str = False,
 ):
+
+    print(f"Processing {len(crossings)} crossings")
 
     mid_crossing_times = (
         crossings["Start Time"] + (crossings["End Time"] - crossings["Start Time"]) / 2
     )
     next_times = mid_crossing_times + pd.Timedelta(seconds=1)
 
-    mid_crossing_times = mid_crossing_times.tolist()
-    next_times = next_times.tolist()
-
-    print("Determined times")
-
     start_positions = (
         np.array(
-            [
-                traj.Get_Position(
-                    "MESSENGER",
-                    mid_crossing_times,
-                    frame="MSM",
-                    aberrate=aberrate,
-                )
-            ]
+            traj.Get_Position(
+                "MESSENGER",
+                mid_crossing_times,
+                frame="MSM",
+                aberrate=aberrate,
+            )
         )
         / Constants.MERCURY_RADIUS_KM
     )
 
     next_positions = (
         np.array(
-            [
-                traj.Get_Position(
-                    "MESSENGER",
-                    next_times,
-                    frame="MSM",
-                    aberrate=aberrate,
-                )
-            ]
+            traj.Get_Position(
+                "MESSENGER",
+                next_times,
+                frame="MSM",
+                aberrate=aberrate,
+            )
         )
         / Constants.MERCURY_RADIUS_KM
     )
-
-    print("Found positions")
 
     cylindrical_start_positions = np.column_stack(
         [
@@ -875,8 +894,6 @@ def Get_Grazing_Angle_Vectorised(
 
     cylindrical_velocities = cylindrical_next_positions - cylindrical_start_positions
     cylindrical_velocities /= np.linalg.norm(cylindrical_velocities, axis=1)[:, None]
-
-    print("Determined velocities")
 
     match function:
         case "bow shock":
@@ -921,11 +938,7 @@ def Get_Grazing_Angle_Vectorised(
     # O(logN) vs O(N)
     kd_tree = scipy.spatial.KDTree(boundary_positions)
 
-    print("Made KDTree")
-
     _, closest_indices = kd_tree.query(cylindrical_start_positions)
-
-    print("Found closest points")
 
     # Get the normal vector of the BS at this point
     # This is just the normalised vector between the spacecraft and the closest point,
@@ -934,22 +947,18 @@ def Get_Grazing_Angle_Vectorised(
     normal_vectors = boundary_positions[closest_indices] - cylindrical_start_positions
     normal_vectors /= np.linalg.norm(normal_vectors, axis=1)[:, None]
 
-    print("Found boundary normals")
-
     dot_products = np.sum(normal_vectors * cylindrical_velocities, axis=1)
 
     grazing_angles = np.arccos(dot_products)
     grazing_angles = np.degrees(grazing_angles)  # convert to degrees
 
-    print("Found grazing angles")
-
     # If the grazing angle is greater than 90, then we take 180 - angle as its from the other side
     # This occurs as we don't make an assumption as to what side of the model boundary we are.
     # i.e. we could be referencing the normal, or the anti-normal.
     grazing_angles = np.where(grazing_angles > 90, 180 - grazing_angles, grazing_angles)
-    normal_vectors = np.where(grazing_angles > 90, -normal_vectors, normal_vectors)
 
     if return_vectors:
+        normal_vectors = np.where(grazing_angles > 90, -normal_vectors, normal_vectors)
         return grazing_angles, normal_vectors, cylindrical_velocities
 
     return grazing_angles
