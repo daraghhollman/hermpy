@@ -520,34 +520,32 @@ def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def Save_Mission(path: str):
-    """Uses functions from hermpy.mag to load and save the entire mission"""
+def Chunk_Dates(start_date, end_date, chunk_size=30):
+    """Divide a date range into smaller chunks of a specified size in days."""
+    current_start = start_date
+    while current_start < end_date:
+        current_end = min(current_start + dt.timedelta(days=chunk_size), end_date)
+        yield current_start, current_end
+        current_start = current_end
 
+
+def Save_Mission(path: str):
     mission_start = dt.datetime(2011, 3, 23, 15, 37)
     mission_end = dt.datetime(2015, 4, 30, 15, 8)
 
-    data = Load_Between_Dates(
-        User.DATA_DIRECTORIES["MAG"],
-        mission_start,
-        mission_end,
-        strip=True,
-        aberrate=True,
-        multiprocess=True,
-        included_columns=set(
-            [
-                "date",
-                "X MSM (radii)",
-                "Y MSM (radii)",
-                "Z MSM (radii)",
-                "Bx",
-                "By",
-                "Bz",
-                "|B|"
-            ]
-        ),
-    )
+    with open(path, 'wb') as f:
+        for start_date, end_date in Chunk_Dates(mission_start, mission_end, chunk_size=60):  # Process 30 days at a time
+            data_chunk = Load_Between_Dates(
+                User.DATA_DIRECTORIES["MAG"],
+                start_date,
+                end_date,
+                strip=True,
+                aberrate=True,
+                multiprocess=True,
+            )
+            pickle.dump(data_chunk, f)
+            # data_chunk.to_parquet(path, engine="pyarrow", compression="snappy", append=True)  # Save incrementally
 
-    pickle.dump(data, open(path, "wb"))
 
 def Load_Mission(path: str):
     return pickle.load(open(path, "rb"))
