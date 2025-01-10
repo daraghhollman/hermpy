@@ -520,21 +520,21 @@ def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def Chunk_Dates(start_date, end_date, chunk_size=30):
+def Chunk_Dates(start_date, end_date, days_per_chunk):
     """Divide a date range into smaller chunks of a specified size in days."""
     current_start = start_date
     while current_start < end_date:
-        current_end = min(current_start + dt.timedelta(days=chunk_size), end_date)
+        current_end = min(current_start + dt.timedelta(days=days_per_chunk), end_date)
         yield current_start, current_end
         current_start = current_end
 
 
-def Save_Mission(path: str):
+def Save_Mission(path: str, days_per_chunk=60):
     mission_start = dt.datetime(2011, 3, 23, 15, 37)
     mission_end = dt.datetime(2015, 4, 30, 15, 8)
 
     with open(path, 'wb') as f:
-        for start_date, end_date in Chunk_Dates(mission_start, mission_end, chunk_size=60):  # Process 30 days at a time
+        for start_date, end_date in Chunk_Dates(mission_start, mission_end, days_per_chunk):  # Process 30 days at a time
             data_chunk = Load_Between_Dates(
                 User.DATA_DIRECTORIES["MAG"],
                 start_date,
@@ -544,7 +544,6 @@ def Save_Mission(path: str):
                 multiprocess=True,
             )
             pickle.dump(data_chunk, f)
-            # data_chunk.to_parquet(path, engine="pyarrow", compression="snappy", append=True)  # Save incrementally
 
 
 def Load_Mission(path: str):
