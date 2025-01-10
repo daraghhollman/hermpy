@@ -1,4 +1,4 @@
-from .utils import *
+from .utils import User
 
 # Check directories all all correct
 import os

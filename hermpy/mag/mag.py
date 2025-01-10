@@ -5,6 +5,7 @@ Functions for loading and handling MAG data
 import datetime as dt
 import multiprocessing
 import warnings
+import pickle
 from glob import glob
 
 import numpy as np
@@ -13,7 +14,7 @@ import scipy.signal
 from tqdm import tqdm
 
 import hermpy.trajectory as trajectory
-from hermpy.utils import Constants
+from hermpy.utils import Constants, User
 
 
 def Load_Messenger(
@@ -517,3 +518,36 @@ def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
     data["Bphi"] = phi
 
     return data
+
+
+def Save_Mission(path: str):
+    """Uses functions from hermpy.mag to load and save the entire mission"""
+
+    mission_start = dt.datetime(2011, 3, 23, 15, 37)
+    mission_end = dt.datetime(2015, 4, 30, 15, 8)
+
+    data = Load_Between_Dates(
+        User.DATA_DIRECTORIES["MAG"],
+        mission_start,
+        mission_end,
+        strip=True,
+        aberrate=True,
+        multiprocess=True,
+        included_columns=set(
+            [
+                "date",
+                "X MSM (radii)",
+                "Y MSM (radii)",
+                "Z MSM (radii)",
+                "Bx",
+                "By",
+                "Bz",
+                "|B|"
+            ]
+        ),
+    )
+
+    pickle.dump(data, open(path, "wb"))
+
+def Load_Mission(path: str):
+    return pickle.load(open(path, "rb"))

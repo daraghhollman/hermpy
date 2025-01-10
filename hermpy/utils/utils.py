@@ -16,8 +16,9 @@ class User:
     }
     CROSSING_LISTS = {
         "Philpott": "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx",
-        "Sun": "/home/daraghhollman/Main/Work/mercury/DataSets/sun_crossing_lists/"
+        "Sun": "/home/daraghhollman/Main/Work/mercury/DataSets/sun_crossing_lists/",
     }
+
 
 class Constants:
     # If no units are specified in the variable name,
@@ -25,8 +26,8 @@ class Constants:
     MERCURY_RADIUS = 2_439_700  # meters
     MERCURY_RADIUS_KM = MERCURY_RADIUS / 1_000  # kilometers
 
-    DIPOLE_OFFSET_KM = 479 # km
-    DIPOLE_OFFSET_RADII = 479 / MERCURY_RADIUS_KM # radii
+    DIPOLE_OFFSET_KM = 479  # km
+    DIPOLE_OFFSET_RADII = 479 / MERCURY_RADIUS_KM  # radii
 
     MERCURY_SEMI_MAJOR_AXIS = 57_909_050 * 1_000  # meters
     SOLAR_MASS = 1.9891e30  # kilograms
@@ -35,10 +36,9 @@ class Constants:
 
     G = 6.6743e-11  # N m^2 / kg^2
 
-
     @staticmethod
     def KM_TO_AU(km):
-        return km / 1.496e+8
+        return km / 1.496e8
 
     @staticmethod
     def RADIANS_TO_DEGREES(radians):
@@ -49,7 +49,6 @@ class Constants:
     def DEGREES_TO_RADIANS(degrees):
         radians = degrees * np.pi / 180
         return radians
-
 
 
 class Urls:
@@ -149,5 +148,9 @@ def Download_In_Parallel(args):
 
     with multiprocessing.Pool(cpus) as pool:
 
-        for _ in tqdm(pool.imap_unordered(Download_Url, args), total=len(args), desc="Downloading MESSENGER MAG"):
+        for _ in tqdm(
+            pool.imap_unordered(Download_Url, args),
+            total=len(args),
+            desc="Downloading MESSENGER MAG",
+        ):
             continue
