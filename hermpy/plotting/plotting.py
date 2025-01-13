@@ -64,6 +64,11 @@ def Plot_Magnetospheric_Boundaries(
     bowshock_x_coords = initial_x + rho * np.cos(phi)
     bowshock_y_coords = rho * np.sin(phi)
 
+    # Bow shock functional form creates non-physical points far sunward of Mercury.
+    # These are incorrect and must be removed.
+    bowshock_y_coords = bowshock_y_coords[ bowshock_x_coords < 2 ]
+    bowshock_x_coords = bowshock_x_coords[ bowshock_x_coords < 2 ]
+
     match plane:
         case "xy":
             bowshock_label = ""
