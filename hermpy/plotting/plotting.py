@@ -460,9 +460,9 @@ def Add_Tick_Ephemeris(
         "minutes",
         "seconds",
         "range",
-        "latitude",
         "MLat",
         "local time",
+        "Heliocentric Distance"
     },
 ) -> None:
     """Adds ephemeris to tick labels
@@ -476,7 +476,7 @@ def Add_Tick_Ephemeris(
     ax : pyplot.Axes
         The pyplot axis to affect.
 
-    include : set {"date", "hours", "minutes", "seconds", "range", "latitude", "local time"}
+    include : set {"date", "hours", "minutes", "seconds", "range", "latitude", "local time", "Heliocentric Distance"}
         Which parameters to include as part of the tick labels.
 
     """
@@ -566,6 +566,11 @@ def Add_Tick_Ephemeris(
                 )
                 tick_format += "\n" + f"{datetime:%H:%M}"
 
+            if "Heliocentric Distance" in include:
+                heliocentric_distance = Constants.KM_TO_AU(trajectory.Get_Heliocentric_Distance(date))
+
+                tick_format += "\n" + f"{heliocentric_distance:.2f}"
+
             new_tick_labels.append(tick_format)
 
         first_tick_format: str = ""
@@ -590,7 +595,10 @@ def Add_Tick_Ephemeris(
             first_tick_format += "\nMLat. " + r"[$^\circ$]"
 
         if "local time" in include:
-            first_tick_format += "\nLT"
+            first_tick_format += "\nLT [HH:MM]"
+
+        if "Heliocentric Distance" in include:
+            first_tick_format += "\nR$_{H}$ [AU]"
 
         new_tick_labels[0] = first_tick_format
 
