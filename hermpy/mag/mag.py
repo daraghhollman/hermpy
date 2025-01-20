@@ -543,8 +543,37 @@ def Save_Mission(path: str, days_per_chunk=60):
                 aberrate=True,
                 multiprocess=True,
             )
+            Remove_Spikes(data_chunk)
+
+            # Reduce columns to save on both storage size,
+            # and when loaded into memory.
+            columns_to_include = [
+                "date",
+                "|B|",
+                "Bx",
+                "By",
+                "Bz",
+                "X MSM' (radii)",
+                "Y MSM' (radii)",
+                "Z MSM' (radii)",
+            ]
+            data_chunk = data_chunk[columns_to_include]
+
+            print(f"Dumped data between {start_date}, and {end_date}")
             pickle.dump(data_chunk, f)
 
 
 def Load_Mission(path: str):
-    return pickle.load(open(path, "rb"))
+    
+    data_chunks = []
+
+    with open(path, "rb") as f:
+        while True:
+            try:
+                data_chunk = pickle.load(f)
+                data_chunks.append(data_chunk)
+
+            except EOFError: # end of file error
+                break
+
+    return pd.concat(data_chunks)
