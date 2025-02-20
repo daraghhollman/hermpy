@@ -110,7 +110,7 @@ def Load_Between_Dates(
     root_dir: str,
     start: dt.datetime,
     end: dt.datetime,
-    strip: bool = False,
+    strip: bool = True,
     verbose: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
@@ -134,7 +134,7 @@ def Load_Between_Dates(
     end : datetime.datetime
         The end point of the data search
 
-    strip : bool {False, True}, optional
+    strip : bool {True, False}, optional
         Should the data be shortened to match the times in start and end
 
 
