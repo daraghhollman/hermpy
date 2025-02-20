@@ -12,6 +12,7 @@ class User:
     METAKERNEL = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
     DATA_DIRECTORIES = {
         "MAG": "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/",
+        "MAG_FULL": "/home/daraghhollman/Main/data/mercury/messenger/mag/full_cadence/",
         "FIPS": "/home/daraghhollman/Main/data/mercury/messenger/FIPS/",
     }
     CROSSING_LISTS = {
@@ -54,12 +55,13 @@ class Constants:
 class Urls:
 
     PDS_BASE = "https://search-pdsppi.igpp.ucla.edu/"
-    MAG_EXTENSION = "ditdos/download?id=pds://PPI/mess-mag-calibrated/data/mso-avg/"
+    MAG_EXTENSION_AVG = "ditdos/download?id=pds://PPI/mess-mag-calibrated/data/mso-avg/"
+    MAG_EXTENSION = "ditdos/download?id=pds://PPI/mess-mag-calibrated/data/mso/"
 
 
 def Download_MESSENGER_MAG(
     save_directory: str,
-    resolution: str = "01",
+    resolution: str | None = "01",
 ) -> None:
     """Function to automatically download MESSENGER MAG data
 
@@ -83,7 +85,12 @@ def Download_MESSENGER_MAG(
 
     """
 
-    base_url = Urls.PDS_BASE + Urls.MAG_EXTENSION
+    if resolution is not None:
+        base_url = Urls.PDS_BASE + Urls.MAG_EXTENSION_AVG
+
+    else:
+        base_url = Urls.PDS_BASE + Urls.MAG_EXTENSION
+
 
     urls = []
     download_locations = []
@@ -91,6 +98,9 @@ def Download_MESSENGER_MAG(
     for year in [2011, 2012, 2013, 2014, 2015]:
 
         for month_index in range(1, 13):
+
+            if year == 2011 and month_index < 4:
+                continue
 
             # First day of the month
             first_day = dt.date(year, month_index, 1)
@@ -105,11 +115,19 @@ def Download_MESSENGER_MAG(
             current_day = first_day
             while current_day <= last_day:
 
-                file_format = (
-                    f"{year}/"
-                    + f"{first_day.strftime('%j')}_{last_day.strftime('%j')}_{first_day.strftime('%b').upper()}/"
-                    + f"MAGMSOSCIAVG{current_day.strftime('%y%j')}_{resolution}_V08.TAB"
-                )
+                if resolution is not None:
+                    file_format = (
+                        f"{year}/"
+                        + f"{first_day.strftime('%j')}_{last_day.strftime('%j')}_{first_day.strftime('%b').upper()}/"
+                        + f"MAGMSOSCIAVG{current_day.strftime('%y%j')}_{resolution}_V08.TAB"
+                    )
+
+                else:
+                    file_format = (
+                        f"{year}/"
+                        + f"{first_day.strftime('%j')}_{last_day.strftime('%j')}_{first_day.strftime('%b').upper()}/"
+                        + f"MAGMSOSCI{current_day.strftime('%y%j')}_V08.TAB"
+                    )
 
                 urls.append(base_url + file_format)
                 download_locations.append(save_directory + file_format)
@@ -125,7 +143,7 @@ def Download_Url(args):
 
     directory = os.path.dirname(download_location)
     if not os.path.isdir(directory):
-        os.makedirs(directory)
+        os.makedirs(directory, exist_ok=True)
 
     response = requests.get(url)
 

@@ -70,7 +70,7 @@ def Load_Between_Dates(
     root_dir: str,
     start: dt.datetime,
     end: dt.datetime,
-    average: int = 1,
+    average: int | None = 1,
     strip: bool = True,
     aberrate: bool = True,
     verbose: bool = False,
@@ -98,9 +98,11 @@ def Load_Between_Dates(
     end : datetime.datetime
         The end point of the data search
 
-    average : int {1, 5, 10, 60}, optional
+    average : int {1, 5, 10, 60, None}, optional
         Which time average of data product to load. i.e. 1 second average,
         5 second average, etc.
+
+        If 'None', the unaveraged data will be downloaded.
 
     strip : bool {True, False}, optional
         Should the data be shortened to match the times in start and end
@@ -136,17 +138,28 @@ def Load_Between_Dates(
         desc="Loading Files",
         disable=not verbose,
     ):
-        file: list[str] = glob(
-            root_dir
-            + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
-        )
+        if average is not None:
+            file: list[str] = glob(
+                root_dir
+                + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
+            )
+        else:
+            file: list[str] = glob(
+                root_dir
+                + f"{date.strftime('%Y')}/*/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
+            )
 
         if len(file) > 1:
             raise ValueError("ERROR: There are duplicate data files being loaded.")
         elif len(file) == 0:
-            warnings.warn(
-                f"WARNING: The data trying to be loaded doesn't exist at filepath: {f'{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB'}"
-            )
+            if average is not None:
+                warnings.warn(
+                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB'}"
+                )
+            else:
+                warnings.warn(
+                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime('%Y')}/*/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB'}"
+                )
             continue
 
         files_to_load.append(file[0])
@@ -154,15 +167,9 @@ def Load_Between_Dates(
     if included_columns == set():
         included_columns = {
             "date",
-            "X MSO (km)",
-            "Y MSO (km)",
-            "Z MSO (km)",
             "X MSO (radii)",
             "Y MSO (radii)",
             "Z MSO (radii)",
-            "X MSM (km)",
-            "Y MSM (km)",
-            "Z MSM (km)",
             "X MSM (radii)",
             "Y MSM (radii)",
             "Z MSM (radii)",
@@ -214,21 +221,20 @@ def Extract_Data(path):
         )
     ]
 
-    ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
-    magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
+    if len(data[0]) == 16:
+        ephemeris = np.array([data[:, 7], data[:, 8], data[:, 9]])
+        magnetic_field = np.array([data[:, 10], data[:, 11], data[:, 12]])
+    else:
+        ephemeris = np.array([data[:, 6], data[:, 7], data[:, 8]])
+        magnetic_field = np.array([data[:, 9], data[:, 10], data[:, 11]])
+
 
     df = pd.DataFrame(
         {
             "date": dates,
-            "X MSO (km)": ephemeris[0],
-            "Y MSO (km)": ephemeris[1],
-            "Z MSO (km)": ephemeris[2],
             "X MSO (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
             "Y MSO (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
             "Z MSO (radii)": ephemeris[2] / Constants.MERCURY_RADIUS_KM,
-            "X MSM (km)": ephemeris[0],
-            "Y MSM (km)": ephemeris[1],
-            "Z MSM (km)": ephemeris[2] - Constants.DIPOLE_OFFSET_KM,
             "X MSM (radii)": ephemeris[0] / Constants.MERCURY_RADIUS_KM,
             "Y MSM (radii)": ephemeris[1] / Constants.MERCURY_RADIUS_KM,
             "Z MSM (radii)": (ephemeris[2] / Constants.MERCURY_RADIUS_KM)
@@ -271,7 +277,7 @@ def Strip_Data(
 
 
     Returns
-    -------
+_{average:02d}    -------
     stripped_data : pandas.DataFrame
         A new dataframe containing only the data between the given dates.
     """
@@ -416,15 +422,6 @@ def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
     data["Bx'"] = data["Bx"] * cos_terms - data["By"] * sin_terms
     data["By'"] = data["Bx"] * sin_terms - data["By"] * cos_terms
     data["Bz'"] = data["Bz"]
-
-    # Rotate ephemeris coordinates in kilometers
-    data["X MSM' (km)"] = (
-        data["X MSM (km)"] * cos_terms - data["Y MSM (km)"] * sin_terms
-    )
-    data["Y MSM' (km)"] = (
-        data["X MSM (km)"] * sin_terms + data["Y MSM (km)"] * cos_terms
-    )
-    data["Z MSM' (km)"] = data["Z MSM (km)"]
 
     # Rotate ephemeris coordinates in radii
     data["X MSM' (radii)"] = (
