@@ -214,7 +214,7 @@ def Extract_Data(path):
             days=day_of_year - 1,
             hours=int(hour),
             minutes=int(minute),
-            seconds=int(second),
+            seconds=float(second),
         )
         for year, day_of_year, hour, minute, second in zip(
             years, day_of_years, hours, minutes, seconds
