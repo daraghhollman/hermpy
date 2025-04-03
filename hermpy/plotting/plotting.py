@@ -23,6 +23,8 @@ def Plot_Magnetospheric_Boundaries(
     initial_x: float = 0.5,
     add_legend: bool = False,
     zorder: int = 0,
+    color = "black",
+    lw = 1,
 ) -> None:
     """Add average magnetopause and bow shock locations based on
     Winslow et al. (2013).
@@ -82,8 +84,8 @@ def Plot_Magnetospheric_Boundaries(
                 magnetopause_x_coords,
                 magnetopause_y_coords,
                 ls="--",
-                lw=1,
-                color="black",
+                lw=lw,
+                color=color,
                 label=magnetopause_label,
                 zorder=zorder,
             )
@@ -91,8 +93,8 @@ def Plot_Magnetospheric_Boundaries(
                 bowshock_x_coords,
                 bowshock_y_coords,
                 ls="-",
-                lw=1,
-                color="black",
+                lw=lw,
+                color=color,
                 label=magnetopause_label,
                 zorder=zorder,
             )
@@ -110,8 +112,8 @@ def Plot_Magnetospheric_Boundaries(
                 magnetopause_x_coords,
                 magnetopause_y_coords,
                 ls="--",
-                lw=1,
-                color="black",
+                lw=lw,
+                color=color,
                 label=magnetopause_label,
                 zorder=zorder,
             )
@@ -119,8 +121,8 @@ def Plot_Magnetospheric_Boundaries(
                 bowshock_x_coords,
                 bowshock_y_coords,
                 ls="-",
-                lw=1,
-                color="black",
+                lw=lw,
+                color=color,
                 zorder=zorder,
                 label=bowshock_label,
             )
