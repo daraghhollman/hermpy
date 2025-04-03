@@ -224,6 +224,7 @@ def Plot_Mercury(
     frame: str = "MSO",
     border_colour: str = "black",
     alpha=1,
+    lw=1,
 ) -> None:
     """Adds a circle represting Mercury.
 
@@ -264,7 +265,7 @@ def Plot_Mercury(
     x_coords = np.cos(angles) + offset[0]
     y_coords = np.sin(angles) + offset[1]
 
-    ax.plot(x_coords, y_coords, color=border_colour)
+    ax.plot(x_coords, y_coords, color=border_colour, lw=lw)
 
     match shaded_hemisphere:
         case "left":
