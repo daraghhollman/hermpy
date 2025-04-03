@@ -638,7 +638,7 @@ def Get_Nearest_Apoapsis(
 
 def Get_Bow_Shock_Grazing_Angle(
     crossing,
-    return_vectors: bool = False,
+    return_vectors: bool = True,
     aberrate: bool | str = True,
     verbose: bool = False,
 ):
@@ -650,9 +650,10 @@ def Get_Bow_Shock_Grazing_Angle(
         verbose=verbose,
     )
 
+
 def Get_Magnetopause_Grazing_Angle(
     crossing,
-    return_vectors: bool = False,
+    return_vectors: bool = True,
     aberrate: bool | str = True,
     verbose: bool = False,
 ):
@@ -663,6 +664,7 @@ def Get_Magnetopause_Grazing_Angle(
         aberrate=aberrate,
         verbose=verbose,
     )
+
 
 def Get_Grazing_Angle(
     crossing,
@@ -807,8 +809,12 @@ def Get_Grazing_Angle(
     # as the vector between an arbitrary point and the closest point on an arbitrary
     # curve is parallel to the normal vector of that curve at that closest point.
     normal_vector = boundary_positions[closest_position] - cylindrical_start_position
-
     normal_vector = normal_vector / np.sqrt(np.sum(normal_vector**2))
+
+    # If the x component of the normal vector is negative, the vector found is
+    # actually the inward pointing normal. Hence, we need to flip the vector.
+    if normal_vector[0] < 0:
+        normal_vector = normal_vector * -1
 
     grazing_angle = np.arccos(
         np.dot(normal_vector, cylindrical_velocity)
@@ -823,7 +829,6 @@ def Get_Grazing_Angle(
         # If the angle is greater than 90 degrees, we have the normal vector
         # the wrong way around. i.e. the inward pointing normal.
         grazing_angle = 180 - grazing_angle
-        normal_vector = -normal_vector
 
     if verbose:
         print(f"Crossing Start Time: {crossing['Start Time']}")
