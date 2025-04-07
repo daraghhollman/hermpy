@@ -12,6 +12,16 @@ import spiceypy as spice
 
 from hermpy.utils import User, Constants
 
+wong_colours = {
+    "black": "black",
+    "orange": "#E69F00",
+    "light blue": "#56B4E9",
+    "green": "#009E73",
+    "yellow": "#F0E442",
+    "blue": "#0072B2",
+    "red": "#D55E00",
+    "pink": "#CC79A7",
+}
 
 def Plot_Magnetospheric_Boundaries(
     ax: plt.Axes,
