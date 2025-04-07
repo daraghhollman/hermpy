@@ -12,7 +12,7 @@ import hermpy.trajectory as traj
 from hermpy.utils import Constants, User
 
 
-def Get_Heliocentric_Distance(date: dt.datetime | dt.date) -> float:
+def Get_Heliocentric_Distance(date: dt.datetime | dt.date | list[dt.datetime]) -> float:
     """Gets the distance from Mercury to the Sun, assumes a SPICE metakernel is loaded.
 
 
@@ -29,12 +29,28 @@ def Get_Heliocentric_Distance(date: dt.datetime | dt.date) -> float:
     """
 
     with spice.KernelPool(User.METAKERNEL):
-        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
-        position, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
 
-        distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+        if isinstance(date, (dt.datetime, dt.date)):
+            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        return distance
+            position, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
+
+            distance = np.sqrt(np.sum(position**2))
+
+            return distance
+
+        elif isinstance(date, Iterable):
+
+            et = spice.datetime2et(date)
+
+            positions, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
+
+            distances = np.sqrt(np.sum(positions**2, axis=1))
+
+            return distances
+
+        else:
+            raise ValueError("Input date of incorrect type!")
 
 
 def Longitude(position: list[float]) -> float:
@@ -308,9 +324,7 @@ def Get_Trajectory(
         return positions
 
 
-def Aberrate_Position(
-    position: list[float], date: dt.datetime | dt.date, verbose=False
-):
+def Aberrate_Position(position: list[float], date: dt.datetime | dt.date):
     """Rotate the spacecraft coordinates into the aberrated coordinate system.
 
 
@@ -369,13 +383,15 @@ def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
 
     """
 
-    if type(date) == dt.datetime:
+    if isinstance(date, dt.datetime):
         mercury_distance = (
             Get_Heliocentric_Distance(date.date()) * 1000
         )  # convert to meters
 
-    else:
-        mercury_distance = Get_Heliocentric_Distance(date) * 1000
+    elif isinstance(date, dt.date):
+        mercury_distance = (
+            Get_Heliocentric_Distance(date) * 1000
+        )  # convert to meters
 
     # determine mercury velocity
     a = Constants.MERCURY_SEMI_MAJOR_AXIS
