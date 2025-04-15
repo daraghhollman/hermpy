@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Iterable
+from typing import Iterable, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,6 +9,7 @@ import scipy.spatial
 import spiceypy as spice
 
 import hermpy.trajectory as traj
+from hermpy.boundaries import boundaries
 from hermpy.utils import Constants, User
 
 
@@ -389,9 +390,7 @@ def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
         )  # convert to meters
 
     elif isinstance(date, dt.date):
-        mercury_distance = (
-            Get_Heliocentric_Distance(date) * 1000
-        )  # convert to meters
+        mercury_distance = Get_Heliocentric_Distance(date) * 1000  # convert to meters
 
     # determine mercury velocity
     a = Constants.MERCURY_SEMI_MAJOR_AXIS
@@ -561,6 +560,34 @@ def Get_All_Apoapsis_In_Range(
                     )
 
         return apoapsis_altitudes, apoapsis_times
+
+
+def Get_Orbit_Number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
+
+    # Orbit number is defined in the Philpott crossing list
+    # New orbits start at BS_IN
+    # We look at the crossing start time before our query time,
+    # and read the orbit number there.
+    # Convert times to list of pd.Timestamp objects
+    if isinstance(times, dt.datetime):
+        times = [times]
+    else:
+        times = pd.to_datetime(times)
+
+    # Load Philpott crossings
+    philpott_intervals = boundaries.Load_Crossings(User.CROSSING_LISTS["Philpott"])
+
+    # Find which Philpott interval was closest to our start time.
+    nearest_indices = (
+        philpott_intervals["Start Time"].searchsorted(times, side="right") - 1
+    )
+
+    orbit_numbers = philpott_intervals["Orbit Number"].loc[nearest_indices]
+
+    if isinstance(times, dt.datetime):
+        return orbit_numbers.tolist()[0]
+    else:
+        return orbit_numbers.tolist()
 
 
 def Get_Nearest_Apoapsis(
