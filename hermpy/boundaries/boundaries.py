@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from hermpy.utils import Constants
 import hermpy.trajectory as trajectory
+from hermpy.utils import Constants
 from hermpy.utils.utils import User
 
 
@@ -549,6 +549,8 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
     start_times = []
     end_times = []
 
+    orbit_numbers = []
+
     start_x_mso_radii = []
     start_y_mso_radii = []
     start_z_mso_radii = []
@@ -601,6 +603,8 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
             start_time = dt.datetime.strptime(start_string, "%Y.0%j.0%H.0%M.0%S.%f")
             start_times.append(start_time)
 
+            orbit_numbers.append(row["Orbit Number"])
+
             start_x_mso_radii.append(row["X_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
             start_y_mso_radii.append(row["Y_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
             start_z_mso_radii.append(row["Z_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
@@ -632,6 +636,7 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
         "Interval Type": types,
         "Interval Start": start_times,
         "Interval End": end_times,
+        "Orbit Number": orbit_numbers,
         "X MSO Start (radii)": start_x_mso_radii,
         "Y MSO Start (radii)": start_y_mso_radii,
         "Z MSO Start (radii)": start_z_mso_radii,
@@ -665,6 +670,7 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
     multi_index_columns = pd.MultiIndex.from_tuples(
         [
             ("Type", "", ""),
+            ("Orbit Number", "", ""),
             ("Start", "Time", ""),
             ("Start", "MSO", "X (radii)"),
             ("Start", "MSO", "Y (radii)"),
@@ -696,6 +702,7 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
 
     multi_index_data = [
         list_data["Interval Type"],
+        list_data["Orbit Number"],
         list_data["Interval Start"],
         list_data["X MSO Start (radii)"],
         list_data["Y MSO Start (radii)"],
