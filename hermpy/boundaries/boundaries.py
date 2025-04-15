@@ -603,7 +603,7 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
             start_time = dt.datetime.strptime(start_string, "%Y.0%j.0%H.0%M.0%S.%f")
             start_times.append(start_time)
 
-            orbit_numbers.append(row["Orbit Number"])
+            orbit_numbers.append(row["Orbit number"])
 
             start_x_mso_radii.append(row["X_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
             start_y_mso_radii.append(row["Y_MSO (km)"] / Constants.MERCURY_RADIUS_KM)
