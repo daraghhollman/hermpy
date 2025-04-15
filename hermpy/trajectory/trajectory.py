@@ -582,6 +582,8 @@ def Get_Orbit_Number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
         philpott_intervals["Start Time"].searchsorted(times, side="right") - 1
     )
 
+    nearest_indices[nearest_indices == -1] = 0
+
     orbit_numbers = philpott_intervals["Orbit Number"].loc[nearest_indices]
 
     if isinstance(times, dt.datetime):
