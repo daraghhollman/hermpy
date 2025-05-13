@@ -2,9 +2,9 @@ import datetime as dt
 import multiprocessing
 import os
 
+import numpy as np
 import requests
 from tqdm import tqdm
-import numpy as np
 
 
 class User:
@@ -14,6 +14,7 @@ class User:
         "MAG": "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/",
         "MAG_FULL": "/home/daraghhollman/Main/data/mercury/messenger/mag/full_cadence/",
         "FIPS": "/home/daraghhollman/Main/data/mercury/messenger/FIPS/",
+        "FULL MISSION": "/home/daraghhollman/Main/data/mercury/messenger_mag",
     }
     CROSSING_LISTS = {
         "Philpott": "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx",
@@ -43,8 +44,7 @@ class Constants:
 
     @staticmethod
     def RADIANS_TO_DEGREES(radians):
-        degrees = radians * 180 / np.pi
-        return degrees
+        return np.degrees(radians)
 
     @staticmethod
     def DEGREES_TO_RADIANS(degrees):
@@ -90,7 +90,6 @@ def Download_MESSENGER_MAG(
 
     else:
         base_url = Urls.PDS_BASE + Urls.MAG_EXTENSION
-
 
     urls = []
     download_locations = []
