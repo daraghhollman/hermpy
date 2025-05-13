@@ -1,16 +1,15 @@
 import datetime as dt
 
-import matplotlib.dates as mpl_dates
-import matplotlib.pyplot as plt
-import matplotlib.patches
 import matplotlib.axes
+import matplotlib.dates as mpl_dates
 import matplotlib.figure
+import matplotlib.patches
+import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-
 import spiceypy as spice
 
-from hermpy.utils import User, Constants
+from hermpy.utils import Constants, User
 
 wong_colours = {
     "black": "black",
@@ -23,6 +22,7 @@ wong_colours = {
     "pink": "#CC79A7",
 }
 
+
 def Plot_Magnetospheric_Boundaries(
     ax: plt.Axes,
     plane: str = "xy",
@@ -33,8 +33,8 @@ def Plot_Magnetospheric_Boundaries(
     initial_x: float = 0.5,
     add_legend: bool = False,
     zorder: int = 0,
-    color = "black",
-    lw = 1,
+    color="black",
+    lw=1,
 ) -> None:
     """Add average magnetopause and bow shock locations based on
     Winslow et al. (2013).
@@ -78,8 +78,8 @@ def Plot_Magnetospheric_Boundaries(
 
     # Bow shock functional form creates non-physical points far sunward of Mercury.
     # These are incorrect and must be removed.
-    bowshock_y_coords = bowshock_y_coords[ bowshock_x_coords < 2 ]
-    bowshock_x_coords = bowshock_x_coords[ bowshock_x_coords < 2 ]
+    bowshock_y_coords = bowshock_y_coords[bowshock_x_coords < 2]
+    bowshock_x_coords = bowshock_x_coords[bowshock_x_coords < 2]
 
     match plane:
         case "xy":
@@ -392,9 +392,9 @@ def Format_Cylindrical_Plot(
     ax.set_ylim(0, 2 * size)
 
     # Set labels
-    ax.set_xlabel(r"$\text{X}_{\text{MSM'}} \quad \left[ \text{R}_\text{M} \right]$")
+    ax.set_xlabel(r"$X_{\text{MSM'}} \quad \left[ \text{R}_\text{M} \right]$")
     ax.set_ylabel(
-        r"$\left( \text{Y}_{\text{MSM'}}^2 + \text{Z}_{\text{MSM'}}^2 \right)^{0.5} \quad \left[ \text{R}_\text{M} \right]$"
+        r"$\left( Y_{\text{MSM'}}^2 + Z_{\text{MSM'}}^2 \right)^{0.5} \quad \left[ \text{R}_\text{M} \right]$"
     )
 
     ax.tick_params(
@@ -475,7 +475,7 @@ def Add_Tick_Ephemeris(
         "range",
         "MLat",
         "local time",
-        "Heliocentric Distance"
+        "Heliocentric Distance",
     },
 ) -> None:
     """Adds ephemeris to tick labels
@@ -580,7 +580,9 @@ def Add_Tick_Ephemeris(
                 tick_format += "\n" + f"{datetime:%H:%M}"
 
             if "Heliocentric Distance" in include:
-                heliocentric_distance = Constants.KM_TO_AU(trajectory.Get_Heliocentric_Distance(date))
+                heliocentric_distance = Constants.KM_TO_AU(
+                    trajectory.Get_Heliocentric_Distance(date)
+                )
 
                 tick_format += "\n" + f"{heliocentric_distance:.2f}"
 
