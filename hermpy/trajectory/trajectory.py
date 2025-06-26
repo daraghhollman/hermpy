@@ -1,4 +1,5 @@
 import datetime as dt
+import multiprocessing
 from typing import Iterable, Union
 
 import matplotlib.pyplot as plt
@@ -52,6 +53,26 @@ def Get_Heliocentric_Distance(date: dt.datetime | dt.date | list[dt.datetime]) -
 
         else:
             raise ValueError("Input date of incorrect type!")
+
+
+def to_et_batch(datetimes: list[dt.datetime]) -> np.ndarray:
+    """Batch-convert datetime list to ephemeris time (ET)."""
+    return np.array([spice.datetime2et(d) for d in datetimes])
+
+
+def compute_position(et: float) -> float:
+    pos, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
+    return np.linalg.norm(pos)
+
+
+def get_heliocentric_distances_parallel(
+    dates: list[dt.datetime], processes: int = None
+) -> np.ndarray:
+    with spice.KernelPool(User.METAKERNEL):
+        ets = to_et_batch(dates)
+        with multiprocessing.Pool(processes or multiprocessing.cpu_count()) as pool:
+            distances = pool.map(compute_position, ets)
+        return np.array(distances)
 
 
 def Longitude(position: list[float]) -> float:
