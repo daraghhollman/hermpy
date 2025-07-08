@@ -12,6 +12,7 @@ cd hermpy/
 pip install .
 ```
 
+### Further Setup
 Further setup is required. Paths in `hermpy/utils/utils.py, class: User` must
 be updated to locations of your choosing. MESSENGER MAG data can be
 automatically downloaded using `hermpy.utils.User.Download_MESSENGER_MAG()`,
@@ -44,9 +45,25 @@ however, it is currently quicker to download zip files using the
 ...
 ```
 
+### Philpott Crossing List
 The Philott et al. (2020) crossing list can be downloaded from supplementary
 information [here](https://doi.org/10.1029/2019JA027544). The path must be
 updated in `hermpy/utils/utils.py`
+
+### SPICE
+hermpy uses SPICE to determine MESSENGER ephemerides. You require a SPICE
+MetaKernel appropriate for the MESSENGER mission. The MetaKernel should refer
+to the appropriate MESSENGER ephemeris (spk) and frame (fk) kernels for the
+period of interest, the current leap seconds kernel (lsk), an appropriate
+planetary and/or satellite ephemeris kernel (spk), and an appropriate planetary
+constants kernel (pck).
+
+More information about the SPICE toolkit can be found at: (https://naif.jpl.nasa.gov/naif/toolkit.html)
+
+In particular, useful information for constructing a MetaKernel can be found at: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
+
+If you don’t have your own metakernel, you can create one for MESSENGER using this tool:
+- [AutoMeta](https://github.com/mjrutala/AutoMeta)
 
 ## Usage
 
