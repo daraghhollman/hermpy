@@ -215,16 +215,16 @@ def Add_Labels(ax: plt.Axes, plane: str, frame="MSO") -> None:
 
     match plane:
         case "xy":
-            ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
-            ax.set_ylabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_xlabel(r"X$_{\rm var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_ylabel(r"Y$_{\rm var1}$ [$R_M$]".replace("var1", frame))
 
         case "xz":
-            ax.set_xlabel(r"X$_{var1}$ [$R_M$]".replace("var1", frame))
-            ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_xlabel(r"X$_{\rm var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_ylabel(r"Z$_{\rm var1}$ [$R_M$]".replace("var1", frame))
 
         case "yz":
-            ax.set_xlabel(r"Y$_{var1}$ [$R_M$]".replace("var1", frame))
-            ax.set_ylabel(r"Z$_{var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_xlabel(r"Y$_{\rm var1}$ [$R_M$]".replace("var1", frame))
+            ax.set_ylabel(r"Z$_{\rm var1}$ [$R_M$]".replace("var1", frame))
 
 
 def Plot_Mercury(
