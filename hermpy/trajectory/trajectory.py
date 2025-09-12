@@ -169,7 +169,10 @@ def Get_Position(
                     pass
 
                 case "MSM":
-                    position[2] -= Constants.DIPOLE_OFFSET_KM
+                    if isinstance(date, Iterable):
+                        position[:,2] -= Constants.DIPOLE_OFFSET_KM
+                    else:
+                        position[2] -= Constants.DIPOLE_OFFSET_KM
 
             if aberrate:
                 if isinstance(date, Iterable):
