@@ -1,5 +1,10 @@
-hermpy/__pycache__/
-hermpy/version.py
-hermpy.egg-info/
+# Python-generated files
+__pycache__/
+*.py[oc]
 build/
-*.pyc
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
