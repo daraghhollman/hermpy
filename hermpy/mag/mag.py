@@ -4,8 +4,8 @@ Functions for loading and handling MAG data
 
 import datetime as dt
 import multiprocessing
-import warnings
 import pickle
+import warnings
 from glob import glob
 
 import numpy as np
@@ -228,7 +228,6 @@ def Extract_Data(path):
         ephemeris = np.array([data[:, 6], data[:, 7], data[:, 8]])
         magnetic_field = np.array([data[:, 9], data[:, 10], data[:, 11]])
 
-
     df = pd.DataFrame(
         {
             "date": dates,
@@ -260,26 +259,26 @@ def Strip_Data(
 ) -> pd.DataFrame:
     """Shortens MAG data to only include times between a start and end time
 
-    Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
-    to match give start and end time.
+        Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
+        to match give start and end time.
 
 
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
 
-    start : datetime.datetime
-        The start date of the data to be kept. All rows prior will be removed.
+        start : datetime.datetime
+            The start date of the data to be kept. All rows prior will be removed.
 
-    end : datetime.datetime
-        The end date of the data to be kept. All rows after will be removed.
+        end : datetime.datetime
+            The end date of the data to be kept. All rows after will be removed.
 
 
-    Returns
-_{average:02d}    -------
-    stripped_data : pandas.DataFrame
-        A new dataframe containing only the data between the given dates.
+        Returns
+    _{average:02d}    -------
+        stripped_data : pandas.DataFrame
+            A new dataframe containing only the data between the given dates.
     """
 
     stripped_data = data.loc[data["date"].between(start, end)]
@@ -318,7 +317,9 @@ def Remove_Spikes(
     components = ["|B|", "Bx", "By", "Bz"]
 
     # First find the peaks in the data
-    peaks, _ = scipy.signal.find_peaks(data["|B|"], height=threshold, distance=padding / 2)
+    peaks, _ = scipy.signal.find_peaks(
+        data["|B|"], height=threshold, distance=padding / 2
+    )
 
     for peak_index in peaks:
         for component in components:
@@ -530,8 +531,10 @@ def Save_Mission(path: str, days_per_chunk=60):
     mission_start = dt.datetime(2011, 3, 23, 15, 37)
     mission_end = dt.datetime(2015, 4, 30, 15, 8)
 
-    with open(path, 'wb') as f:
-        for start_date, end_date in Chunk_Dates(mission_start, mission_end, days_per_chunk):  # Process 30 days at a time
+    with open(path, "wb") as f:
+        for start_date, end_date in Chunk_Dates(
+            mission_start, mission_end, days_per_chunk
+        ):  # Process 30 days at a time
             data_chunk = Load_Between_Dates(
                 User.DATA_DIRECTORIES["MAG"],
                 start_date,
@@ -561,7 +564,7 @@ def Save_Mission(path: str, days_per_chunk=60):
 
 
 def Load_Mission(path: str):
-    
+
     data_chunks = []
 
     with open(path, "rb") as f:
@@ -570,7 +573,7 @@ def Load_Mission(path: str):
                 data_chunk = pickle.load(f)
                 data_chunks.append(data_chunk)
 
-            except EOFError: # end of file error
+            except EOFError:  # end of file error
                 break
 
     return pd.concat(data_chunks)
