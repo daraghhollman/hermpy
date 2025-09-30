@@ -11,7 +11,26 @@ import spiceypy as spice
 
 import hermpy.trajectory as traj
 from hermpy.boundaries import boundaries
+from hermpy.typing import DateLike, DateOrDates
 from hermpy.utils import Constants, User
+
+
+def get_true_anomaly_angle(date: DateOrDates):
+    """
+    For a given date/datetime or sequence, returns Mercury's TAA
+    """
+
+    with spice.KernelPool(User.METAKERNEL):
+
+        if isinstance(date, DateLike):
+            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+
+            mercury_state = spice.spkezr("MERCURY", et, "J2000", "NONE", "SUN")
+
+            mu = spice.bodvrd("SUN", "GM", 1)
+            orbital_elements = spice.oscltx(mercury_state, et, mu)
+
+            print(orbital_elements)
 
 
 def Get_Heliocentric_Distance(date: dt.datetime | dt.date | list[dt.datetime]) -> float:
@@ -170,7 +189,7 @@ def Get_Position(
 
                 case "MSM":
                     if isinstance(date, Iterable):
-                        position[:,2] -= Constants.DIPOLE_OFFSET_KM
+                        position[:, 2] -= Constants.DIPOLE_OFFSET_KM
                     else:
                         position[2] -= Constants.DIPOLE_OFFSET_KM
 
@@ -349,7 +368,9 @@ def Get_Trajectory(
         return positions
 
 
-def Aberrate_Position(position: list[float], date: dt.datetime | dt.date):
+def Aberrate_Position(
+    position: list[float], date: dt.datetime | dt.date, use_own_metakernel=False
+):
     """Rotate the spacecraft coordinates into the aberrated coordinate system.
 
 
@@ -373,8 +394,24 @@ def Aberrate_Position(position: list[float], date: dt.datetime | dt.date):
         The new position, rotated into the aberrated frame.
     """
 
-    with spice.KernelPool(User.METAKERNEL):
+    if not use_own_metakernel:
+        with spice.KernelPool(User.METAKERNEL):
 
+            aberration_angle = Get_Aberration_Angle(date)
+
+            rotation_matrix = np.array(
+                [
+                    [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
+                    [np.sin(aberration_angle), np.cos(aberration_angle), 0],
+                    [0, 0, 1],
+                ]
+            )
+
+            rotated_position = np.matmul(rotation_matrix, position)
+
+            return rotated_position
+
+    else:
         aberration_angle = Get_Aberration_Angle(date)
 
         rotation_matrix = np.array(
