@@ -11,7 +11,6 @@ paths_to_test = [
 ]
 
 for path in paths_to_test:
-
     if os.path.exists(path):
         continue
 

@@ -154,11 +154,11 @@ def Load_Between_Dates(
         elif len(file) == 0:
             if average is not None:
                 warnings.warn(
-                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB'}"
+                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime("%Y")}/*/MAGMSOSCIAVG{date.strftime("%y%j")}_{average:02d}_V08.TAB'}"
                 )
             else:
                 warnings.warn(
-                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime('%Y')}/*/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB'}"
+                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime("%Y")}/*/MAGMSOSCI{date.strftime("%y%j")}_V08.TAB'}"
                 )
             continue
 
@@ -346,7 +346,6 @@ def Determine_Variability(items):
 def Add_Field_Variability(
     data: pd.DataFrame, time_frame: dt.timedelta, multiprocess=False
 ):
-
     if multiprocess:
         variabilities = []
         count = 0
@@ -362,7 +361,6 @@ def Add_Field_Variability(
         print("Adding Field Variability")
         variabilities = []
         for i, row in tqdm(data.iterrows(), total=len(data)):
-
             # Get the rows before and after
             data_to_average = data.loc[
                 (data["date"].between(row["date"] - time_frame, row["date"]))
@@ -564,7 +562,6 @@ def Save_Mission(path: str, days_per_chunk=60):
 
 
 def Load_Mission(path: str):
-
     data_chunks = []
 
     with open(path, "rb") as f:

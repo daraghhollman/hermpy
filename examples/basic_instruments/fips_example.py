@@ -21,7 +21,9 @@ philpott_crossings = boundaries.Load_Crossings(
 start = dt.datetime(year=2013, month=8, day=19, hour=12)
 stop = dt.datetime(year=2013, month=8, day=22, hour=21)
 
-data = fips.Load_Between_Dates("/home/daraghhollman/Main/data/mercury/messenger/FIPS/", start, stop, strip=True)
+data = fips.Load_Between_Dates(
+    "/home/daraghhollman/Main/data/mercury/messenger/FIPS/", start, stop, strip=True
+)
 
 # We transpose to place the time axis along x
 protons = np.transpose(data["proton_energies"])
@@ -43,17 +45,23 @@ cmap = "plasma"
 protons_mesh = axes[0].pcolormesh(
     data["dates"], fips_calibration, protons, norm=mpl_colors.LogNorm(), cmap=cmap
 )
-heavy_ions_mesh = axes[1].pcolormesh(data["dates"], fips_calibration, heavy_ions, norm=mpl_colors.LogNorm(), cmap=cmap)
+heavy_ions_mesh = axes[1].pcolormesh(
+    data["dates"], fips_calibration, heavy_ions, norm=mpl_colors.LogNorm(), cmap=cmap
+)
 
 colorbar_label = "Diff. Energy Flux\n[(keV/e)$^{-1}$ sec$^{-1}$ cm$^{-2}$]"
 plt.colorbar(protons_mesh, ax=axes[0], label="Proton " + colorbar_label)
 plt.colorbar(protons_mesh, ax=axes[1], label="Heavy Ion " + colorbar_label)
 
-plotting.Add_Tick_Ephemeris(axes[1], {"date", "hours", "minutes", "range", "latitude", "local time"})
+plotting.Add_Tick_Ephemeris(
+    axes[1], {"date", "hours", "minutes", "range", "latitude", "local time"}
+)
 
 for ax in axes:
     ax.set_ylabel("E/Q [keV/Q]")
     ax.set_yscale("log")
-    boundaries.Plot_Crossing_Intervals(ax, start, stop, philpott_crossings, color="black", height=1.1)
+    boundaries.Plot_Crossing_Intervals(
+        ax, start, stop, philpott_crossings, color="black", height=1.1
+    )
 
 plt.show()

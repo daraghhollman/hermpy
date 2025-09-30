@@ -9,7 +9,9 @@ start = dt.datetime(year=2011, month=3, day=24)
 end = dt.datetime(year=2011, month=3, day=25)
 
 # Isolating only a particular portion of the files
-data = mag.Load_Between_Dates(User.DATA_DIRECTORIES["MAG_FULL"], start, end, average=None)
+data = mag.Load_Between_Dates(
+    User.DATA_DIRECTORIES["MAG_FULL"], start, end, average=None
+)
 
 # This data can then be plotted using external libraries such as matplotlib
 fig, ax = plt.subplots()

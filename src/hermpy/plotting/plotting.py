@@ -110,7 +110,6 @@ def Plot_Magnetospheric_Boundaries(
             )
 
         case "xz":
-
             bowshock_label = ""
             magnetopause_label = ""
 
@@ -423,7 +422,6 @@ def Format_Cylindrical_Plot(
 
     # Add Mercury
     match mercury_style:
-
         case "offset":
             Plot_Circle(
                 ax, (0, +Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey"
@@ -444,7 +442,6 @@ def Plot_Circle(
     shade_colour: str = "grey",
     **kwargs,
 ) -> None:
-
     if shade_half:
         w1 = matplotlib.patches.Wedge(
             centre, radius, 90, 180 + 90, fc=shade_colour, **kwargs

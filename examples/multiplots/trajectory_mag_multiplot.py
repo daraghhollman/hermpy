@@ -12,7 +12,9 @@ mpl.rcParams["font.size"] = 14
 
 ###################### MAG #########################
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
-philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
+philpott_crossings = boundaries.Load_Crossings(
+    "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
+)
 
 # We need a metakernel to retrieve ephemeris information
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
@@ -43,7 +45,6 @@ to_plot = ["Bx", "By", "Bz", "|B|"]
 y_labels = ["B$_x$", "B$_y$", "B$_z$", "|B|"]
 
 for i, ax in enumerate(mag_axes):
-
     # Plot Data
     ax.plot(data["date"], data[to_plot[i]], color="black", lw=0.8)
     ax.set_ylabel(y_labels[i])
@@ -74,7 +75,6 @@ for ax in mag_axes:
         ax.set_xticklabels([])
 
 
-
 ##################### TRAJECTORIES ######################
 # Add trajectory subplot
 
@@ -90,30 +90,48 @@ frame = "MSM"
 
 # Get positions in MSO coordinate system
 positions = trajectory.Get_Trajectory("Messenger", dates, frame=frame, aberrate=True)
-padded_positions = trajectory.Get_Trajectory("Messenger", padded_dates, frame=frame, aberrate=True)
+padded_positions = trajectory.Get_Trajectory(
+    "Messenger", padded_dates, frame=frame, aberrate=True
+)
 
 # Convert from km to Mercury radii
 positions /= 2439.7
 padded_positions /= 2439.7
 
-trajectory_axes[0].plot(positions[:, 0], positions[:, 1], color="magenta", lw=3, zorder=10)
-trajectory_axes[1].plot(positions[:, 0], positions[:, 2], color="magenta", lw=3, zorder=10, label="Plotted Trajectory")
-trajectory_axes[2].plot(positions[:, 1], positions[:, 2], color="magenta", lw=3, zorder=10)
+trajectory_axes[0].plot(
+    positions[:, 0], positions[:, 1], color="magenta", lw=3, zorder=10
+)
+trajectory_axes[1].plot(
+    positions[:, 0],
+    positions[:, 2],
+    color="magenta",
+    lw=3,
+    zorder=10,
+    label="Plotted Trajectory",
+)
+trajectory_axes[2].plot(
+    positions[:, 1], positions[:, 2], color="magenta", lw=3, zorder=10
+)
 
 # We also would like to give context and plot the orbit around this
 trajectory_axes[0].plot(padded_positions[:, 0], padded_positions[:, 1], color="grey")
-trajectory_axes[1].plot(padded_positions[:, 0], padded_positions[:, 2], color="grey", label=r"Trajectory $\pm$ 6 hours")
+trajectory_axes[1].plot(
+    padded_positions[:, 0],
+    padded_positions[:, 2],
+    color="grey",
+    label=r"Trajectory $\pm$ 6 hours",
+)
 trajectory_axes[2].plot(padded_positions[:, 1], padded_positions[:, 2], color="grey")
 
 planes = ["xy", "xz", "yz"]
 for i, ax in enumerate(trajectory_axes):
-    plotting.Plot_Mercury(
-        ax, shaded_hemisphere="left", plane=planes[i], frame=frame
-    )
+    plotting.Plot_Mercury(ax, shaded_hemisphere="left", plane=planes[i], frame=frame)
     plotting.Add_Labels(ax, planes[i], frame=frame)
     plotting.Plot_Magnetospheric_Boundaries(ax, plane=planes[i], add_legend=True)
     plotting.Square_Axes(ax, 4)
 
-trajectory_axes[1].legend(bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5)
+trajectory_axes[1].legend(
+    bbox_to_anchor=(0.5, 1.2), loc="center", ncol=2, borderaxespad=0.5
+)
 
 plt.show()

@@ -92,7 +92,6 @@ def Plot_Crossing_Intervals(
     """
 
     for _, row in crossings.iterrows():
-
         # If crossing interval is in plot
         if (row["Start Time"] > start and row["Start Time"] < end) or (
             row["End Time"] > start and row["End Time"] < end
@@ -169,12 +168,10 @@ def Plot_Crossings_As_Minutes_Before(
     """
 
     for _, row in crossings.iterrows():
-
         # Check if crossing interval is in plot
         if (row["Start Time"] > data_start and row["Start Time"] < data_end) or (
             row["End Time"] > data_start and row["End Time"] < data_end
         ):
-
             if not show_partial_crossings:
                 if not (
                     row["Start Time"] > data_start and row["Start Time"] < data_end
@@ -234,12 +231,10 @@ def Get_Crossings_As_Points(
     positions = []
 
     for _, row in crossings.iterrows():
-
         # Check if crossing interval is in plot
         if (row["start"] > start and row["start"] < end) or (
             row["end"] > start and row["end"] < end
         ):
-
             # Get position of midpoint
             midpoint_x_msm = (row["start_x_msm"] + row["end_x_msm"]) / 2
             midpoint_y_msm = (row["start_y_msm"] + row["end_y_msm"]) / 2
@@ -279,7 +274,6 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
     for path in [
         input_directory + file_name for file_name in os.listdir(input_directory)
     ]:
-
         file_data_numeric = np.genfromtxt(
             path, dtype=float, usecols=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
         )
@@ -307,7 +301,6 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
                 int
             ),  # convert decimal seconds to microseconds
         ):
-
             start_times.append(
                 dt.datetime(y, m, d)
                 + dt.timedelta(
@@ -340,7 +333,6 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
                 int
             ),  # convert decimal seconds to microseconds
         ):
-
             end_times.append(
                 dt.datetime(y, m, d)
                 + dt.timedelta(
@@ -353,7 +345,6 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
 
         boundary_id = file_data_letters[:, 0][0]
         match boundary_id:
-
             case "BSI":
                 new_boundary_id = "BS_IN"
 
@@ -575,7 +566,6 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
         # interval.
 
         if row["Boundary number"] % 2 != 0:
-
             match row["Boundary number"]:
                 case 1:
                     types.append("BS_IN")

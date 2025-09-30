@@ -44,7 +44,6 @@ def Load_Messenger(file_paths: list[str]):
     }
 
     for path in file_paths:
-
         # Create structured array from data
         # This type is a list of tuples for each row
         dates = np.genfromtxt(
@@ -92,7 +91,6 @@ def Load_Messenger(file_paths: list[str]):
         keys = ["ve_energies", "proton_energies", "ep_energies"]
         variables = [ve_energies, proton_energies, ep_energies]
         for key, var in zip(keys, variables):
-
             if type(multi_file_data[key]) is list:
                 multi_file_data[key] = var
 
@@ -177,9 +175,10 @@ def Load_Between_Dates(
         elif len(file) == 0:
             raise ValueError(
                 "ERROR: The data trying to be loaded doesn't exist!"
-                + f"\n path: {            root_dir
-            + f'{date.strftime('%Y')}/*/FIPS_R{date.strftime('%Y%j')}CDR_V3.TAB'
-}"
+                + f"\n path: {
+                    root_dir
+                    + f'{date.strftime("%Y")}/*/FIPS_R{date.strftime("%Y%j")}CDR_V3.TAB'
+                }"
             )
 
         files_to_load.append(file[0])

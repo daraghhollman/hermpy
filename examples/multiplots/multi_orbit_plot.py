@@ -75,7 +75,6 @@ minutes_before = middle_data["minutes before apoapsis"][0]
 
 data_groups = []
 for apoapsis_time in apoapsis_times:
-
     start_time = apoapsis_time - dt.timedelta(minutes=minutes_before)
     end_time = start_time + data_length
 
@@ -109,12 +108,11 @@ for i in range(len(data_groups)):
 mag_axes[0].set_title(" ")
 
 for i, orbit_data in enumerate(data_groups):
-
     ax = mag_axes[i]
 
     if i == middle_index:
         colour = "magenta"
-        label = f"{orbit_data['date'].iloc[0].strftime("%Y-%m-%d %H:%M:%S")} to\n{orbit_data['date'].iloc[-1].strftime("%Y-%m-%d %H:%M:%S")}"
+        label = f"{orbit_data['date'].iloc[0].strftime('%Y-%m-%d %H:%M:%S')} to\n{orbit_data['date'].iloc[-1].strftime('%Y-%m-%d %H:%M:%S')}"
 
     else:
         colour = "black"

@@ -25,7 +25,6 @@ to_plot = ["Bx", "By", "Bz", "|B|"]
 y_labels = ["B$_x$", "B$_y$", "B$_z$", "|B|"]
 
 for i, ax in enumerate(axes):
-
     # Plot Data
     ax.plot(data["date"], data[to_plot[i]], color="black", lw=0.8)
     ax.set_ylabel(y_labels[i])

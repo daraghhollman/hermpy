@@ -1,5 +1,5 @@
 """
-Script to determine and plot the magnetic field vector as 
+Script to determine and plot the magnetic field vector as
 polar spherical coordinates.
 
 We define theta as the angle in the xy plane, and phi as the
@@ -19,7 +19,9 @@ import hermpy.plotting_tools as hermplot
 root_dir = "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/"
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
-philpott_crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
+philpott_crossings = boundaries.Load_Crossings(
+    "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
+)
 
 start = dt.datetime(year=2012, month=1, day=1, hour=6, minute=50)
 end = dt.datetime(year=2012, month=1, day=1, hour=12, minute=10)

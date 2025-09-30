@@ -7,10 +7,8 @@ from hermpy.utils import User
 
 
 class Test_Loading(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-
         cls.philpott_crossings = boundaries.Load_Crossings(
             User.CROSSING_LISTS["Philpott"]
         )

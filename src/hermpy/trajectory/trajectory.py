@@ -21,7 +21,6 @@ def get_true_anomaly_angle(date: DateOrDates):
     """
 
     with spice.KernelPool(User.METAKERNEL):
-
         if isinstance(date, DateLike):
             et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -50,7 +49,6 @@ def Get_Heliocentric_Distance(date: dt.datetime | dt.date | list[dt.datetime]) -
     """
 
     with spice.KernelPool(User.METAKERNEL):
-
         if isinstance(date, (dt.datetime, dt.date)):
             et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -61,7 +59,6 @@ def Get_Heliocentric_Distance(date: dt.datetime | dt.date | list[dt.datetime]) -
             return distance
 
         elif isinstance(date, Iterable):
-
             et = spice.datetime2et(date)
 
             positions, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
@@ -95,7 +92,6 @@ def get_heliocentric_distances_parallel(
 
 
 def Longitude(position: list[float]) -> float:
-
     longitude = np.arctan2(position[1], position[0])
     longitude = Constants.RADIANS_TO_DEGREES(longitude)
 
@@ -106,14 +102,12 @@ def Longitude(position: list[float]) -> float:
 
 
 def Local_Time(position: list[float]) -> float:
-
     local_time = ((Longitude(position) + 180) * 24 / 360) % 24
 
     return local_time
 
 
 def Latitude(position: list[float]) -> float:
-
     latitude = np.arctan2(position[2], np.sqrt(position[0] ** 2 + position[1] ** 2))
     latitude = Constants.RADIANS_TO_DEGREES(latitude)
 
@@ -121,7 +115,6 @@ def Latitude(position: list[float]) -> float:
 
 
 def Magnetic_Latitude(position: list[float]) -> float:
-
     magnetic_latitude = np.arctan2(
         position[2] - Constants.DIPOLE_OFFSET_RADII,
         np.sqrt(position[0] ** 2 + position[1] ** 2),
@@ -167,12 +160,10 @@ def Get_Position(
         return Get_Avg_Aberrated_Position(spacecraft, date, frame)
 
     with spice.KernelPool(User.METAKERNEL):
-
         if isinstance(date, dt.datetime):
             et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
         elif isinstance(date, Iterable):
-
             et = spice.datetime2et(date)
 
         else:
@@ -249,12 +240,10 @@ def Get_Avg_Aberrated_Position(
     """
 
     with spice.KernelPool(User.METAKERNEL):
-
         if isinstance(date, dt.datetime):
             et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
         elif isinstance(date, Iterable):
-
             et = spice.datetime2et(date)
 
         else:
@@ -328,7 +317,6 @@ def Get_Trajectory(
     """
 
     with spice.KernelPool(User.METAKERNEL):
-
         dates = [dates[0] + (t * (dates[1] - dates[0]) / steps) for t in range(steps)]
         spice_times = spice.str2et(
             [date.strftime("%Y-%m-%d %H:%M:%S") for date in dates]
@@ -396,7 +384,6 @@ def Aberrate_Position(
 
     if not use_own_metakernel:
         with spice.KernelPool(User.METAKERNEL):
-
             aberration_angle = Get_Aberration_Angle(date)
 
             rotation_matrix = np.array(
@@ -564,7 +551,6 @@ def Get_All_Apoapsis_In_Range(
         times = []
 
         while current_time < end_time:
-
             # Get current altitude
             et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
             position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
@@ -584,11 +570,9 @@ def Get_All_Apoapsis_In_Range(
         apoapsis_times = np.array(times)[peak_indices]
 
         if number_of_orbits_to_include > 0:
-
             # if the number of apoapses is greater than the number of orbits
             # we must remove the furthest apoapsis until they are equal
             while len(apoapsis_altitudes) > number_of_orbits_to_include:
-
                 if plot:
                     plt.plot(times, altitudes)
                     plt.scatter(apoapsis_times, apoapsis_altitudes)
@@ -624,7 +608,6 @@ def Get_All_Apoapsis_In_Range(
 
 
 def Get_Orbit_Number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
-
     # Orbit number is defined in the Philpott crossing list
     # New orbits start at BS_IN
     # We look at the crossing start time before our query time,
@@ -702,7 +685,6 @@ def Get_Nearest_Apoapsis(
         times = []
 
         while current_time < search_end:
-
             # Get current altitude
             et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
             position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
@@ -958,7 +940,6 @@ def Get_Grazing_Angle_Vectorised(
     aberrate: bool | str = True,
     verbose: bool | str = False,
 ):
-
     print(f"Processing {len(crossings)} crossings")
 
     mid_crossing_times = (

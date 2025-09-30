@@ -10,7 +10,9 @@ from hermpy.utils import User
 mpl.rcParams["font.size"] = 14
 
 
-philpott_crossings = boundaries.Load_Crossings(User.CROSSING_LISTS["Sun"], backend="sun")
+philpott_crossings = boundaries.Load_Crossings(
+    User.CROSSING_LISTS["Sun"], backend="sun"
+)
 
 
 ### This section as shown in mag_example.py
@@ -41,8 +43,8 @@ boundaries.Plot_Crossing_Intervals(ax, start, end, philpott_crossings)
 # We need a metakernel to retrieve ephemeris information
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
-plotting.Add_Tick_Ephemeris(ax, include={
-    "date", "hours", "minutes", "range", "latitude", "local time" 
-})
+plotting.Add_Tick_Ephemeris(
+    ax, include={"date", "hours", "minutes", "range", "latitude", "local time"}
+)
 
 plt.show()

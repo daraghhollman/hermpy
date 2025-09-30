@@ -8,7 +8,6 @@ from tqdm import tqdm
 
 
 class User:
-
     METAKERNEL = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
     DATA_DIRECTORIES = {
         "MAG": "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/",
@@ -53,7 +52,6 @@ class Constants:
 
 
 class Urls:
-
     PDS_BASE = "https://search-pdsppi.igpp.ucla.edu/"
     MAG_EXTENSION_AVG = "ditdos/download?id=pds://PPI/mess-mag-calibrated/data/mso-avg/"
     MAG_EXTENSION = "ditdos/download?id=pds://PPI/mess-mag-calibrated/data/mso/"
@@ -95,9 +93,7 @@ def Download_MESSENGER_MAG(
     download_locations = []
 
     for year in [2011, 2012, 2013, 2014, 2015]:
-
         for month_index in range(1, 13):
-
             if year == 2011 and month_index < 4:
                 continue
 
@@ -113,7 +109,6 @@ def Download_MESSENGER_MAG(
 
             current_day = first_day
             while current_day <= last_day:
-
                 if resolution is not None:
                     file_format = (
                         f"{year}/"
@@ -137,7 +132,6 @@ def Download_MESSENGER_MAG(
 
 
 def Download_Url(args):
-
     url, download_location = args
 
     directory = os.path.dirname(download_location)
@@ -160,11 +154,9 @@ def Download_Url(args):
 
 
 def Download_In_Parallel(args):
-
     cpus = multiprocessing.cpu_count()
 
     with multiprocessing.Pool(cpus) as pool:
-
         for _ in tqdm(
             pool.imap_unordered(Download_Url, args),
             total=len(args),
