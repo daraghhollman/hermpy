@@ -1,32 +1,32 @@
-[build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "hermpy"
+version = "0.0.1"
 description = "A collection of tools to aid in the creation of publication plots from spacecraft around Mercury."
-authors = [
-    { name="Daragh Hollman", email="dhollman@cp.dias.ie" },
-    { name="Charles Bowers", email="cbowers@cp.dias.ie"},
-    { name="Caitriona Jackman", email="cjackman@cp.dias.ie"},
-    { name="Adam Healy"}
-]
 readme = "README.md"
 license = {file = "LICENSE"}
-dependencies = [
-    "numpy",
-    "matplotlib",
-    "ephem",
-    "spiceypy",
-    "pandas",
-    "tqdm"
+authors = [
+    { name="Daragh Hollman", email="daragh.hollman@dias.ie" },
+    { name="Charles Bowers"},
+    { name="Caitriona Jackman"},
+    { name="Adam Healy"}
 ]
-dynamic = ["version"]
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.6",
+    "numpy>=2.3.3",
+    "pandas>=2.3.3",
+    "requests>=2.32.5",
+    "scipy>=1.16.2",
+    "spiceypy>=7.0.0",
+    "tqdm>=4.67.1",
+]
 
 [project.urls]
-homepage = "https://github.com/daraghhollman/HermPy"
+homepage = "https://github.com/daraghhollman/hermpy"
 
-[tool.setuptools.packages.find]
+[project.scripts]
+hermpy = "hermpy:main"
 
-[tool.setuptools_scm]
-write_to = "hermpy/version.py"
+[build-system]
+requires = ["uv_build>=0.8.22,<0.9.0"]
+build-backend = "uv_build"
