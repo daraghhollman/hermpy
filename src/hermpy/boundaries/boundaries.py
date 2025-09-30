@@ -7,7 +7,6 @@ import pandas as pd
 
 import hermpy.trajectory as trajectory
 from hermpy.utils import Constants
-from hermpy.utils.utils import User
 
 
 def Load_Crossings(
@@ -568,7 +567,7 @@ def Reformat_Philpott(input_path: str, include_data_gaps=True) -> pd.DataFrame:
     end_z_mso_km = []
 
     for i, row in philpott_csv.iterrows():
-        assert type(i) == int
+        assert type(i) is int
 
         # We loop through each row, if the row type is equal to
         # an odd number, it is the start edge of the interval. The

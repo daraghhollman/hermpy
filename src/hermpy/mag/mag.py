@@ -353,7 +353,7 @@ def Add_Field_Variability(
         items = [(data, row, time_frame) for _, row in data.iterrows()]
         with multiprocessing.Pool() as pool:
             for result in pool.imap(Determine_Variability, items):
-                if result != None:
+                if result is not None:
                     variabilities.append(result)
                 count += 1
                 print(f"{count} / {len(data)}", end="\r")

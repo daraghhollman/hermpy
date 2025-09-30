@@ -1,5 +1,4 @@
 import datetime as dt
-from glob import glob
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -234,9 +233,7 @@ trajectory_axes[2].plot(padded_positions[:, 1], padded_positions[:, 2], color="g
 planes = ["xy", "xz", "yz"]
 shaded = ["left", "left", "none"]
 for i, ax in enumerate(trajectory_axes):
-    plotting.Plot_Mercury(
-        ax, shaded_hemisphere=shaded[i], plane=planes[i], frame=frame
-    )
+    plotting.Plot_Mercury(ax, shaded_hemisphere=shaded[i], plane=planes[i], frame=frame)
     plotting.Add_Labels(ax, planes[i], frame=frame)
     plotting.Plot_Magnetospheric_Boundaries(ax, plane=planes[i], add_legend=True)
     plotting.Square_Axes(ax, 4)

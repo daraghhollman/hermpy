@@ -74,7 +74,7 @@ def Load_Messenger(file_paths: list[str]):
         )
 
         quality = np.genfromtxt(path, dtype=int, usecols=[2])
-        mode = np.genfromtxt(path, dtype=int, usecols=[3])
+        # mode = np.genfromtxt(path, dtype=int, usecols=[3])
 
         if quality.any() != 0:
             # A quality value != 0 is bad, we should ignore these
@@ -87,19 +87,17 @@ def Load_Messenger(file_paths: list[str]):
             proton_energies = proton_energies[indices]
             ep_energies = ep_energies[indices]
 
-
         multi_file_data["dates"] = np.append(multi_file_data["dates"], dates)
 
         keys = ["ve_energies", "proton_energies", "ep_energies"]
         variables = [ve_energies, proton_energies, ep_energies]
         for key, var in zip(keys, variables):
-            
-            if type(multi_file_data[key]) is list :
+
+            if type(multi_file_data[key]) is list:
                 multi_file_data[key] = var
 
             else:
                 multi_file_data[key] = np.vstack((multi_file_data[key], var))
-
 
         multi_file_data["dates"] = np.squeeze(multi_file_data["dates"])
 
