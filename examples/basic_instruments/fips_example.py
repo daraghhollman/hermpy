@@ -10,16 +10,14 @@ import hermpy.boundaries as boundaries
 import hermpy.fips as fips
 import hermpy.plotting as plotting
 
-mpl.rcParams["font.size"] = 18
-
 metakernel = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
 spice.furnsh(metakernel)
 philpott_crossings = boundaries.Load_Crossings(
     "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx"
 )
 
-start = dt.datetime(year=2013, month=8, day=19, hour=12)
-stop = dt.datetime(year=2013, month=8, day=22, hour=21)
+start = dt.datetime(year=2012, month=7, day=2, hour=17, minute=20)
+stop = dt.datetime(year=2012, month=7, day=2, hour=17, minute=45)
 
 data = fips.Load_Between_Dates(
     "/home/daraghhollman/Main/data/mercury/messenger/FIPS/", start, stop, strip=True
