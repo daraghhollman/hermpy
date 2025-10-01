@@ -21,6 +21,10 @@ def get_true_anomaly_angle(
     """
     For a given date/datetime or sequence, returns Mercury's TAA
 
+    A SPICE pck kernel should be added to the metakernel to determine these values.
+    e.g.
+        https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/gm_de431.tpc
+
     Parameters
     ----------
     date: hermpy.typing.DateOrDates
