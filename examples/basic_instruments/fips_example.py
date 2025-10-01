@@ -1,6 +1,5 @@
 import datetime as dt
 
-import matplotlib as mpl
 import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
 import numpy as np
