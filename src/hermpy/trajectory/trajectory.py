@@ -1,6 +1,6 @@
 import datetime as dt
 import multiprocessing
-from typing import Iterable, Union
+from typing import Iterable, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,21 +15,84 @@ from hermpy.typing import DateLike, DateOrDates
 from hermpy.utils import Constants, User
 
 
-def get_true_anomaly_angle(date: DateOrDates):
+def get_true_anomaly_angle(
+    date: DateOrDates, use_degrees=True
+) -> float | Sequence[float]:
     """
     For a given date/datetime or sequence, returns Mercury's TAA
+
+    Parameters
+    ----------
+    date: hermpy.typing.DateOrDates
+        datetime or sequence of datetime values to determine TAA
+
+    use_degrees: bool
+        Return output in degrees if true, radians if false. (Default true)
+
+    Returns
+    -------
+    taa: float | Sequence[float]
+        True anomaly values for each value in {date}
     """
 
     with spice.KernelPool(User.METAKERNEL):
         if isinstance(date, DateLike):
             et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-            mercury_state = spice.spkezr("MERCURY", et, "J2000", "NONE", "SUN")
+            mercury_state, _ = spice.spkezr("MERCURY", et, "J2000", "NONE", "SUN")
 
-            mu = spice.bodvrd("SUN", "GM", 1)
+            mu = spice.bodvrd("SUN", "GM", 1)[1][0]
             orbital_elements = spice.oscltx(mercury_state, et, mu)
 
-            print(orbital_elements)
+            # orbital_elements is a list of values as follows:
+            # RP      Perifocal distance.
+            # ECC     Eccentricity.
+            # INC     Inclination.
+            # LNODE   Longitude of the ascending node.
+            # ARGP    Argument of periapsis.
+            # M0      Mean anomaly at epoch.
+            # T0      Epoch.
+            # MU      Gravitational parameter.
+            # NU      True anomaly at epoch.
+            # A       Semi-major axis. A is set to zero if it is not computable.
+            # TAU     Orbital period. Applicable only for elliptical orbits. Set to zero otherwise.
+
+            # TAA is the 8th index
+            taa = orbital_elements[8]
+
+            return taa
+
+        else:
+            ets = spice.datetime2et(date)
+
+            mercury_states, _ = spice.spkezr("MERCURY", ets, "J2000", "NONE", "SUN")
+
+            mu = spice.bodvrd("SUN", "GM", 1)[1][0]
+
+            orbital_elements = np.array(
+                [spice.oscltx(state, t, mu) for state, t in zip(mercury_states, ets)]
+            )
+
+            # each in orbital_elements is a list of values as follows:
+            # RP      Perifocal distance.
+            # ECC     Eccentricity.
+            # INC     Inclination.
+            # LNODE   Longitude of the ascending node.
+            # ARGP    Argument of periapsis.
+            # M0      Mean anomaly at epoch.
+            # T0      Epoch.
+            # MU      Gravitational parameter.
+            # NU      True anomaly at epoch.
+            # A       Semi-major axis. A is set to zero if it is not computable.
+            # TAU     Orbital period. Applicable only for elliptical orbits. Set to zero otherwise.
+
+            # TAA is the 8th index
+            taa = orbital_elements[:, 8]
+
+        if use_degrees:
+            taa *= 180 / np.pi
+
+        return taa.tolist()
 
 
 def Get_Heliocentric_Distance(date: dt.datetime | dt.date | list[dt.datetime]) -> float:
