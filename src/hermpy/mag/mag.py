@@ -76,6 +76,7 @@ def Load_Between_Dates(
     verbose: bool = False,
     included_columns: set = set(),
     multiprocess: bool = False,
+    no_dirs: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
 
@@ -116,6 +117,9 @@ def Load_Between_Dates(
         A set containing the names of the columns the user wishes to load.
         Defaults to including everything.
 
+    no_dirs : bool, optional
+        If True, expects no subdirectory structure in root_dir
+
     Returns
     -------
     data : pandas.DataFrame
@@ -138,16 +142,27 @@ def Load_Between_Dates(
         desc="Loading Files",
         disable=not verbose,
     ):
-        if average is not None:
-            file: list[str] = glob(
-                root_dir
-                + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
-            )
+        if not no_dirs:
+            if average is not None:
+                file: list[str] = glob(
+                    root_dir
+                    + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
+                )
+            else:
+                file: list[str] = glob(
+                    root_dir
+                    + f"{date.strftime('%Y')}/*/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
+                )
         else:
-            file: list[str] = glob(
-                root_dir
-                + f"{date.strftime('%Y')}/*/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
-            )
+            if average is not None:
+                file: list[str] = glob(
+                    root_dir
+                    + f"/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
+                )
+            else:
+                file: list[str] = glob(
+                    root_dir + f"/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
+                )
 
         if len(file) > 1:
             raise ValueError("ERROR: There are duplicate data files being loaded.")
@@ -407,7 +422,7 @@ def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
     unique_dates = data["date"].dt.floor("D").unique()
     # Precompute aberration angles as dictionary
     aberration_angles = {
-        date: trajectory.Get_Aberration_Angle(date) for date in unique_dates
+        date: hermpy.trajectory.Get_Aberration_Angle(date) for date in unique_dates
     }
 
     # Map aberration angles back to the dataframe
