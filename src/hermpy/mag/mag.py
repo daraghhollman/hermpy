@@ -13,7 +13,7 @@ import pandas as pd
 import scipy.signal
 from tqdm import tqdm
 
-import hermpy.trajectory as trajectory
+import hermpy.trajectory
 from hermpy.utils import Constants, User
 
 
@@ -482,7 +482,7 @@ def Aberrate(
         The date to aberrate at.
     """
 
-    aberration_angle = trajectory.Get_Aberration_Angle(date)
+    aberration_angle = hermpy.trajectory.Get_Aberration_Angle(date)
 
     # Adjust x and y ephemeris and data
     new_x: float = x * np.cos(aberration_angle) - y * np.sin(aberration_angle)
