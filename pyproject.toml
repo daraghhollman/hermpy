@@ -1,6 +1,6 @@
 [project]
 name = "hermpy"
-version = "0.0.2"
+version = "0.0.3"
 description = "A collection of tools to aid in the creation of publication plots from spacecraft around Mercury."
 readme = "README.md"
 license = {file = "LICENSE"}
