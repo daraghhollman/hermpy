@@ -144,36 +144,38 @@ def Load_Between_Dates(
     ):
         if not no_dirs:
             if average is not None:
-                file: list[str] = glob(
+                path = (
                     root_dir
                     + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
                 )
+                file: list[str] = glob(path)
             else:
-                file: list[str] = glob(
+                path = (
                     root_dir
                     + f"{date.strftime('%Y')}/*/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
                 )
+                file: list[str] = glob(path)
         else:
             if average is not None:
-                file: list[str] = glob(
+                path = (
                     root_dir
                     + f"/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
                 )
+                file: list[str] = glob(path)
             else:
-                file: list[str] = glob(
-                    root_dir + f"/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
-                )
+                path = root_dir + f"/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
+                file: list[str] = glob(path)
 
         if len(file) > 1:
             raise ValueError("ERROR: There are duplicate data files being loaded.")
         elif len(file) == 0:
             if average is not None:
                 warnings.warn(
-                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime("%Y")}/*/MAGMSOSCIAVG{date.strftime("%y%j")}_{average:02d}_V08.TAB'}"
+                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {path}"
                 )
             else:
                 warnings.warn(
-                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {root_dir + f'{date.strftime("%Y")}/*/MAGMSOSCI{date.strftime("%y%j")}_V08.TAB'}"
+                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {path}"
                 )
             continue
 
