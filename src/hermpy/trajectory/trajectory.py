@@ -1,5 +1,6 @@
 import datetime as dt
 import multiprocessing
+from functools import lru_cache
 from typing import Iterable, Sequence, Union
 
 import matplotlib.pyplot as plt
@@ -481,6 +482,7 @@ def Aberrate_Position(
         return rotated_position
 
 
+@lru_cache(maxsize=None)
 def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
     """For a given date, find the solar wind aberration angle.
 
