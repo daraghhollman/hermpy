@@ -9,6 +9,7 @@ import pandas as pd
 import scipy.signal
 import scipy.spatial
 import spiceypy as spice
+from tqdm import tqdm
 
 import hermpy.trajectory as traj
 from hermpy.boundaries import boundaries
@@ -256,7 +257,10 @@ def Get_Position(
                 if isinstance(date, Iterable):
                     # Precompute aberration angles
                     aberration_angles = np.array(
-                        [Get_Aberration_Angle(date.date()) for date in date]
+                        [
+                            Get_Aberration_Angle(date.date())
+                            for date in tqdm(date, desc="Computing aberration angles")
+                        ]
                     )
 
                     # Create rotation matrices
