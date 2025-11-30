@@ -387,10 +387,10 @@ def Reformat_Sun(input_directory: str) -> pd.DataFrame:
     # Now that we have the full list, we can add on the extra columns we need!
 
     # Finding position
-    start_position_mso_km = trajectory.Get_Position(
+    start_position_mso_km = trajectory.get_position(
         "MESSENGER", full_list["start"], frame="MSO", aberrate=False
     )
-    end_position_mso_km = trajectory.Get_Position(
+    end_position_mso_km = trajectory.get_position(
         "MESSENGER", full_list["end"], frame="MSO", aberrate=False
     )
 

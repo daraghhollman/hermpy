@@ -516,7 +516,7 @@ def Add_Tick_Ephemeris(
                 tick_format += date.strftime(":%S")
 
             if "range" in include:
-                position = trajectory.Get_Position("MESSENGER", date)
+                position = trajectory.get_position("MESSENGER", date)
                 distance = np.sqrt(
                     position[0] ** 2 + position[1] ** 2 + position[2] ** 2
                 )
@@ -526,7 +526,7 @@ def Add_Tick_Ephemeris(
                 tick_format += "\n" + f"{distance:.2f}"
 
             if "longitude" in include:
-                position = trajectory.Get_Position("MESSENGER", date)
+                position = trajectory.get_position("MESSENGER", date)
 
                 longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
 
@@ -536,7 +536,7 @@ def Add_Tick_Ephemeris(
                 tick_format += "\n" + f"{longitude:.2f}"
 
             if "latitude" in include:
-                position = trajectory.Get_Position("MESSENGER", date)
+                position = trajectory.get_position("MESSENGER", date)
 
                 latitude = np.arctan2(
                     position[2], np.sqrt(position[0] ** 2 + position[1] ** 2)
@@ -548,7 +548,7 @@ def Add_Tick_Ephemeris(
                 tick_format += "\n" + f"{latitude:.2f}"
 
             if "MLat" in include:
-                position = trajectory.Get_Position("MESSENGER", date)
+                position = trajectory.get_position("MESSENGER", date)
 
                 mlat = np.arctan2(
                     position[2] - Constants.DIPOLE_OFFSET_KM,
@@ -561,7 +561,7 @@ def Add_Tick_Ephemeris(
                 tick_format += "\n" + f"{mlat:.2f}"
 
             if "local time" in include:
-                position = trajectory.Get_Position("MESSENGER", date)
+                position = trajectory.get_position("MESSENGER", date)
 
                 longitude = np.arctan2(position[1], position[0]) * 180 / np.pi
 
@@ -578,7 +578,7 @@ def Add_Tick_Ephemeris(
 
             if "Heliocentric Distance" in include:
                 heliocentric_distance = Constants.KM_TO_AU(
-                    trajectory.Get_Heliocentric_Distance(date)
+                    trajectory.get_heliocentric_distance(date)
                 )
 
                 tick_format += "\n" + f"{heliocentric_distance:.2f}"

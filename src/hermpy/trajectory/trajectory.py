@@ -1,6 +1,6 @@
 import datetime as dt
 import multiprocessing
-from functools import lru_cache
+from functools import cache
 from typing import Iterable, Sequence, Union
 
 import matplotlib.pyplot as plt
@@ -101,7 +101,7 @@ def get_true_anomaly_angle(
         return taa.tolist()
 
 
-def Get_Heliocentric_Distance(date: dt.datetime | dt.date | list[dt.datetime]) -> float:
+def get_heliocentric_distance(date: dt.datetime | dt.date | list[dt.datetime]) -> float:
     """Gets the distance from Mercury to the Sun, assumes a SPICE metakernel is loaded.
 
 
@@ -160,7 +160,7 @@ def get_heliocentric_distances_parallel(
         return np.array(distances)
 
 
-def Longitude(position: list[float]) -> float:
+def longitude(position: list[float]) -> float:
     longitude = np.arctan2(position[1], position[0])
     longitude = Constants.RADIANS_TO_DEGREES(longitude)
 
@@ -170,20 +170,20 @@ def Longitude(position: list[float]) -> float:
     return longitude
 
 
-def Local_Time(position: list[float]) -> float:
-    local_time = ((Longitude(position) + 180) * 24 / 360) % 24
+def local_Time(position: list[float]) -> float:
+    local_time = ((longitude(position) + 180) * 24 / 360) % 24
 
     return local_time
 
 
-def Latitude(position: list[float]) -> float:
+def latitude(position: list[float]) -> float:
     latitude = np.arctan2(position[2], np.sqrt(position[0] ** 2 + position[1] ** 2))
     latitude = Constants.RADIANS_TO_DEGREES(latitude)
 
     return latitude
 
 
-def Magnetic_Latitude(position: list[float]) -> float:
+def magnetic_latitude(position: list[float]) -> float:
     magnetic_latitude = np.arctan2(
         position[2] - Constants.DIPOLE_OFFSET_RADII,
         np.sqrt(position[0] ** 2 + position[1] ** 2),
@@ -193,7 +193,7 @@ def Magnetic_Latitude(position: list[float]) -> float:
     return magnetic_latitude
 
 
-def Get_Position(
+def get_position(
     spacecraft: str,
     date: dt.datetime | Iterable[dt.datetime],
     frame: str = "MSO",
@@ -226,7 +226,7 @@ def Get_Position(
     """
 
     if aberrate == "average":
-        return Get_Avg_Aberrated_Position(spacecraft, date, frame)
+        return get_average_aberrated_position(spacecraft, date, frame)
 
     with spice.KernelPool(User.METAKERNEL):
         if isinstance(date, dt.datetime):
@@ -258,7 +258,7 @@ def Get_Position(
                     # Precompute aberration angles
                     aberration_angles = np.array(
                         [
-                            Get_Aberration_Angle(date.date())
+                            get_aberration_angle(date.date())
                             for date in tqdm(date, desc="Computing aberration angles")
                         ]
                     )
@@ -277,7 +277,7 @@ def Get_Position(
                     position = np.einsum("ijk,ik->ij", rotation_matrices, position)
 
                 elif isinstance(date, dt.datetime):
-                    position = Aberrate_Position(position, date.date())
+                    position = aberate_position(position, date.date())
 
             return position
 
@@ -285,7 +285,7 @@ def Get_Position(
             raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
 
 
-def Get_Avg_Aberrated_Position(
+def get_average_aberrated_position(
     spacecraft: str, date: dt.datetime | Iterable[dt.datetime], frame: str = "MSM"
 ):
     """Returns spacecraft position at a given time
@@ -339,7 +339,7 @@ def Get_Avg_Aberrated_Position(
             raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
 
 
-def Get_Trajectory(
+def get_trajectory(
     spacecraft: str,
     dates: Iterable[dt.datetime],
     steps: int = 100,
@@ -401,7 +401,7 @@ def Get_Trajectory(
         if aberrate:
             # Precompute aberration angles
             aberration_angles = np.array(
-                [Get_Aberration_Angle(date.date()) for date in dates]
+                [get_aberration_angle(date.date()) for date in dates]
             )
 
             # Create rotation matrices
@@ -428,7 +428,7 @@ def Get_Trajectory(
         return positions
 
 
-def Aberrate_Position(
+def aberate_position(
     position: list[float], date: dt.datetime | dt.date, use_own_metakernel=False
 ):
     """Rotate the spacecraft coordinates into the aberrated coordinate system.
@@ -456,7 +456,7 @@ def Aberrate_Position(
 
     if not use_own_metakernel:
         with spice.KernelPool(User.METAKERNEL):
-            aberration_angle = Get_Aberration_Angle(date)
+            aberration_angle = get_aberration_angle(date)
 
             rotation_matrix = np.array(
                 [
@@ -471,7 +471,7 @@ def Aberrate_Position(
             return rotated_position
 
     else:
-        aberration_angle = Get_Aberration_Angle(date)
+        aberration_angle = get_aberration_angle(date)
 
         rotation_matrix = np.array(
             [
@@ -486,8 +486,8 @@ def Aberrate_Position(
         return rotated_position
 
 
-@lru_cache(maxsize=None)
-def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
+@cache
+def get_aberration_angle(date: dt.datetime | dt.date) -> float:
     """For a given date, find the solar wind aberration angle.
 
     Uses a daily average
@@ -507,11 +507,11 @@ def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
 
     if isinstance(date, dt.datetime):
         mercury_distance = (
-            Get_Heliocentric_Distance(date.date()) * 1000
+            get_heliocentric_distance(date.date()) * 1000
         )  # convert to meters
 
     elif isinstance(date, dt.date):
-        mercury_distance = Get_Heliocentric_Distance(date) * 1000  # convert to meters
+        mercury_distance = get_heliocentric_distance(date) * 1000  # convert to meters
 
     # determine mercury velocity
     a = Constants.MERCURY_SEMI_MAJOR_AXIS
@@ -528,7 +528,7 @@ def Get_Aberration_Angle(date: dt.datetime | dt.date) -> float:
     return aberration_angle
 
 
-def Get_Range_From_Date(
+def get_range(
     spacecraft: str, dates: list[dt.datetime] | dt.datetime
 ) -> list[float]:
     """For a date, or range of dates, return a spacecraft's distance from Mercury
@@ -572,7 +572,7 @@ def Get_Range_From_Date(
         return distances
 
 
-def Get_All_Apoapsis_In_Range(
+def find_apoapses(
     start_time: dt.datetime,
     end_time: dt.datetime,
     time_delta: dt.timedelta = dt.timedelta(minutes=1),
@@ -680,7 +680,7 @@ def Get_All_Apoapsis_In_Range(
         return apoapsis_altitudes, apoapsis_times
 
 
-def Get_Orbit_Number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
+def get_orbit_number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
     # Orbit number is defined in the Philpott crossing list
     # New orbits start at BS_IN
     # We look at the crossing start time before our query time,
@@ -709,7 +709,7 @@ def Get_Orbit_Number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
         return orbit_numbers.tolist()
 
 
-def Get_Nearest_Apoapsis(
+def get_nearest_appoapses(
     time: dt.datetime,
     time_delta: dt.timedelta = dt.timedelta(minutes=1),
     time_limit: dt.timedelta = dt.timedelta(hours=12),
@@ -797,13 +797,13 @@ def Get_Nearest_Apoapsis(
         return apoapsis_time, apoapsis_altitude
 
 
-def Get_Bow_Shock_Grazing_Angle(
+def get_bow_shock_grazing_angle(
     crossing,
     return_vectors: bool = True,
     aberrate: bool | str = True,
     verbose: bool = False,
 ):
-    return Get_Grazing_Angle(
+    return get_grazing_angle(
         crossing,
         function="bow shock",
         return_vectors=return_vectors,
@@ -812,13 +812,13 @@ def Get_Bow_Shock_Grazing_Angle(
     )
 
 
-def Get_Magnetopause_Grazing_Angle(
+def get_magnetopause_grazing_angle(
     crossing,
     return_vectors: bool = True,
     aberrate: bool | str = True,
     verbose: bool = False,
 ):
-    return Get_Grazing_Angle(
+    return get_grazing_angle(
         crossing,
         function="magnetopause",
         return_vectors=return_vectors,
@@ -827,7 +827,7 @@ def Get_Magnetopause_Grazing_Angle(
     )
 
 
-def Get_Grazing_Angle(
+def get_grazing_angle(
     crossing,
     function: str = "unset",
     return_vectors: bool = False,
@@ -881,12 +881,12 @@ def Get_Grazing_Angle(
 
     if isinstance(crossing, Iterable) and not isinstance(crossing, pd.Series):
         print("Using vectorised grazing angle calculation")
-        return Get_Grazing_Angle_Vectorised(
+        return get_grazing_angle_vectorised(
             crossing, function, return_vectors, aberrate, verbose
         )
 
     start_position = (
-        traj.Get_Position(
+        traj.get_position(
             "MESSENGER",
             crossing["Start Time"]
             + (crossing["End Time"] - crossing["Start Time"]) / 2,
@@ -897,7 +897,7 @@ def Get_Grazing_Angle(
     )
 
     next_position = (
-        traj.Get_Position(
+        traj.get_position(
             "MESSENGER",
             crossing["Start Time"]
             + (crossing["End Time"] - crossing["Start Time"]) / 2
@@ -1006,7 +1006,7 @@ def Get_Grazing_Angle(
     return grazing_angle
 
 
-def Get_Grazing_Angle_Vectorised(
+def get_grazing_angle_vectorised(
     crossings,
     function: str = "bow shock",
     return_vectors: bool = False,
@@ -1022,7 +1022,7 @@ def Get_Grazing_Angle_Vectorised(
 
     start_positions = (
         np.array(
-            traj.Get_Position(
+            traj.get_position(
                 "MESSENGER",
                 mid_crossing_times,
                 frame="MSM",
@@ -1034,7 +1034,7 @@ def Get_Grazing_Angle_Vectorised(
 
     next_positions = (
         np.array(
-            traj.Get_Position(
+            traj.get_position(
                 "MESSENGER",
                 next_times,
                 frame="MSM",
