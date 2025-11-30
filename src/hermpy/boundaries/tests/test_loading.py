@@ -1,3 +1,9 @@
+"""
+#######################################################################
+As long as the Philpott crossing list remains only available via manual
+download, we cannot reliably test these functionalities
+#######################################################################
+
 import unittest
 
 import pandas
@@ -9,10 +15,10 @@ from hermpy.utils import User
 class Test_Loading(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.philpott_crossings = boundaries.Load_Crossings(
+        cls.philpott_crossings = boundaries.load_crossings(
             User.CROSSING_LISTS["Philpott"]
         )
-        cls.philpott_crossings_no_data_gaps = boundaries.Load_Crossings(
+        cls.philpott_crossings_no_data_gaps = boundaries.load_crossings(
             User.CROSSING_LISTS["Philpott"], include_data_gaps=False
         )
 
@@ -61,8 +67,9 @@ class Test_Loading(unittest.TestCase):
 
     def test_backend(self):
         with self.assertRaises(ValueError):
-            boundaries.Load_Crossings("Some/path", backend="something else")
+            boundaries.load_crossings("Some/path", backend="something else")
 
 
 if __name__ == "__main__":
     unittest.main()
+"""

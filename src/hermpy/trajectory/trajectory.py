@@ -529,9 +529,7 @@ def get_aberration_angle(date: dt.datetime | dt.date) -> float:
     return aberration_angle
 
 
-def get_range(
-    spacecraft: str, dates: list[dt.datetime] | dt.datetime
-) -> list[float]:
+def get_range(spacecraft: str, dates: list[dt.datetime] | dt.datetime) -> list[float]:
     """For a date, or range of dates, return a spacecraft's distance from Mercury
 
     Finds the distance of a spacecraft from Mercury at a single, or multiple
@@ -693,7 +691,7 @@ def get_orbit_number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
         times = pd.to_datetime(times)
 
     # Load Philpott crossings
-    philpott_intervals = boundaries.Load_Crossings(User.CROSSING_LISTS["Philpott"])
+    philpott_intervals = boundaries.load_crossings(User.CROSSING_LISTS["Philpott"])
 
     # Find which Philpott interval was closest to our start time.
     nearest_indices = (
