@@ -7,20 +7,6 @@ import requests
 from tqdm import tqdm
 
 
-class User:
-    METAKERNEL = "/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt"
-    DATA_DIRECTORIES = {
-        "MAG": "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/",
-        "MAG_FULL": "/home/daraghhollman/Main/data/mercury/messenger/mag/full_cadence/",
-        "FIPS": "/home/daraghhollman/Main/data/mercury/messenger/FIPS/",
-        "FULL MISSION": "/home/daraghhollman/Main/data/mercury/messenger_mag",
-    }
-    CROSSING_LISTS = {
-        "Philpott": "/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx",
-        "Sun": "/home/daraghhollman/Main/Work/mercury/DataSets/sun_crossing_lists/",
-    }
-
-
 class Constants:
     # If no units are specified in the variable name,
     # SI units are implied.
@@ -57,8 +43,8 @@ class Urls:
     MAG_EXTENSION = "ditdos/download?id=pds://PPI/mess-mag-calibrated/data/mso/"
 
 
-def Download_MESSENGER_MAG(
-    save_directory: str = User.DATA_DIRECTORIES["MAG"],
+def download_MESSENGER_MAG(
+    save_directory: str,
     resolution: str | None = "01",
 ) -> None:
     """Function to automatically download MESSENGER MAG data
@@ -128,10 +114,10 @@ def Download_MESSENGER_MAG(
 
                 current_day += dt.timedelta(days=1)
 
-    Download_In_Parallel(list(zip(urls, download_locations)))
+    _download_in_parallel(list(zip(urls, download_locations)))
 
 
-def Download_Url(args):
+def _download_url(args):
     url, download_location = args
 
     directory = os.path.dirname(download_location)
@@ -153,12 +139,12 @@ def Download_Url(args):
     return
 
 
-def Download_In_Parallel(args):
+def _download_in_parallel(args):
     cpus = multiprocessing.cpu_count()
 
     with multiprocessing.Pool(cpus) as pool:
         for _ in tqdm(
-            pool.imap_unordered(Download_Url, args),
+            pool.imap_unordered(_download_url, args),
             total=len(args),
             desc="Downloading MESSENGER MAG",
         ):

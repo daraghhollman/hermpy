@@ -15,7 +15,7 @@ from tqdm import tqdm
 import hermpy.trajectory as traj
 from hermpy.boundaries import boundaries
 from hermpy.typing import DateLike, DateOrDates
-from hermpy.utils import Constants, User
+from hermpy.utils import Constants
 
 
 def get_true_anomaly_angle(
@@ -42,64 +42,63 @@ def get_true_anomaly_angle(
         True anomaly values for each value in {date}
     """
 
-    with spice.KernelPool(User.METAKERNEL):
-        if isinstance(date, DateLike):
-            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+    if isinstance(date, DateLike):
+        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-            mercury_state, _ = spice.spkezr("MERCURY", et, "J2000", "NONE", "SUN")
+        mercury_state, _ = spice.spkezr("MERCURY", et, "J2000", "NONE", "SUN")
 
-            mu = spice.bodvrd("SUN", "GM", 1)[1][0]
-            orbital_elements = spice.oscltx(mercury_state, et, mu)
+        mu = spice.bodvrd("SUN", "GM", 1)[1][0]
+        orbital_elements = spice.oscltx(mercury_state, et, mu)
 
-            # orbital_elements is a list of values as follows:
-            # RP      Perifocal distance.
-            # ECC     Eccentricity.
-            # INC     Inclination.
-            # LNODE   Longitude of the ascending node.
-            # ARGP    Argument of periapsis.
-            # M0      Mean anomaly at epoch.
-            # T0      Epoch.
-            # MU      Gravitational parameter.
-            # NU      True anomaly at epoch.
-            # A       Semi-major axis. A is set to zero if it is not computable.
-            # TAU     Orbital period. Applicable only for elliptical orbits. Set to zero otherwise.
+        # orbital_elements is a list of values as follows:
+        # RP      Perifocal distance.
+        # ECC     Eccentricity.
+        # INC     Inclination.
+        # LNODE   Longitude of the ascending node.
+        # ARGP    Argument of periapsis.
+        # M0      Mean anomaly at epoch.
+        # T0      Epoch.
+        # MU      Gravitational parameter.
+        # NU      True anomaly at epoch.
+        # A       Semi-major axis. A is set to zero if it is not computable.
+        # TAU     Orbital period. Applicable only for elliptical orbits. Set to zero otherwise.
 
-            # TAA is the 8th index
-            taa = orbital_elements[8]
+        # TAA is the 8th index
+        taa = orbital_elements[8]
 
-            return taa
+        return taa
 
-        else:
-            ets = spice.datetime2et(date)
+    else:
+        ets = spice.datetime2et(date)
 
-            mercury_states, _ = spice.spkezr("MERCURY", ets, "J2000", "NONE", "SUN")
+        mercury_states, _ = spice.spkezr("MERCURY", ets, "J2000", "NONE", "SUN")
 
-            mu = spice.bodvrd("SUN", "GM", 1)[1][0]
+        mu = spice.bodvrd("SUN", "GM", 1)[1][0]
 
-            orbital_elements = np.array(
-                [spice.oscltx(state, t, mu) for state, t in zip(mercury_states, ets)]
-            )
+        orbital_elements = np.array(
+            [spice.oscltx(state, t, mu) for state, t in zip(mercury_states, ets)]
+        )
 
-            # each in orbital_elements is a list of values as follows:
-            # RP      Perifocal distance.
-            # ECC     Eccentricity.
-            # INC     Inclination.
-            # LNODE   Longitude of the ascending node.
-            # ARGP    Argument of periapsis.
-            # M0      Mean anomaly at epoch.
-            # T0      Epoch.
-            # MU      Gravitational parameter.
-            # NU      True anomaly at epoch.
-            # A       Semi-major axis. A is set to zero if it is not computable.
-            # TAU     Orbital period. Applicable only for elliptical orbits. Set to zero otherwise.
+        # each in orbital_elements is a list of values as follows:
+        # RP      Perifocal distance.
+        # ECC     Eccentricity.
+        # INC     Inclination.
+        # LNODE   Longitude of the ascending node.
+        # ARGP    Argument of periapsis.
+        # M0      Mean anomaly at epoch.
+        # T0      Epoch.
+        # MU      Gravitational parameter.
+        # NU      True anomaly at epoch.
+        # A       Semi-major axis. A is set to zero if it is not computable.
+        # TAU     Orbital period. Applicable only for elliptical orbits. Set to zero otherwise.
 
-            # TAA is the 8th index
-            taa = orbital_elements[:, 8]
+        # TAA is the 8th index
+        taa = orbital_elements[:, 8]
 
-        if use_degrees:
-            taa *= 180 / np.pi
+    if use_degrees:
+        taa *= 180 / np.pi
 
-        return taa.tolist()
+    return taa.tolist()
 
 
 def get_heliocentric_distance(date: dt.datetime | dt.date | list[dt.datetime]) -> float:
@@ -118,27 +117,26 @@ def get_heliocentric_distance(date: dt.datetime | dt.date | list[dt.datetime]) -
         The distance from Mercury to the sun at time `date` in km
     """
 
-    with spice.KernelPool(User.METAKERNEL):
-        if isinstance(date, (dt.datetime, dt.date)):
-            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+    if isinstance(date, (dt.datetime, dt.date)):
+        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-            position, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
+        position, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
 
-            distance = np.sqrt(np.sum(position**2))
+        distance = np.sqrt(np.sum(position**2))
 
-            return distance
+        return distance
 
-        elif isinstance(date, Iterable):
-            et = spice.datetime2et(date)
+    elif isinstance(date, Iterable):
+        et = spice.datetime2et(date)
 
-            positions, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
+        positions, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
 
-            distances = np.sqrt(np.sum(positions**2, axis=1))
+        distances = np.sqrt(np.sum(positions**2, axis=1))
 
-            return distances
+        return distances
 
-        else:
-            raise ValueError("Input date of incorrect type!")
+    else:
+        raise ValueError("Input date of incorrect type!")
 
 
 def to_et_batch(datetimes: list[dt.datetime]) -> np.ndarray:
@@ -146,19 +144,19 @@ def to_et_batch(datetimes: list[dt.datetime]) -> np.ndarray:
     return np.array([spice.datetime2et(d) for d in datetimes])
 
 
-def compute_position(et: float) -> float:
+def compute_mercury_position(et: float) -> float:
     pos, _ = spice.spkpos("MERCURY", et, "J2000", "NONE", "SUN")
-    return np.linalg.norm(pos)
+    return float(np.linalg.norm(pos))
 
 
 def get_heliocentric_distances_parallel(
-    dates: list[dt.datetime], processes: int = None
+    dates: list[dt.datetime], processes: int | None = None
 ) -> np.ndarray:
-    with spice.KernelPool(User.METAKERNEL):
-        ets = to_et_batch(dates)
-        with multiprocessing.Pool(processes or multiprocessing.cpu_count()) as pool:
-            distances = pool.map(compute_position, ets)
-        return np.array(distances)
+
+    ets = to_et_batch(dates)
+    with multiprocessing.Pool(processes or multiprocessing.cpu_count()) as pool:
+        distances = pool.map(compute_mercury_position, ets)
+    return np.array(distances)
 
 
 def longitude(position: list[float]) -> float:
@@ -229,61 +227,55 @@ def get_position(
     if aberrate == "average":
         return get_average_aberrated_position(spacecraft, date, frame)
 
-    with spice.KernelPool(User.METAKERNEL):
-        if isinstance(date, dt.datetime):
-            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+    if isinstance(date, dt.datetime):
+        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        elif isinstance(date, Iterable):
-            et = spice.datetime2et(date)
+    elif isinstance(date, Iterable):
+        et = spice.datetime2et(date)
 
-        else:
-            raise ValueError("Input date of incorrect type!")
+    try:
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
 
-        # There are data gaps in the kernels?
-        # We need to test for this
-        try:
-            position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
+        match frame:
+            case "MSO":
+                pass
 
-            match frame:
-                case "MSO":
-                    pass
-
-                case "MSM":
-                    if isinstance(date, Iterable):
-                        position[:, 2] -= Constants.DIPOLE_OFFSET_KM
-                    else:
-                        position[2] -= Constants.DIPOLE_OFFSET_KM
-
-            if aberrate:
+            case "MSM":
                 if isinstance(date, Iterable):
-                    # Precompute aberration angles
-                    aberration_angles = np.array(
-                        [
-                            get_aberration_angle(date.date())
-                            for date in tqdm(date, desc="Computing aberration angles")
-                        ]
-                    )
+                    position[:, 2] -= Constants.DIPOLE_OFFSET_KM
+                else:
+                    position[2] -= Constants.DIPOLE_OFFSET_KM
 
-                    # Create rotation matrices
-                    cos_angles = np.cos(aberration_angles)
-                    sin_angles = np.sin(aberration_angles)
+        if aberrate:
+            if isinstance(date, Iterable):
+                # Precompute aberration angles
+                aberration_angles = np.array(
+                    [
+                        get_aberration_angle(date.date())
+                        for date in tqdm(date, desc="Computing aberration angles")
+                    ]
+                )
 
-                    rotation_matrices = np.array(
-                        [
-                            [[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]]
-                            for cos, sin in zip(cos_angles, sin_angles)
-                        ]
-                    )
+                # Create rotation matrices
+                cos_angles = np.cos(aberration_angles)
+                sin_angles = np.sin(aberration_angles)
 
-                    position = np.einsum("ijk,ik->ij", rotation_matrices, position)
+                rotation_matrices = np.array(
+                    [
+                        [[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]]
+                        for cos, sin in zip(cos_angles, sin_angles)
+                    ]
+                )
 
-                elif isinstance(date, dt.datetime):
-                    position = aberate_position(position, date.date())
+                position = np.einsum("ijk,ik->ij", rotation_matrices, position)
 
-            return position
+            elif isinstance(date, dt.datetime):
+                position = aberate_position(position, date.date())
 
-        except:
-            raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
+        return position
+
+    except:
+        raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
 
 
 def get_average_aberrated_position(
@@ -312,32 +304,31 @@ def get_average_aberrated_position(
         The position in the MSO / MSM coordinate frame. In km.
     """
 
-    with spice.KernelPool(User.METAKERNEL):
-        if isinstance(date, dt.datetime):
-            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+    if isinstance(date, dt.datetime):
+        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        elif isinstance(date, Iterable):
-            et = spice.datetime2et(date)
+    elif isinstance(date, Iterable):
+        et = spice.datetime2et(date)
 
-        else:
-            raise ValueError("Input date of incorrect type!")
+    else:
+        raise ValueError("Input date of incorrect type!")
 
-        # There are data gaps in the kernels?
-        # We need to test for this
-        try:
-            position, _ = spice.spkpos(spacecraft, et, "BC_MSO_AB", "NONE", "MERCURY")
+    # There are data gaps in the kernels?
+    # We need to test for this
+    try:
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO_AB", "NONE", "MERCURY")
 
-            match frame:
-                case "MSO":
-                    pass
+        match frame:
+            case "MSO":
+                pass
 
-                case "MSM":
-                    position[2] -= Constants.DIPOLE_OFFSET_KM
+            case "MSM":
+                position[2] -= Constants.DIPOLE_OFFSET_KM
 
-            return position
+        return position
 
-        except:
-            raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
+    except:
+        raise RuntimeError(f"Unable to load ephemeris for datetime: {date}")
 
 
 def get_trajectory(
@@ -346,7 +337,6 @@ def get_trajectory(
     steps: int = 100,
     frame: str = "MSM",
     aberrate: bool = True,
-    verbose: bool = False,
 ):
     """Finds a given spacecraft's trajectory between two dates.
 
@@ -389,48 +379,47 @@ def get_trajectory(
         ]
     """
 
-    with spice.KernelPool(User.METAKERNEL):
-        dates = time_range.split(steps)
-        spice_times = spice.str2et(
-            [date.strftime("%Y-%m-%d %H:%M:%S") for date in dates]
+    dates = time_range.split(steps)
+    spice_times = spice.str2et(
+        [date.strftime("%Y-%m-%d %H:%M:%S") for date in dates]
+    )
+
+    positions, _ = spice.spkpos(
+        spacecraft, spice_times, "BC_MSO", "NONE", "MERCURY"
+    )
+
+    if aberrate:
+        # Precompute aberration angles
+        aberration_angles = np.array(
+            [get_aberration_angle(date.date()) for date in dates]
         )
 
-        positions, _ = spice.spkpos(
-            spacecraft, spice_times, "BC_MSO", "NONE", "MERCURY"
+        # Create rotation matrices
+        cos_angles = np.cos(aberration_angles)
+        sin_angles = np.sin(aberration_angles)
+
+        rotation_matrices = np.array(
+            [
+                [[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]]
+                for cos, sin in zip(cos_angles, sin_angles)
+            ]
         )
 
-        if aberrate:
-            # Precompute aberration angles
-            aberration_angles = np.array(
-                [get_aberration_angle(date.date()) for date in dates]
-            )
+        positions = np.einsum("ijk,ik->ij", rotation_matrices, positions)
 
-            # Create rotation matrices
-            cos_angles = np.cos(aberration_angles)
-            sin_angles = np.sin(aberration_angles)
+    match frame:
+        case "MSO":
+            return positions
 
-            rotation_matrices = np.array(
-                [
-                    [[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]]
-                    for cos, sin in zip(cos_angles, sin_angles)
-                ]
-            )
+        case "MSM":
+            positions[:, 2] -= Constants.DIPOLE_OFFSET_KM
+            return positions
 
-            positions = np.einsum("ijk,ik->ij", rotation_matrices, positions)
-
-        match frame:
-            case "MSO":
-                return positions
-
-            case "MSM":
-                positions[:, 2] -= Constants.DIPOLE_OFFSET_KM
-                return positions
-
-        return positions
+    return positions
 
 
 def aberate_position(
-    position: list[float], date: dt.datetime | dt.date, use_own_metakernel=False
+    position: list[float], date: dt.datetime | dt.date
 ):
     """Rotate the spacecraft coordinates into the aberrated coordinate system.
 
@@ -455,36 +444,19 @@ def aberate_position(
         The new position, rotated into the aberrated frame.
     """
 
-    if not use_own_metakernel:
-        with spice.KernelPool(User.METAKERNEL):
-            aberration_angle = get_aberration_angle(date)
+    aberration_angle = get_aberration_angle(date)
 
-            rotation_matrix = np.array(
-                [
-                    [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
-                    [np.sin(aberration_angle), np.cos(aberration_angle), 0],
-                    [0, 0, 1],
-                ]
-            )
+    rotation_matrix = np.array(
+        [
+            [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
+            [np.sin(aberration_angle), np.cos(aberration_angle), 0],
+            [0, 0, 1],
+        ]
+    )
 
-            rotated_position = np.matmul(rotation_matrix, position)
+    rotated_position = np.matmul(rotation_matrix, position)
 
-            return rotated_position
-
-    else:
-        aberration_angle = get_aberration_angle(date)
-
-        rotation_matrix = np.array(
-            [
-                [np.cos(aberration_angle), -np.sin(aberration_angle), 0],
-                [np.sin(aberration_angle), np.cos(aberration_angle), 0],
-                [0, 0, 1],
-            ]
-        )
-
-        rotated_position = np.matmul(rotation_matrix, position)
-
-        return rotated_position
+    return rotated_position
 
 
 @cache
@@ -551,24 +523,23 @@ def get_range(spacecraft: str, dates: list[dt.datetime] | dt.datetime) -> list[f
         The spacecraft's distance from Mercury at each time specified.
     """
 
-    with spice.KernelPool(User.METAKERNEL):
-        if isinstance(dates, dt.datetime):
-            dates = [dates]
+    if isinstance(dates, dt.datetime):
+        dates = [dates]
 
-        distances = []
+    distances = []
 
-        for date in dates:
-            et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
+    for date in dates:
+        et = spice.str2et(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-            position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
 
-            distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
-            distances.append(distance)
+        distance = np.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2)
+        distances.append(distance)
 
-        if len(distances) == 1:
-            return distances[0]
+    if len(distances) == 1:
+        return distances[0]
 
-        return distances
+    return distances
 
 
 def find_apoapses(
@@ -616,96 +587,66 @@ def find_apoapses(
     apoapsis_times : numpy.array[datetime.datetime]
         The dates and times of each apoapsis found.
     """
-    with spice.KernelPool(User.METAKERNEL):
-        current_time = start_time
+    current_time = start_time
 
-        altitudes = []
-        times = []
+    altitudes = []
+    times = []
 
-        while current_time < end_time:
-            # Get current altitude
-            et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
-            position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
-            current_altitude = np.sqrt(
-                position[0] ** 2 + position[1] ** 2 + position[2] ** 2
-            )
+    while current_time < end_time:
+        # Get current altitude
+        et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
+        current_altitude = np.sqrt(
+            position[0] ** 2 + position[1] ** 2 + position[2] ** 2
+        )
 
-            altitudes.append(current_altitude)
-            times.append(current_time)
+        altitudes.append(current_altitude)
+        times.append(current_time)
 
-            current_time += time_delta
+        current_time += time_delta
 
-        # Now we find the peaks and their times using scipy.signal
-        peak_indices, _ = scipy.signal.find_peaks(altitudes)
+    # Now we find the peaks and their times using scipy.signal
+    peak_indices, _ = scipy.signal.find_peaks(altitudes)
 
-        apoapsis_altitudes = np.array(altitudes)[peak_indices]
-        apoapsis_times = np.array(times)[peak_indices]
+    apoapsis_altitudes = np.array(altitudes)[peak_indices]
+    apoapsis_times = np.array(times)[peak_indices]
 
-        if number_of_orbits_to_include > 0:
-            # if the number of apoapses is greater than the number of orbits
-            # we must remove the furthest apoapsis until they are equal
-            while len(apoapsis_altitudes) > number_of_orbits_to_include:
-                if plot:
-                    plt.plot(times, altitudes)
-                    plt.scatter(apoapsis_times, apoapsis_altitudes)
-                    plt.axvline(dt.datetime(year=2011, month=4, day=11, hour=5))
-                    plt.show()
+    if number_of_orbits_to_include > 0:
+        # if the number of apoapses is greater than the number of orbits
+        # we must remove the furthest apoapsis until they are equal
+        while len(apoapsis_altitudes) > number_of_orbits_to_include:
+            if plot:
+                plt.plot(times, altitudes)
+                plt.scatter(apoapsis_times, apoapsis_altitudes)
+                plt.axvline(dt.datetime(year=2011, month=4, day=11, hour=5))
+                plt.show()
 
-                # find the furthest one from the start time
-                # it will be at one of the ends
-                first_apoapsis_time = apoapsis_times[0]
-                last_apoapsis_time = apoapsis_times[-1]
+            # find the furthest one from the start time
+            # it will be at one of the ends
+            first_apoapsis_time = apoapsis_times[0]
+            last_apoapsis_time = apoapsis_times[-1]
 
-                midpoint = start_time + (end_time - start_time) / 2
+            midpoint = start_time + (end_time - start_time) / 2
 
-                first_time_difference = abs(first_apoapsis_time - midpoint)
-                last_time_difference = abs(last_apoapsis_time - midpoint)
+            first_time_difference = abs(first_apoapsis_time - midpoint)
+            last_time_difference = abs(last_apoapsis_time - midpoint)
 
-                if first_time_difference > last_time_difference:
-                    # remove first
-                    apoapsis_times = np.delete(apoapsis_times, 0)
-                    apoapsis_altitudes = np.delete(apoapsis_altitudes, 0)
+            if first_time_difference > last_time_difference:
+                # remove first
+                apoapsis_times = np.delete(apoapsis_times, 0)
+                apoapsis_altitudes = np.delete(apoapsis_altitudes, 0)
 
-                elif last_time_difference > first_time_difference:
-                    # remove last
-                    apoapsis_times = np.delete(apoapsis_times, -1)
-                    apoapsis_altitudes = np.delete(apoapsis_altitudes, -1)
+            elif last_time_difference > first_time_difference:
+                # remove last
+                apoapsis_times = np.delete(apoapsis_times, -1)
+                apoapsis_altitudes = np.delete(apoapsis_altitudes, -1)
 
-                else:
-                    raise ValueError(
-                        "Cannot reduce apoapsis list from 1 orbit. Instead, use trajectory.Get_Nearest_Apoapsis"
-                    )
+            else:
+                raise ValueError(
+                    "Cannot reduce apoapsis list from 1 orbit. Instead, use trajectory.Get_Nearest_Apoapsis"
+                )
 
-        return apoapsis_altitudes, apoapsis_times
-
-
-def get_orbit_number(times: Union[pd.Timestamp, Iterable[pd.Timestamp]]):
-    # Orbit number is defined in the Philpott crossing list
-    # New orbits start at BS_IN
-    # We look at the crossing start time before our query time,
-    # and read the orbit number there.
-    # Convert times to list of pd.Timestamp objects
-    if isinstance(times, dt.datetime):
-        times = [times]
-    else:
-        times = pd.to_datetime(times)
-
-    # Load Philpott crossings
-    philpott_intervals = boundaries.load_crossings(User.CROSSING_LISTS["Philpott"])
-
-    # Find which Philpott interval was closest to our start time.
-    nearest_indices = (
-        philpott_intervals["Start Time"].searchsorted(times, side="right") - 1
-    )
-
-    nearest_indices[nearest_indices == -1] = 0
-
-    orbit_numbers = philpott_intervals["Orbit Number"].loc[nearest_indices]
-
-    if isinstance(times, dt.datetime):
-        return orbit_numbers.tolist()[0]
-    else:
-        return orbit_numbers.tolist()
+    return apoapsis_altitudes, apoapsis_times
 
 
 def get_nearest_appoapses(
@@ -743,57 +684,56 @@ def get_nearest_appoapses(
     apoapsis_altitude : float
         The altitude of each apoapsis found.
     """
-    with spice.KernelPool(User.METAKERNEL):
-        apoapsis_altitude: float = 0
-        apoapsis_time: dt.datetime = time
+    apoapsis_altitude: float = 0
+    apoapsis_time: dt.datetime = time
 
-        # Get all position data within time +- time_delta
-        search_start = time - time_limit
-        search_end = time + time_limit
+    # Get all position data within time +- time_delta
+    search_start = time - time_limit
+    search_end = time + time_limit
 
-        current_time = search_start
+    current_time = search_start
 
-        altitudes = []
-        times = []
+    altitudes = []
+    times = []
 
-        while current_time < search_end:
-            # Get current altitude
-            et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
-            position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
-            current_altitude = np.sqrt(
-                position[0] ** 2 + position[1] ** 2 + position[2] ** 2
-            )
+    while current_time < search_end:
+        # Get current altitude
+        et = spice.str2et(current_time.strftime("%Y-%m-%d %H:%M:%S"))
+        position, _ = spice.spkpos(spacecraft, et, "BC_MSO", "NONE", "MERCURY")
+        current_altitude = np.sqrt(
+            position[0] ** 2 + position[1] ** 2 + position[2] ** 2
+        )
 
-            altitudes.append(current_altitude)
-            times.append(current_time)
+        altitudes.append(current_altitude)
+        times.append(current_time)
 
-            current_time += time_delta
+        current_time += time_delta
 
-        # Now we find the peaks and their times using scipy.signal
-        peak_indices, _ = scipy.signal.find_peaks(altitudes)
+    # Now we find the peaks and their times using scipy.signal
+    peak_indices, _ = scipy.signal.find_peaks(altitudes)
 
-        # Check for the closest one
-        time_distances = []
-        for i in peak_indices:
-            peak_time = times[i]
+    # Check for the closest one
+    time_distances = []
+    for i in peak_indices:
+        peak_time = times[i]
 
-            time_distance = abs(time - peak_time)
-            time_distances.append(time_distance)
+        time_distance = abs(time - peak_time)
+        time_distances.append(time_distance)
 
-        closest_apoapsis_index = peak_indices[np.argmin(time_distances)]
+    closest_apoapsis_index = peak_indices[np.argmin(time_distances)]
 
-        if plot:
-            plt.plot(times, altitudes)
-            plt.scatter(
-                np.array(times)[peak_indices], np.array(altitudes)[peak_indices]
-            )
-            plt.axvline(time)
-            plt.show()
+    if plot:
+        plt.plot(times, altitudes)
+        plt.scatter(
+            np.array(times)[peak_indices], np.array(altitudes)[peak_indices]
+        )
+        plt.axvline(time)
+        plt.show()
 
-        apoapsis_time = times[closest_apoapsis_index]
-        apoapsis_altitude = altitudes[closest_apoapsis_index]
+    apoapsis_time = times[closest_apoapsis_index]
+    apoapsis_altitude = altitudes[closest_apoapsis_index]
 
-        return apoapsis_time, apoapsis_altitude
+    return apoapsis_time, apoapsis_altitude
 
 
 def get_bow_shock_grazing_angle(
