@@ -2,6 +2,7 @@ import datetime as dt
 from glob import glob
 
 import numpy as np
+from sunpy.time import TimeRange
 
 
 def _load_MESSENGER(file_paths: list[str]):
@@ -104,9 +105,7 @@ def _load_MESSENGER(file_paths: list[str]):
 
 def load_between_dates(
     root_dir: str,
-    start: dt.datetime,
-    end: dt.datetime,
-    strip: bool = True,
+    time_range: TimeRange,
     verbose: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
@@ -124,14 +123,8 @@ def load_between_dates(
 
         root_dir/2012/01_JAN/FIPS_R2011364CDR_V3.TAB
 
-    start : datetime.datetime
-        The start point of the data search
-
-    end : datetime.datetime
-        The end point of the data search
-
-    strip : bool {True, False}, optional
-        Should the data be shortened to match the times in start and end
+    time_range: sunpy.time.TimeRange
+        The range of time to load data
 
 
     Returns
@@ -155,8 +148,8 @@ def load_between_dates(
     """
 
     # convert start and end to days
-    start_date = start.date()
-    end_date = end.date()
+    start_date = time_range.start.to_datetime().date()
+    end_date = time_range.end.to_datetime().date()
 
     dates_to_load: list[dt.date] = [
         start_date + dt.timedelta(days=i)
@@ -187,45 +180,22 @@ def load_between_dates(
         print("Loading Files")
     data = _load_MESSENGER(files_to_load)
 
-    if strip:
-        data = _strip_data(data, start, end)
+    data = _strip_data(data, time_range)
 
     return data
 
 
-def _strip_data(data: dict, start: dt.datetime, stop: dt.datetime):
-    """Shortens the array to only include times between two given times
-
-
-    Parameters
-    ----------
-    data : dict
-        The data to be shortened, as created by Load_Messenger().
-        Although, any similarly formatted data will work.
-
-    start : datetime.datetime
-        The date and time to start including data.
-        Anything before this time will be excluded.
-
-    end : datetime.datetime
-        The date and time to stop including data.
-        Anything after this time will be excluded.
-
-
-    Returns
-    -------
-    out : dict
-        A copy of the input data dictionary, shortened to only
-        include the data between the start and stop times.
-    """
-
+def _strip_data(data: dict, time_range: TimeRange):
     # First we iterrate through the dates list in the data dictionary
     # to find the indices which are outside of the time range.
+    start = time_range.start.to_datetime()
+    end = time_range.end.to_datetime()
+
     dates = data["dates"]
 
     indices_to_remove: list[int] = []
     for i, date in enumerate(dates):
-        if (date < start) or (date > stop):
+        if (date < start) or (date > end):
             # Add to indices list
             indices_to_remove.append(i)
 
