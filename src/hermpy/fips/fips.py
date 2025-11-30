@@ -4,7 +4,7 @@ from glob import glob
 import numpy as np
 
 
-def Load_Messenger(file_paths: list[str]):
+def _load_MESSENGER(file_paths: list[str]):
     """Reads data from a list of file paths
 
     Uses numpy to load and combine multiple FIPS data files
@@ -102,7 +102,7 @@ def Load_Messenger(file_paths: list[str]):
     return multi_file_data
 
 
-def Load_Between_Dates(
+def load_between_dates(
     root_dir: str,
     start: dt.datetime,
     end: dt.datetime,
@@ -185,15 +185,15 @@ def Load_Between_Dates(
 
     if verbose:
         print("Loading Files")
-    data = Load_Messenger(files_to_load)
+    data = _load_MESSENGER(files_to_load)
 
     if strip:
-        data = Strip_Data(data, start, end)
+        data = _strip_data(data, start, end)
 
     return data
 
 
-def Strip_Data(data: dict, start: dt.datetime, stop: dt.datetime):
+def _strip_data(data: dict, start: dt.datetime, stop: dt.datetime):
     """Shortens the array to only include times between two given times
 
 
@@ -240,7 +240,7 @@ def Strip_Data(data: dict, start: dt.datetime, stop: dt.datetime):
     return data
 
 
-def Get_Calibration() -> list[float]:
+def _get_calibration() -> list[float]:
     """Returns calibration for FIPS energy channels
 
     Currently 'calibration' is assumed constant for all data modes.
