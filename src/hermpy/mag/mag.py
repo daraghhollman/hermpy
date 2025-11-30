@@ -5,20 +5,20 @@ Functions for loading and handling MAG data
 import datetime as dt
 import multiprocessing
 import pickle
-import warnings
-from glob import glob
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import scipy.signal
+from sunpy.time import TimeRange
 from tqdm import tqdm
 
 import hermpy.trajectory
-from hermpy.utils import Constants, User
+from hermpy.utils import Constants
 
 
-def Load_Messenger(
-    file_paths: list[str],
+def _load_messenger(
+    file_paths: list[Path],
     verbose=False,
     included_columns: set = set(),
     multiprocess: bool = False,
@@ -38,12 +38,12 @@ def Load_Messenger(
     """
 
     multi_file_data = []
-    # Load and concatonate into one dataframe
+    # Load and concatenate into one dataframe
 
     if multiprocess:
         with multiprocessing.Pool() as pool:
             for result in tqdm(
-                pool.imap(Extract_Data, file_paths),
+                pool.imap(_extract_data, file_paths),
                 total=len(file_paths),
                 desc="Extracting Data",
                 disable=not verbose,
@@ -57,7 +57,7 @@ def Load_Messenger(
             desc="Extracting Data",
             disable=not verbose,
         ):
-            multi_file_data.append(Extract_Data(path)[list(included_columns)])
+            multi_file_data.append(_extract_data(path)[list(included_columns)])
 
     multi_file_data = pd.concat(multi_file_data)
 
@@ -66,17 +66,14 @@ def Load_Messenger(
     return multi_file_data
 
 
-def Load_Between_Dates(
-    root_dir: str,
-    start: dt.datetime,
-    end: dt.datetime,
+def load_between_dates(
+    root_dir: Path | str,
+    time_range: TimeRange,
     average: int | None = 1,
-    strip: bool = True,
     aberrate: bool = True,
-    verbose: bool = False,
     included_columns: set = set(),
     multiprocess: bool = False,
-    no_dirs: bool = False,
+    verbose: bool = False,
 ):
     """Automatically finds and loads files between a start and end point
 
@@ -93,32 +90,23 @@ def Load_Between_Dates(
 
         root_dir/2012/01_JAN/MAGMSOSCIAVG12010_01_V08.TAB
 
-    start : datetime.datetime
-        The start point of the data search
+    time_range: sunpy.time.TimeRange
+        The range of times to load data between.
 
-    end : datetime.datetime
-        The end point of the data search
-
-    average : int {1, 5, 10, 60, None}, optional
+    average: int {1, 5, 10, 60, None}, optional
         Which time average of data product to load. i.e. 1 second average,
         5 second average, etc.
 
         If 'None', the unaveraged data will be downloaded.
 
-    strip : bool {True, False}, optional
-        Should the data be shortened to match the times in start and end
-
-    aberrate : bool {True, False}, optional
+    aberrate: bool {True, False}, optional
         Should the dataframe contain MAG data and Ephemeris data in MSM'
 
         Requires a loaded spice kernel
 
-    included_columns : set, optional
+    included_columns: set, optional
         A set containing the names of the columns the user wishes to load.
         Defaults to including everything.
-
-    no_dirs : bool, optional
-        If True, expects no subdirectory structure in root_dir
 
     Returns
     -------
@@ -126,60 +114,35 @@ def Load_Between_Dates(
         The combined data from each file loaded between the input dates.
     """
 
+    if isinstance(root_dir, str):
+        root_dir = Path(root_dir)
+
     # convert start and end to days
-    start_date = start.date()
-    end_date = end.date()
+    start_date = time_range.start.to_datetime().date()
+    end_date = time_range.end.to_datetime().date()
 
     dates_to_load: list[dt.date] = [
         start_date + dt.timedelta(days=i)
         for i in range((end_date - start_date).days + 1)
     ]
 
-    files_to_load: list[str] = []
+    files_to_load: list[Path] = []
     for date in tqdm(
         dates_to_load,
         total=len(dates_to_load),
         desc="Loading Files",
         disable=not verbose,
     ):
-        if not no_dirs:
-            if average is not None:
-                path = (
-                    root_dir
-                    + f"{date.strftime('%Y')}/*/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
-                )
-                file: list[str] = glob(path)
-            else:
-                path = (
-                    root_dir
-                    + f"{date.strftime('%Y')}/*/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
-                )
-                file: list[str] = glob(path)
+        if average is not None:
+            # Full cadence
+            path = (
+                root_dir / f"MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
+            )
         else:
-            if average is not None:
-                path = (
-                    root_dir
-                    + f"/MAGMSOSCIAVG{date.strftime('%y%j')}_{average:02d}_V08.TAB"
-                )
-                file: list[str] = glob(path)
-            else:
-                path = root_dir + f"/MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
-                file: list[str] = glob(path)
+            # Averaged cadence
+            path = root_dir / f"MAGMSOSCI{date.strftime('%y%j')}_V08.TAB"
 
-        if len(file) > 1:
-            raise ValueError("ERROR: There are duplicate data files being loaded.")
-        elif len(file) == 0:
-            if average is not None:
-                warnings.warn(
-                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {path}"
-                )
-            else:
-                warnings.warn(
-                    f"WARNING: The data trying to be loaded doesn't exist at filepath: {path}"
-                )
-            continue
-
-        files_to_load.append(file[0])
+        files_to_load.append(path)
 
     if included_columns == set():
         included_columns = {
@@ -197,25 +160,24 @@ def Load_Between_Dates(
             "|B|",
         }
 
-    data = Load_Messenger(
+    data = _load_messenger(
         files_to_load,
         verbose=verbose,
         included_columns=included_columns,
         multiprocess=multiprocess,
     )
 
-    if strip:
-        data = Strip_Data(data, start, end)
+    data = _strip_data(data, time_range)
 
     if aberrate:
         if verbose:
             print("Adding aberrated terms")
-        data = Add_Aberrated_Terms(data)
+        data = _add_aberrated_terms(data)
 
     return data
 
 
-def Extract_Data(path):
+def _extract_data(path: Path):
     # Read file
     data = np.genfromtxt(path)
 
@@ -271,40 +233,40 @@ def Extract_Data(path):
     return df
 
 
-def Strip_Data(
-    data: pd.DataFrame, start: dt.datetime, end: dt.datetime
-) -> pd.DataFrame:
+def _strip_data(data: pd.DataFrame, time_range: TimeRange) -> pd.DataFrame:
     """Shortens MAG data to only include times between a start and end time
 
-        Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
-        to match give start and end time.
+    Removes the start and end of a pandas dataframe (containing a dt.datetime "date" row)
+    to match give start and end time.
 
 
-        Parameters
-        ----------
-        data : pandas.DataFrame
-            Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data as a pandas dataframe, typically loaded using `Load_Messenger()`.
 
-        start : datetime.datetime
-            The start date of the data to be kept. All rows prior will be removed.
-
-        end : datetime.datetime
-            The end date of the data to be kept. All rows after will be removed.
+    time_range: sunpy.time.TimeRange
+        The time range within which to keep data. Rows prior and after
+        these times will be dropped.
 
 
-        Returns
-    _{average:02d}    -------
-        stripped_data : pandas.DataFrame
-            A new dataframe containing only the data between the given dates.
+    Returns
+    -------
+    stripped_data : pandas.DataFrame
+        A new dataframe containing only the data between the given dates.
     """
 
-    stripped_data = data.loc[data["date"].between(start, end)]
+    stripped_data = data.loc[
+        data["date"].between(
+            time_range.start.to_datetime(), time_range.end.to_datetime()
+        )
+    ]
     stripped_data = stripped_data.reset_index(drop=True)
 
     return stripped_data
 
 
-def Remove_Spikes(
+def _remove_data_spikes(
     data: pd.DataFrame, threshold: int = 10_000, padding: int = 120
 ) -> None:
     """Removes non-physical large spikes in the data
@@ -345,56 +307,7 @@ def Remove_Spikes(
     return
 
 
-def Determine_Variability(items):
-    data, row, time_frame = items
-
-    # Get the rows before and after
-    data_to_average = data.loc[
-        (data["date"].between(row["date"] - time_frame, row["date"]))
-        | (data["date"].between(row["date"], row["date"] + time_frame))
-    ]["|B|"]
-
-    average_mag = np.mean(data_to_average)
-    variability = np.sqrt((row["|B|"] - average_mag) ** 2)
-
-    return variability
-
-
-def Add_Field_Variability(
-    data: pd.DataFrame, time_frame: dt.timedelta, multiprocess=False
-):
-    if multiprocess:
-        variabilities = []
-        count = 0
-        items = [(data, row, time_frame) for _, row in data.iterrows()]
-        with multiprocessing.Pool() as pool:
-            for result in pool.imap(Determine_Variability, items):
-                if result is not None:
-                    variabilities.append(result)
-                count += 1
-                print(f"{count} / {len(data)}", end="\r")
-
-    else:
-        print("Adding Field Variability")
-        variabilities = []
-        for i, row in tqdm(data.iterrows(), total=len(data)):
-            # Get the rows before and after
-            data_to_average = data.loc[
-                (data["date"].between(row["date"] - time_frame, row["date"]))
-                | (data["date"].between(row["date"], row["date"] + time_frame))
-            ]["|B|"]
-
-            average_mag = np.mean(data_to_average)
-            variability = np.sqrt((row["|B|"] - average_mag) ** 2)
-
-            variabilities.append(variability)
-
-    data.insert(len(data.columns), "B_variability", variabilities)
-
-    return data
-
-
-def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
+def _add_aberrated_terms(data: pd.DataFrame) -> pd.DataFrame:
     """Shift the data into the aberrated frame. MSO -> MSO', MSM -> MSM'
 
 
@@ -424,7 +337,7 @@ def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
     unique_dates = data["date"].dt.floor("D").unique()
     # Precompute aberration angles as dictionary
     aberration_angles = {
-        date: hermpy.trajectory.Get_Aberration_Angle(date) for date in unique_dates
+        date: hermpy.trajectory.get_aberration_angle(date) for date in unique_dates
     }
 
     # Map aberration angles back to the dataframe
@@ -451,7 +364,7 @@ def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def Aberrate(
+def aberrate(
     x: float, y: float, z: float, date: dt.datetime
 ) -> tuple[float, float, float]:
     """Aberrate any singular x, y, z point
@@ -484,7 +397,7 @@ def Aberrate(
         The date to aberrate at.
     """
 
-    aberration_angle = hermpy.trajectory.Get_Aberration_Angle(date)
+    aberration_angle = hermpy.trajectory.get_aberration_angle(date)
 
     # Adjust x and y ephemeris and data
     new_x: float = x * np.cos(aberration_angle) - y * np.sin(aberration_angle)
@@ -493,47 +406,7 @@ def Aberrate(
     return (new_x, new_y, z)
 
 
-def Convert_To_Polars(data: pd.DataFrame) -> pd.DataFrame:
-    """Converts data from cartesian to polar coordinates
-
-    Convets to polar coordinates irrespective of frame.
-    Perform transformations and aberrations prior to this
-    function.
-
-    Takes the values for x, y, and z and creates a new column
-    for each polar coordinate.
-
-
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        A dataframe of data to be converted
-
-
-    Returns
-    -------
-    out: pandas.DataFrame
-        The resulting data with added columns
-        [mag_r, mag_theta, mag_phi]
-
-    """
-
-    x = data["Bx"]
-    y = data["By"]
-    z = data["Bz"]
-
-    r = np.sqrt(x**2 + y**2 + z**2)
-    theta = Constants.RADIANS_TO_DEGREES(np.arctan2(y, x))
-    phi = Constants.RADIANS_TO_DEGREES(np.arctan2(z, r))
-
-    data["Br"] = r
-    data["Btheta"] = theta
-    data["Bphi"] = phi
-
-    return data
-
-
-def Chunk_Dates(start_date, end_date, days_per_chunk):
+def _chunk_dates(start_date, end_date, days_per_chunk):
     """Divide a date range into smaller chunks of a specified size in days."""
     current_start = start_date
     while current_start < end_date:
@@ -542,32 +415,29 @@ def Chunk_Dates(start_date, end_date, days_per_chunk):
         current_start = current_end
 
 
-def Save_Mission(path: str, days_per_chunk=60):
+def save_mission(data_directory: Path, save_path: Path, days_per_chunk=60):
     mission_start = dt.datetime(2011, 3, 23, 15, 37)
     mission_end = dt.datetime(2015, 4, 30, 15, 8)
 
-    with open(path, "wb") as f:
-        for start_date, end_date in Chunk_Dates(
+    with open(save_path, "wb") as f:
+        for start_date, end_date in _chunk_dates(
             mission_start, mission_end, days_per_chunk
         ):  # Process 30 days at a time
-            data_chunk = Load_Between_Dates(
-                User.DATA_DIRECTORIES["MAG"],
-                start_date,
-                end_date,
-                strip=True,
-                aberrate=True,
+            data_chunk = load_between_dates(
+                data_directory,
+                TimeRange(mission_start, mission_end),
                 multiprocess=True,
             )
-            Remove_Spikes(data_chunk)
+            _remove_data_spikes(data_chunk)
 
             # Reduce columns to save on both storage size,
             # and when loaded into memory.
             columns_to_include = [
                 "date",
                 "|B|",
-                "Bx",
-                "By",
-                "Bz",
+                "Bx'",
+                "By'",
+                "Bz'",
                 "X MSM' (radii)",
                 "Y MSM' (radii)",
                 "Z MSM' (radii)",
@@ -578,7 +448,7 @@ def Save_Mission(path: str, days_per_chunk=60):
             pickle.dump(data_chunk, f)
 
 
-def Load_Mission(path: str):
+def load_mission(path: str):
     data_chunks = []
 
     with open(path, "rb") as f:
