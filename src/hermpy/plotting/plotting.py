@@ -23,7 +23,7 @@ wong_colours = {
 }
 
 
-def Plot_Magnetospheric_Boundaries(
+def plot_magnetospheric_boundaries(
     ax: plt.Axes,
     plane: str = "xy",
     sub_solar_magnetopause: float = 1.45,
@@ -140,7 +140,7 @@ def Plot_Magnetospheric_Boundaries(
             pass
 
 
-def Square_Axes(ax: plt.Axes, distance: float) -> None:
+def square_axes(ax: plt.Axes, distance: float) -> None:
     """Sets axis limits and aspect ratio for square trajectory
     plots.
 
@@ -190,7 +190,7 @@ def Square_Axes(ax: plt.Axes, distance: float) -> None:
     ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_locator))
 
 
-def Add_Labels(ax: plt.Axes, plane: str, frame="MSO") -> None:
+def add_labels(ax: plt.Axes, plane: str, frame="MSO") -> None:
     """Adds axes labels corresponding to a particular trajectory
     plane.
 
@@ -226,7 +226,7 @@ def Add_Labels(ax: plt.Axes, plane: str, frame="MSO") -> None:
             ax.set_ylabel(r"Z$_{\rm var1}$ [$R_M$]".replace("var1", frame))
 
 
-def Plot_Mercury(
+def plot_mercury(
     ax: plt.Axes,
     shaded_hemisphere: str = "none",
     plane: str = "xy",
@@ -350,7 +350,7 @@ def Plot_Mercury(
             )
 
 
-def Format_Cylindrical_Plot(
+def format_cylindrical_plot(
     ax: matplotlib.axes.Axes,
     size: float = 3,
     mercury_style: str = "offset",
@@ -423,18 +423,18 @@ def Format_Cylindrical_Plot(
     # Add Mercury
     match mercury_style:
         case "offset":
-            Plot_Circle(
+            plot_circle(
                 ax, (0, +Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey"
             )
-            Plot_Circle(
+            plot_circle(
                 ax, (0, -Constants.DIPOLE_OFFSET_RADII), 1, ec="k", shade_colour="grey"
             )
 
         case "centred":
-            Plot_Circle(ax, (0, 0), 1, ec="k", fill=False)
+            plot_circle(ax, (0, 0), 1, ec="k", fill=False)
 
 
-def Plot_Circle(
+def plot_circle(
     ax: matplotlib.axes.Axes,
     centre: tuple[float, float],
     radius: float = 1,
@@ -462,7 +462,7 @@ def Plot_Circle(
         return
 
 
-def Add_Tick_Ephemeris(
+def add_tick_ephemeris(
     ax: plt.Axes,
     include: set = {
         "date",
