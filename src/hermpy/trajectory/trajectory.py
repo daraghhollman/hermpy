@@ -9,6 +9,7 @@ import pandas as pd
 import scipy.signal
 import scipy.spatial
 import spiceypy as spice
+from sunpy.time import TimeRange
 from tqdm import tqdm
 
 import hermpy.trajectory as traj
@@ -341,7 +342,7 @@ def get_average_aberrated_position(
 
 def get_trajectory(
     spacecraft: str,
-    dates: Iterable[dt.datetime],
+    time_range: TimeRange,
     steps: int = 100,
     frame: str = "MSM",
     aberrate: bool = True,
@@ -359,8 +360,8 @@ def get_trajectory(
     spacecraft : str
         The name of the spacecraft to query. i.e. 'MESSENGER'.
 
-    dates : list[datetime.datetime]
-        The start and end date and time to query at.
+    time_range: sunpy.time.TimeRange
+        The range of time within which to get positions
 
     steps : int {100}, optional
         The number of points to sample beween the two times.
@@ -389,7 +390,7 @@ def get_trajectory(
     """
 
     with spice.KernelPool(User.METAKERNEL):
-        dates = [dates[0] + (t * (dates[1] - dates[0]) / steps) for t in range(steps)]
+        dates = time_range.split(steps)
         spice_times = spice.str2et(
             [date.strftime("%Y-%m-%d %H:%M:%S") for date in dates]
         )
