@@ -55,14 +55,6 @@ def download_MESSENGER_MAG(
     save_directory : str
         Directory to save MAG files to.
 
-    force_update : bool {False, True}, optional
-        Default behaviour is to only update files if they have changed.
-        Update can be forced.
-
-    show_progress : bool {True, False}, optional
-        Shows a progress bar to track downloads.
-
-
     Returns
     -------
     None
