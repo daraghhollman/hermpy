@@ -1,7 +1,6 @@
 # HERMPY - A tool-belt for space science at Mercury
 
-Tools for aiding in the handling of data and the creation of publication ready
-plots from spacecraft around Mercury.
+Tools for aiding in the handling of data and the creation of publication ready plots from spacecraft around Mercury.
 
 ## Installation
 
@@ -15,32 +14,12 @@ pip install .
 
 ### Further Setup
 
-Further setup is required. Paths in `hermpy/utils/utils.py, class: User` must
-be updated to locations of your choosing. We appreciate this is inconvienient,
-and are looking for solutions to avoid this going forward.
+MESSENGER MAG data can be automatically downloaded with:
 
-MESSENGER MAG data can be automatically downloaded using
-`hermpy.utils.Download_MESSENGER_MAG()` provided a download path is describe in
-`hermpy/utils/utils.py`, however, it is possible to download files manually
-using the
-[PDS](https://search-pdsppi.igpp.ucla.edu/search/view/?f=yes&id=pds://PPI/mess-mag-calibrated/data/mso),
-[doi](https://doi.org/10.17189/1522385). The directories however should match
-the following format:
-
+```python
+hermpy.utils.download_MESSENGER_MAG(save_directory: str)
 ```
-.
-├── 2011
-│   ├── 03_MAR
-│   │   ├── MAGMSOSCIAVG11082_01_V08.TAB
-│   │   ├── MAGMSOSCIAVG11083_01_V08.TAB
-│   │   ... etc.
-│   ├── 04_APR
-│   ├── 05_MAY
-│   ├── 06_JUN
-├── 2012
-│   ├── 01_JAN
-...
-```
+however, it is possible to download files manually using the [PDS](https://search-pdsppi.igpp.ucla.edu/search/view/?f=yes&id=pds://PPI/mess-mag-calibrated/data/mso), [doi](https://doi.org/10.17189/1522385). The directories however should match the following format:
 
 ### Philpott Crossing List
 Certain functions (particularly from hermpy.boundaries) require the use of a
