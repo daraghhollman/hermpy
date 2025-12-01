@@ -436,7 +436,7 @@ def Add_Aberrated_Terms(data: pd.DataFrame) -> pd.DataFrame:
 
     # Rotate MAG vectors
     data["Bx'"] = data["Bx"] * cos_terms - data["By"] * sin_terms
-    data["By'"] = data["Bx"] * sin_terms - data["By"] * cos_terms
+    data["By'"] = data["Bx"] * sin_terms + data["By"] * cos_terms
     data["Bz'"] = data["Bz"]
 
     # Rotate ephemeris coordinates in radii
