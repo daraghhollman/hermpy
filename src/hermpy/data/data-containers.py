@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import xarray as xr
 from astropy.table import Column, QTable
 
-from hermpy.data import parse_messenger_fips
-
 
 class DataContainer(Protocol):
 
@@ -23,7 +21,6 @@ class Timeseries(DataContainer):
     metadata: dict[str, str] = field(default_factory=dict)
 
     def quickplot(self) -> None:
-
         _, ax = plt.subplots()
 
         # Loop through the non-time columns and plot
