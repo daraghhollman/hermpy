@@ -37,6 +37,7 @@ class ClientMESSENGER:
             "MAG 5s": "mess-mag-calibrated/data/mso-avg/",
             "MAG 10s": "mess-mag-calibrated/data/mso-avg/",
             "MAG 60s": "mess-mag-calibrated/data/mso-avg/",
+            "MAG RTN 60s": "mess-mag-calibrated/data/rtn-avg/",
             # FIPS
             "FIPS": "mess-epps-fips-calibrated/data/scan/",
         },
@@ -46,6 +47,7 @@ class ClientMESSENGER:
             "MAG 5s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_05_V{{version}}.TAB",
             "MAG 10s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_10_V{{version}}.TAB",
             "MAG 60s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_60_V{{version}}.TAB",
+            "MAG RTN 60s": "{{year:4d}}/{subdir}/MAGRTNSCIAVG{{year:2d}}{{day_of_year:3d}}_60_V{{version}}.TAB",
             # FIPS
             "FIPS": "{{year:4d}}/{subdir}/FIPS_R{{year:4d}}{{day_of_year:3d}}CDR_V{{version}}.TAB",
         },
