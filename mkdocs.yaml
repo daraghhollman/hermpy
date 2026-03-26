@@ -1,0 +1,44 @@
+site_name: hermpy
+site_url: https://pypi.org/project/hermpy/
+repo_url: https://github.com/daraghhollman/hermpy
+
+nav:
+  - index.md
+  - about.md
+  - Tutorials:
+    - tutorials/index.md
+    - tutorials/getting-started.md
+  - Examples:
+    - examples/index.md
+  - Contributing:
+    - contributing/index.md
+  - Reference:
+    - reference/net.md
+    - reference/data.md
+    - reference/plotting.md
+    - reference/utils.md
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+  features:
+    - navigation.path
+    - navigation.tabs
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+
+extra:
+  generator: false
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: true
+            heading_level: 3
