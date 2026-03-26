@@ -1,21 +1,19 @@
-name: publish-to-pypi
+name: Publish to PyPI
 
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+*"
+  release:
+    types: [published]
 
 jobs:
-  pypi-publish:
-    name: upload release to PyPI
+  publish:
     runs-on: ubuntu-latest
-    # Specifying a GitHub environment is optional, but strongly encouraged
-    environment: pypi
     permissions:
-      # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/<YOUR_PACKAGE_NAME>
     steps:
-      # retrieve your distributions here
-
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: uv build
+      - run: uv publish
