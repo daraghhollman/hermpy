@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: publish-to-pypi
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/pytest-cov
+      url: https://pypi.org/p/hermpy
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
 
