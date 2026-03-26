@@ -7,7 +7,6 @@ from astropy.table import Column, QTable
 
 
 class DataContainer(Protocol):
-
     # Any data product should be able to be quickly viewed.
     # Quickplot functions should read the metadata for fields
     # such as: x_label, y_label, x_unit.
@@ -25,7 +24,6 @@ class Timeseries(DataContainer):
 
         # Loop through the non-time columns and plot
         for column_name in self.table.colnames:
-
             if column_name == self.time_column:
                 continue
 

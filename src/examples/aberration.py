@@ -19,7 +19,6 @@ mag_data: QTable = parse_messenger_mag(mag_file_paths, time_range)
 # src/examples/spice.py
 spice_client = ClientSPICE()
 with spice_client.KernelPool():
-
     # We append aberrated terms to mag data in the following way.
     mag_data = rotate_to_aberrated_coordinates(mag_data)
 

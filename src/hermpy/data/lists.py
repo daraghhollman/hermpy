@@ -7,7 +7,6 @@ from astropy.time import Time
 
 
 class EventList(ABC):
-
     def __init__(self, table: QTable):
         self.table = table.copy()
 
@@ -44,7 +43,6 @@ class DurationEventList(EventList):
 
 
 class CrossingList:
-
     @classmethod
     def from_csv(cls, csv_path: Path, time_column="UTC") -> InstantEventList:
 

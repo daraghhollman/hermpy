@@ -5,7 +5,6 @@ from hermpy.net import ClientMESSENGER
 
 
 class TestInstruments(TestCase):
-
     def test_messenger_instruments(self):
 
         client = ClientMESSENGER()
