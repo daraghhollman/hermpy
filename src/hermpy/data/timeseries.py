@@ -84,7 +84,7 @@ def parse_messenger_mag(file_paths: list[Path], time_range: TimeRange) -> QTable
     file_data: list[QTable] = []
     for path in file_paths:
         table = ascii.read(path)
-        assert type(table) == Table
+        assert type(table) is Table
 
         # Extract time information
         year = table.columns[0]

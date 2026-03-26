@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
-from astropy import units as u
 from astropy.table import QTable
 
 

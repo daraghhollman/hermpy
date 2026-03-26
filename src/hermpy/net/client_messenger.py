@@ -90,7 +90,7 @@ class ClientMESSENGER:
 
                 scraper = Scraper(format=pattern, **pattern_kwargs)
                 filelist = scraper.filelist(time_range)
-                assert type(filelist) == list
+                assert type(filelist) is list
                 urls.extend(filelist)
 
         else:
@@ -100,7 +100,7 @@ class ClientMESSENGER:
 
             scraper = Scraper(format=pattern, **pattern_kwargs)
             filelist = scraper.filelist(time_range)
-            assert type(filelist) == list
+            assert type(filelist) is list
             urls = filelist
 
         # For some reason, this gives us more than just the files we want.
