@@ -7,9 +7,6 @@ keywords = ["hermpy", "mercury", "space", "science", "messenger", "bepicolombo"]
 authors = [
     {name = "Daragh M. Hollman", email = "daragh.hollman@dias.ie"}
 ]
-maintainers = [
-    {name = "Daragh M. Hollman", email = "daragh.hollman@dias.ie"}
-]
 
 readme = "README.md"
 license = {file = "LICENSE"}
