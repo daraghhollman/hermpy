@@ -1,9 +1,27 @@
 [project]
 name = "hermpy"
 version = "0.1.0"
-description = "A collection of tools to aid in the creation of publication plots from spacecraft around Mercury."
+description = "Tools for space science at Mercury"
+keywords = ["hermpy", "mercury", "space", "science", "messenger", "bepicolombo"]
+
+authors = [
+    {name = "Daragh M. Hollman", email = "daragh.hollman@dias.ie"}
+]
+maintainers = [
+    {name = "Daragh M. Hollman", email = "daragh.hollman@dias.ie"}
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Researchers",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
 readme = "README.md"
 license = {file = "LICENSE"}
+
 requires-python = ">=3.12"
 dependencies = [
     "bs4>=0.0.2",
