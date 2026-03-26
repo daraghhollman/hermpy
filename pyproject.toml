@@ -1,6 +1,6 @@
 [project]
 name = "hermpy"
-version = "0.1.4"
+version = "0.1.5"
 description = "Tools for space science at Mercury"
 keywords = ["hermpy", "mercury", "space", "science", "messenger", "bepicolombo"]
 
@@ -9,14 +9,6 @@ authors = [
 ]
 maintainers = [
     {name = "Daragh M. Hollman", email = "daragh.hollman@dias.ie"}
-]
-
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Researchers",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
 ]
 
 readme = "README.md"
