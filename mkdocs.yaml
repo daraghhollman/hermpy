@@ -40,5 +40,4 @@ plugins:
         python:
           options:
             show_source: false
-            show_root_heading: true
-            heading_level: 3
+            show_if_no_docstring: false

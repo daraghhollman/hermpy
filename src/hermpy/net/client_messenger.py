@@ -27,6 +27,24 @@ def main():
 
 
 class ClientMESSENGER:
+    """
+    Client for accessing and downloading MESSENGER mission PDS data files.
+
+    This class provides an interface to query, fetch, and manage calibrated
+    instrument data from the UCLA PDS archive for the MESSENGER spacecraft.
+    It supports multiple instruments (MAG, FIPS, etc.) and time ranges.
+
+    Attributes:
+        PDS_BASE_URL (str):
+            Base URL of the PDS data archive.
+        PDS_DATA_LOCATION (dict[str, str]):
+            Mapping of instrument names to their relative PDS data directories.
+        FILE_PATTERN (dict[str, str]):
+            Filename pattern templates for each instrument.
+        _query_buffer (list[str]):
+            Internal buffer holding the results of the most recent query.
+    """
+
     def __init__(
         self,
         PDS_BASE_URL: str = "https://pds-ppi.igpp.ucla.edu/data/",
@@ -52,6 +70,18 @@ class ClientMESSENGER:
             "FIPS": "{{year:4d}}/{subdir}/FIPS_R{{year:4d}}{{day_of_year:3d}}CDR_V{{version}}.TAB",
         },
     ):
+        """
+        Initialize the ClientMESSENGER with optional PDS URLs and patterns.
+
+        Args:
+            PDS_BASE_URL (str, optional):
+                Base URL of the PDS archive. Defaults to the UCLA PDS MESSENGER archive.
+            PDS_DATA_LOCATION (dict[str, str], optional):
+                Mapping of instrument names to their relative PDS directories.
+            FILE_PATTERN (dict[str, str], optional):
+                Filename templates for each instrument. Can include placeholders
+                for year, day of year, subdir, and version.
+        """
         # Paths defining where the data can be found
         self.PDS_BASE_URL = PDS_BASE_URL
         self.PDS_DATA_LOCATION = PDS_DATA_LOCATION
@@ -64,14 +94,30 @@ class ClientMESSENGER:
 
     @property
     def instruments(self) -> list[str]:
+        """
+        Return a list of available instrument names.
+
+        Returns:
+            list[str]: Instrument names available in PDS_DATA_LOCATION.
+        """
         return list(self.PDS_DATA_LOCATION.keys())
 
     def query(self, time_range: TimeRange, instrument: str) -> list[str]:
         """
-        Query the data locations for key <instrument>, between the times in
-        time_range.
+        Query the PDS archive for a given instrument and time range.
 
-        Returns a list[str] of urls and extends the search buffer.
+        This method generates URLs based on the instrument's data location and
+        filename pattern, filters results to match the requested days of year,
+        and updates the internal query buffer.
+
+        Args:
+            time_range (TimeRange):
+                The start and end times for the query.
+            instrument (str):
+                Name of the instrument to query (must exist in `PDS_DATA_LOCATION`).
+
+        Returns:
+            list[str]: List of matching file URLs.
         """
 
         pattern = (
@@ -116,8 +162,17 @@ class ClientMESSENGER:
 
     def fetch(self, check_for_updates: bool = False) -> list[Path]:
         """
-        Download and fetch files in self.query_buffer and clears the buffer. If
-        files are already downloaded, fetch them.
+        Download all files in the query buffer and return local paths.
+
+        Uses parallel download and optionally updates cached files. After
+        downloading, clears the query buffer.
+
+        Args:
+            check_for_updates (bool, optional):
+                If True, forces re-download of cached files. Defaults to False.
+
+        Returns:
+            list[pathlib.Path]: Local paths to downloaded files.
         """
 
         data_paths = download_files_in_parallel(
