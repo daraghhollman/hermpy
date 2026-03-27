@@ -1,3 +1,0 @@
-# hermpy.net
-
-::: hermpy.net

@@ -1,3 +1,0 @@
-# hermpy.utils
-
-::: hermpy.utils
