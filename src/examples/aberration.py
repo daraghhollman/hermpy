@@ -18,6 +18,23 @@ mag_data: QTable = parse_messenger_mag(mag_file_paths, time_range)
 # We also require spice kernels for these calculations. For more details see
 # src/examples/spice.py
 spice_client = ClientSPICE()
+
+# Add spice kernels for MESSENGER
+spice_client.KERNEL_LOCATIONS.update(
+    {
+        "MESSENGER Frames (tf)": {
+            "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+            "DIRECTORY": "pds/data/mess-e_v_h-spice-6-v1.0/messsp_1000/data/fk/",
+            "PATTERNS": ["msgr_dyn_v600.tf"],
+        },
+        "MESSENGER": {
+            "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+            "DIRECTORY": "pds/data/mess-e_v_h-spice-6-v1.0/messsp_1000/data/spk/",
+            "PATTERNS": ["msgr_??????_??????_??????_od431sc_2.bsp"],
+        },
+    }
+)
+
 with spice_client.KernelPool():
     # We append aberrated terms to mag data in the following way.
     mag_data = rotate_to_aberrated_coordinates(mag_data)

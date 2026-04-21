@@ -23,16 +23,6 @@ class ClientSPICE:
                 "DIRECTORY": "generic_kernels/pck/",
                 "PATTERNS": ["pck00011.tpc"],
             },
-            "MESSENGER Frames (tf)": {
-                "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
-                "DIRECTORY": "pds/data/mess-e_v_h-spice-6-v1.0/messsp_1000/data/fk/",
-                "PATTERNS": ["msgr_dyn_v600.tf"],
-            },
-            "MESSENGER": {
-                "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
-                "DIRECTORY": "pds/data/mess-e_v_h-spice-6-v1.0/messsp_1000/data/spk/",
-                "PATTERNS": ["msgr_??????_??????_??????_od431sc_2.bsp"],
-            },
         },
     ):
         self.KERNEL_LOCATIONS = KERNEL_LOCATIONS

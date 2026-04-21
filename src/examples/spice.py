@@ -25,6 +25,22 @@ spice_client.KERNEL_LOCATIONS.update(
     }
 )
 
+# Add spice kernels for MESSENGER
+spice_client.KERNEL_LOCATIONS.update(
+    {
+        "MESSENGER Frames (tf)": {
+            "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+            "DIRECTORY": "pds/data/mess-e_v_h-spice-6-v1.0/messsp_1000/data/fk/",
+            "PATTERNS": ["msgr_dyn_v600.tf"],
+        },
+        "MESSENGER": {
+            "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+            "DIRECTORY": "pds/data/mess-e_v_h-spice-6-v1.0/messsp_1000/data/spk/",
+            "PATTERNS": ["msgr_??????_??????_??????_od431sc_2.bsp"],
+        },
+    }
+)
+
 # We open a context in which we load kernels from ClientSPICE. For more details
 # see the spiceypy documentation.
 with spice.KernelPool(spice_client.fetch()):
