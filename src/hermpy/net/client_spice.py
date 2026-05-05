@@ -23,6 +23,11 @@ class ClientSPICE:
                 "DIRECTORY": "generic_kernels/pck/",
                 "PATTERNS": ["pck00011.tpc"],
             },
+            "Generic (bsp)": {  # Planets
+                "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+                "DIRECTORY": "generic_kernels/spk/planets/",
+                "PATTERNS": ["de442.bsp"],
+            },
         },
     ):
         self.KERNEL_LOCATIONS = KERNEL_LOCATIONS
