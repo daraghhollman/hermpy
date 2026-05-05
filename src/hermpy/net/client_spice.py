@@ -91,8 +91,14 @@ def expand_patterns(base_url: str, directory: str, patterns: list[str]) -> list[
 
     matched = []
     for pattern in patterns:
-        matched.extend(
-            f"{full_dir_url}{fname}" for fname in files if fnmatch(fname, pattern)
-        )
+        # Check first if file exists
+        hits = [f"{full_dir_url}{fname}" for fname in files if fnmatch(fname, pattern)]
+
+        if not hits:
+            raise FileNotFoundError(
+                f"No remote files matched pattern '{pattern}' in {full_dir_url}"
+            )
+
+        matched.extend(hits)
 
     return matched
