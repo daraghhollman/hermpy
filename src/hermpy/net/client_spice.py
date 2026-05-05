@@ -23,6 +23,11 @@ class ClientSPICE:
                 "DIRECTORY": "generic_kernels/pck/",
                 "PATTERNS": ["pck00011.tpc"],
             },
+            "Generic (bsp)": {  # Planets
+                "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+                "DIRECTORY": "generic_kernels/spk/planets/",
+                "PATTERNS": ["de442.bsp"],
+            },
         },
     ):
         self.KERNEL_LOCATIONS = KERNEL_LOCATIONS
@@ -91,8 +96,14 @@ def expand_patterns(base_url: str, directory: str, patterns: list[str]) -> list[
 
     matched = []
     for pattern in patterns:
-        matched.extend(
-            f"{full_dir_url}{fname}" for fname in files if fnmatch(fname, pattern)
-        )
+        # Check first if file exists
+        hits = [f"{full_dir_url}{fname}" for fname in files if fnmatch(fname, pattern)]
+
+        if not hits:
+            raise FileNotFoundError(
+                f"No remote files matched pattern '{pattern}' in {full_dir_url}"
+            )
+
+        matched.extend(hits)
 
     return matched
