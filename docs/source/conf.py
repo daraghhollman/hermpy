@@ -23,6 +23,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_exec_code",
+    "matplotlib.sphinxext.plot_directive",
 ]
 
 napoleon_google_docstring = False  # Turn off googledoc strings
