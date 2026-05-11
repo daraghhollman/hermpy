@@ -1,16 +1,15 @@
-hermpy documentation
-====================
+`hermpy`_ is a small Python package designed to make space science a little
+easier at Mercury. It is heavily opinionated, but I'm always open to new ideas,
+suggestions, and contributions.
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+.. _hermpy: https://github.com/daraghhollman/hermpy
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    intro.rst
+   examples/index.rst
 
 
 Indices and tables

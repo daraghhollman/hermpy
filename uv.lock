@@ -678,6 +678,7 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "sphinx" },
+    { name = "sphinx-exec-code" },
     { name = "sphinx-rtd-theme" },
 ]
 
@@ -705,6 +706,7 @@ dev = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = ">=0.15.7" },
     { name = "sphinx", specifier = ">=9.1.0" },
+    { name = "sphinx-exec-code", specifier = ">=0.18" },
     { name = "sphinx-rtd-theme", specifier = ">=3.1.0" },
 ]
 
@@ -1827,6 +1829,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cd/bd/f08eb0f4eed5c83f1ba2a3bd18f7745a2b1525fad70660a1c00224ec468a/sphinx-9.1.0.tar.gz", hash = "sha256:7741722357dd75f8190766926071fed3bdc211c74dd2d7d4df5404da95930ddb", size = 8718324, upload-time = "2025-12-31T15:09:27.646Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/73/f7/b1884cb3188ab181fc81fa00c266699dab600f927a964df02ec3d5d1916a/sphinx-9.1.0-py3-none-any.whl", hash = "sha256:c84fdd4e782504495fe4f2c0b3413d6c2bf388589bb352d439b2a3bb99991978", size = 3921742, upload-time = "2025-12-31T15:09:25.561Z" },
+]
+
+[[package]]
+name = "sphinx-exec-code"
+version = "0.18"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ce/7f/2705ea70eb6d7b9a72f6f035fa85160d0eb53876653f5ed697708eb186d6/sphinx_exec_code-0.18.tar.gz", hash = "sha256:f254c44dfe91a6e1337675535b098296a7bafbcc0d0feb5759f93fb720e8546f", size = 16741, upload-time = "2026-03-18T08:17:49.047Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/2c/6e0aa56de08a48324eae2f0fda32d4ffc769dd72fafc62da55c1f7f14510/sphinx_exec_code-0.18-py3-none-any.whl", hash = "sha256:257c5847adab86f971c9ec20849df84aec4c8ee05aca787915efaac930586656", size = 17414, upload-time = "2026-03-18T08:17:47.762Z" },
 ]
 
 [[package]]

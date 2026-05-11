@@ -15,7 +15,6 @@ sys.path.insert(0, os.path.abspath("."))
 project = "hermpy"
 copyright = "2026, Daragh M. Hollman"
 author = "Daragh M. Hollman"
-release = "0.1.6"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -23,6 +22,7 @@ release = "0.1.6"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx_exec_code",
 ]
 
 napoleon_google_docstring = False  # Turn off googledoc strings
