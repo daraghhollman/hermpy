@@ -4,4 +4,4 @@
 
 Tools for aiding in the handling of data, their analysis, and the creation of publication ready plots from spacecraft around Mercury.
 
-See our [documentation](https://github.com/daraghhollman.github.io/hermpy) for more details.
+See our [documentation](https://daraghhollman.github.io/hermpy) for more details.
