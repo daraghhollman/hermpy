@@ -1,4 +1,6 @@
-# Hermpy Documentation
+![hermpy-banner](images/banner.png)
+
+# Introduction
 
 **Hermpy** is a small Python package designed to make space science a little
 easier at Mercury. It is heavily opinionated, but I'm always open to new ideas,
