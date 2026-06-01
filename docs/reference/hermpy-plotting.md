@@ -1,3 +1,0 @@
-# hermpy.plotting
-
-::: hermpy.plotting

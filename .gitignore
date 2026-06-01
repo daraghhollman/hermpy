@@ -14,3 +14,5 @@ example-data/
 
 # Zensical
 site/
+/docs/_build
+/docs/generated_examples
