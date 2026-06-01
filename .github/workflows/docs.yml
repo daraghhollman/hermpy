@@ -1,8 +1,15 @@
-name: Docs
+name: Build & Deploy Docs
+
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -10,10 +17,7 @@ permissions:
   id-token: write
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,11 +29,19 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
-      - run: uv run zensical build --clean
+      - name: Build docs
+        run: cd docs && uv run make html
 
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
+  deploy:
+    if: github.event_name == 'push'
+    needs: build
 
-      - uses: actions/deploy-pages@v5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
         id: deployment

@@ -1,3 +1,0 @@
-# hermpy.data
-
-::: hermpy.data
