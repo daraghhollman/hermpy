@@ -7,6 +7,7 @@ from urllib.request import urlopen
 
 import spiceypy as spice
 from astropy.utils.data import download_files_in_parallel
+from hermpy.utils.os import get_multiprocessing_start_method
 
 
 class ClientSPICE:
@@ -68,6 +69,7 @@ class ClientSPICE:
             self._query_buffer,
             cache="update" if check_for_updates else True,
             pkgname="hermpy",
+            multiprocessing_start_method=get_multiprocessing_start_method(),
         )
 
         # Return downloaded paths and anything in the local buffer.
