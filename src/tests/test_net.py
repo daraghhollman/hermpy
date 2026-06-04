@@ -1,6 +1,7 @@
 from astropy.utils.data import download_file, download_files_in_parallel
 
 from hermpy.net import ClientMESSENGER
+from hermpy.utils.os import get_multiprocessing_start_method
 
 
 def test_messenger_instruments():
@@ -34,7 +35,7 @@ def test_astropy_download_parallel():
         TEST_URLS,
         pkgname="hermpy",
         cache=True,
-        multiprocessing_start_method="fork",
+        multiprocessing_start_method=get_multiprocessing_start_method(),
     )
     assert len(paths) == len(TEST_URLS)
     assert all(paths)

@@ -8,6 +8,8 @@ from astropy.utils.data import download_files_in_parallel
 from sunpy.net import Scraper
 from sunpy.time import TimeRange
 
+from hermpy.utils.os import get_multiprocessing_start_method
+
 
 def main():
     """
@@ -124,7 +126,7 @@ class ClientMESSENGER:
             self._query_buffer,
             cache="update" if check_for_updates else True,
             pkgname="hermpy",
-            multiprocessing_start_method="fork",
+            multiprocessing_start_method=get_multiprocessing_start_method(),
         )
 
         # Flush query buffer
