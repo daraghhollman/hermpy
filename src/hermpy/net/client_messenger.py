@@ -124,6 +124,7 @@ class ClientMESSENGER:
             self._query_buffer,
             cache="update" if check_for_updates else True,
             pkgname="hermpy",
+            multiprocessing_start_method="fork",
         )
 
         # Flush query buffer

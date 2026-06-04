@@ -68,6 +68,7 @@ class ClientSPICE:
             self._query_buffer,
             cache="update" if check_for_updates else True,
             pkgname="hermpy",
+            multiprocessing_start_method="fork",
         )
 
         # Return downloaded paths and anything in the local buffer.
