@@ -1,3 +1,6 @@
+import tomllib
+from pathlib import Path
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -9,7 +12,10 @@
 project = "hermpy"
 copyright = "2026, Daragh M. Hollman"
 author = "Daragh M. Hollman"
-release = "0.2.3"
+
+# Set release based on pyproject.toml
+with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as f:
+    release = tomllib.load(f)["project"]["version"]
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
