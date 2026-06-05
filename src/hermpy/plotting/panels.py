@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
@@ -42,6 +43,8 @@ class MultiPanel:
         for panel, ax in zip(self._panels, axes):
             panel._plot_on(ax)
 
+            ax.set(**panel.ax_set_params)
+
         if show:
             plt.show()
 
@@ -53,6 +56,7 @@ class Panel(ABC):
 
     def __init__(self, time_column: str = "UTC"):
         self.time_column = time_column
+        self._ax_set_params: dict = {}
 
     def __add__(self, other) -> MultiPanel:
         # If other is another Panel, we can just pass this Panel and the
@@ -73,13 +77,25 @@ class Panel(ABC):
     @abstractmethod
     def _plot_on(self, ax):
         """Plot panel content on the given axis."""
-        pass
+        ...
+
+    @property
+    def ax_set_params(self) -> dict:
+        return self._ax_set_params
+
+    @ax_set_params.setter
+    def ax_set_params(self, params: dict):
+        if not isinstance(params, dict):
+            raise TypeError(f"`ax_set_params` must be a dict, got {type(params)}")
+        self._ax_set_params = params
 
     def plot(self, show=True):
         """Creates a quick plot for this panel alone."""
 
         fig, ax = plt.subplots()
         self._plot_on(ax)
+
+        ax.set(**self.ax_set_params)
 
         if show:
             plt.show()
@@ -94,7 +110,7 @@ class TimeseriesPanel(Panel):
         self._check_units()
 
     @property
-    def unit(self):
+    def unit(self) -> u.Unit:
         return self._unit
 
     def _check_units(self):
@@ -145,22 +161,26 @@ class SpectrogramPanel(Panel):
     def __init__(
         self,
         data: xr.DataArray,
-        time_dim: str = "UTC",
-        y_dim: str = "Energy Channel",
+        time_dim: str,
+        y_dim: str,
         y_bin_edges: list[float | int] | None = None,
+        yscale="log",
         vmin=None,
         vmax=None,
         cmap="viridis",
-        yscale="log",
+        cmap_scale="log",
+        unit="",
     ):
         self.data = data
         self.time_dim = time_dim
         self.y_dim = y_dim
         self.y_bin_edges = y_bin_edges or np.arange(0, len(data[y_dim]) + 1).tolist()
+        self.yscale = yscale
         self.vmin = vmin
         self.vmax = vmax
         self.cmap = cmap
-        self.yscale = yscale
+        self.cmap_scale = cmap_scale
+        self.unit = unit
 
     def _plot_on(self, ax):
         mesh = ax.pcolormesh(
@@ -171,11 +191,12 @@ class SpectrogramPanel(Panel):
             vmin=self.vmin,
             vmax=self.vmax,
             cmap=self.cmap,
+            norm=self.cmap_scale,
         )
 
         cbar_bounds = (1.02, 0, 0.02, 1)
         self.cbar_ax = ax.inset_axes(cbar_bounds)
 
-        self.cbar = plt.colorbar(mesh, cax=self.cbar_ax)
+        self.cbar = plt.colorbar(mesh, cax=self.cbar_ax, label=self.unit)
 
         ax.set_yscale(self.yscale)
