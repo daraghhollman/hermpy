@@ -1,6 +1,6 @@
 [project]
 name = "hermpy"
-version = "0.2.4"
+version = "0.2.5"
 description = "Tools for space science at Mercury"
 keywords = ["hermpy", "mercury", "space", "science", "messenger", "bepicolombo"]
 

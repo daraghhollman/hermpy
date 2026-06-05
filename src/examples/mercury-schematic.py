@@ -24,7 +24,7 @@ mpl.rcParams["axes.linewidth"] = 2
 #
 # .. _sunpy: https://www.sunpy.org/
 bepi_time_range = TimeRange("2026-08-15", "2026-08-16")
-messenger_time_range = TimeRange("2012-08-01", "2012-08-02")
+messenger_time_range = TimeRange("2012-08-05", "2012-08-06")
 
 # %%
 # We use ``hermpy.net.ClientSPICE`` to aid in the downloading a querying of SPICE
@@ -70,19 +70,22 @@ with spice_client.KernelPool():
     bepi_times = [t.center.to_datetime() for t in bepi_time_range.split(1000)]
     bepi_ets = spice.datetime2et(bepi_times)
 
-    mpo_positions, _ = spice.spkpos("MPO", bepi_ets, "BC_MSM", "NONE", "MERCURY")
+    mpo_positions, _ = spice.spkpos("MPO", bepi_ets, "BC_MSO", "NONE", "MERCURY")
     mpo_positions /= c.MERCURY_RADIUS.to("km").value
+    mpo_positions -= c.DIPOLE_OFFSET_RADII.value
 
-    mmo_positions, _ = spice.spkpos("MMO", bepi_ets, "BC_MSM", "NONE", "MERCURY")
+    mmo_positions, _ = spice.spkpos("MMO", bepi_ets, "BC_MSO", "NONE", "MERCURY")
     mmo_positions /= c.MERCURY_RADIUS.to("km").value
+    mmo_positions -= c.DIPOLE_OFFSET_RADII.value
 
     messenger_times = [t.center.to_datetime() for t in messenger_time_range.split(1000)]
     messenger_ets = spice.datetime2et(messenger_times)
 
     messenger_positions, _ = spice.spkpos(
-        "MESSENGER", messenger_ets, "BC_MSM", "NONE", "MERCURY"
+        "MESSENGER", messenger_ets, "BC_MSO", "NONE", "MERCURY"
     )
     messenger_positions /= c.MERCURY_RADIUS.to("km").value
+    messenger_positions -= c.DIPOLE_OFFSET_RADII.value
 
 # %%
 # We create our plot, and begin by plotting the above positions. The are in the
@@ -105,8 +108,8 @@ with spice_client.KernelPool():
 fig, ax = plt.subplots()
 
 ax.set(
-    xlim=(-3, 6),
-    ylim=(-6, 3),
+    xlim=(-4, 6),
+    ylim=(-6, 4),
     xticks=[],
     yticks=[],
     aspect="equal",
@@ -135,15 +138,15 @@ ax.plot(
     **spacecraft_params,
 )
 
-ax.text(1.8, 0.8, "MPO", color="blue", weight="bold")
-ax.text(4.8, 0, "Mio", color="red", weight="bold")
-ax.text(0.5, -5, "MESSENGER", color="orange", weight="bold")
+ax.text(1.5, 0.8, "MPO", color="blue", weight="bold")
+ax.text(4.5, 0, "Mio", color="red", weight="bold")
+ax.text(0.8, -5, "MESSENGER", color="orange", weight="bold")
 
 # WARNING: This function will likely change in future versions
 plot_magnetospheric_boundaries(ax, "xz", lw=2, zorder=-1)
 
 mercury_circle = Circle(
-    (0, -c.DIPOLE_OFFSET_RADII),
+    (0, -c.DIPOLE_OFFSET_RADII.value),
     radius=1,
     linewidth=3,
     facecolor="lightgrey",
