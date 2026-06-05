@@ -12,7 +12,7 @@ import xarray as xr
 from astropy.table import QTable
 from sunpy.time import TimeRange
 
-from hermpy.data import parse_messenger_fips, parse_messenger_mag
+from hermpy.data import fips_energy_bin_edges, parse_messenger_fips, parse_messenger_mag
 from hermpy.net import ClientMESSENGER
 from hermpy.plotting import MultiPanel, SpectrogramPanel, TimeseriesPanel
 
@@ -25,7 +25,7 @@ from hermpy.plotting import MultiPanel, SpectrogramPanel, TimeseriesPanel
 #
 # .. _here: download_data.html
 c = ClientMESSENGER()
-time_range = TimeRange("2011-06-01T00:00", "2011-06-01T01:00")
+time_range = TimeRange("2011-09-26T12:00", "2011-09-26T13:20")
 
 c.query(time_range, "MAG")
 mag_file_paths = c.fetch()
@@ -72,14 +72,26 @@ fig, ax = mag_panel.plot()
 # %%
 # Plotting with more than one panel
 # ---------------------------------
-# However, the power in Panel objects comes when we go to construct multipanel
-# plots. We can combine Panel objects to construct a multi-panel plot by simply
-# adding them.
+# The power in Panel objects comes when we go to construct multipanel plots. We
+# can combine Panel objects to construct a multi-panel plot by simply adding
+# them.
 #
 # Lets make a second panel where we plot the FIPS data. We can combine the two
-# using the addition operator.
+# using the addition operator. ``SpectrogramPanel`` doesn't know anything about
+# our data, so we need to provide the time axis, y axis, and y bin edges.
 proton_flux = fips_data["Proton Flux"]
-fips_panel = SpectrogramPanel(proton_flux)
+fips_panel = SpectrogramPanel(
+    proton_flux,
+    time_dim="UTC",
+    y_dim="Energy Channel",
+    y_bin_edges=fips_energy_bin_edges(),
+    cmap="magma",
+    unit="DEF [e / cm$^2$ s sr keV]",
+)
+
+# %%
+# We can set anything about the plot with ``ax_set_params``
+fips_panel.ax_set_params = {"ylabel": "E/q [keV/e]"}
 
 multipanel: MultiPanel = mag_panel + fips_panel
 fig, axes = multipanel.plot()
