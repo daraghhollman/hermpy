@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:15.307** total execution time for 4 files **from all galleries**:
+**00:37.881** total execution time for 5 files **from all galleries**:
 
 .. container::
 
@@ -33,14 +33,17 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_generated_examples_multipanel_plots.py` (``../src/examples/multipanel_plots.py``)
-     - 00:15.307
-     - 0.0
-   * - :ref:`sphx_glr_generated_examples_download_data.py` (``../src/examples/download_data.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_generated_examples_mercury-schematic.py` (``../src/examples/mercury-schematic.py``)
-     - 00:00.000
+     - 00:15.556
      - 0.0
    * - :ref:`sphx_glr_generated_examples_spice.py` (``../src/examples/spice.py``)
-     - 00:00.000
+     - 00:09.493
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_plot_one_orbit_of_messenger_mag.py` (``../src/examples/plot_one_orbit_of_messenger_mag.py``)
+     - 00:05.892
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_mercury-schematic.py` (``../src/examples/mercury-schematic.py``)
+     - 00:05.691
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_download_data.py` (``../src/examples/download_data.py``)
+     - 00:01.250
      - 0.0
