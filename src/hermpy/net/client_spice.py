@@ -2,56 +2,76 @@ import re
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 from urllib.request import urlopen
 
 import spiceypy as spice
 
 from hermpy.utils import download_files
 
+#: Default remote kernel sources used by :class:`ClientSPICE` when no
+#: ``KERNEL_LOCATIONS`` argument is provided. Includes the standard NAIF
+#: generic kernels for leap seconds (LSK), planetary constants (PCK), and
+#: planetary ephemerides (SPK). Each entry requires ``BASE``, ``DIRECTORY``,
+#: and ``PATTERNS`` keys — see :class:`ClientSPICE` for details.
+DEFAULT_KERNEL_LOCATIONS: Dict[str, Dict[str, Any]] = {
+    "Generic (tls)": {
+        "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+        "DIRECTORY": "generic_kernels/lsk/",
+        "PATTERNS": ["naif????.tls", "latest_leapseconds.tls"],
+    },
+    "Generic (tpc)": {
+        "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+        "DIRECTORY": "generic_kernels/pck/",
+        "PATTERNS": ["pck00011.tpc"],
+    },
+    "Generic (bsp)": {  # Planets
+        "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
+        "DIRECTORY": "generic_kernels/spk/planets/",
+        "PATTERNS": ["de442.bsp"],
+    },
+}
+
 
 class ClientSPICE:
+    """
+    Client for managing and loading SPICE kernels from remote and local sources.
+
+    Handles downloading kernels from NAIF (or other configured sources),
+    resolving filename patterns against remote directory listings, and
+    furnishing the resulting files to SpiceyPy via a context manager.
+    """
+
     def __init__(
-        self,
-        KERNEL_LOCATIONS: dict[str, dict[str, Any]] = {
-            "Generic (tls)": {
-                "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
-                "DIRECTORY": "generic_kernels/lsk/",
-                "PATTERNS": ["naif????.tls", "latest_leapseconds.tls"],
-            },
-            "Generic (tpc)": {
-                "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
-                "DIRECTORY": "generic_kernels/pck/",
-                "PATTERNS": ["pck00011.tpc"],
-            },
-            "Generic (bsp)": {  # Planets
-                "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
-                "DIRECTORY": "generic_kernels/spk/planets/",
-                "PATTERNS": ["de442.bsp"],
-            },
-        },
+        self, KERNEL_LOCATIONS: Dict[str, Dict[str, Any]] = DEFAULT_KERNEL_LOCATIONS
     ):
+        #: Remote kernel source configurations keyed by human-readable label.
+        #: Each entry requires three keys: ``BASE`` (root URL), ``DIRECTORY``
+        #: (path under base), and ``PATTERNS`` (filename patterns to resolve
+        #: against the remote directory listing).
         self.KERNEL_LOCATIONS = KERNEL_LOCATIONS
+
         self._query_buffer: list[str] = []
         self._local_buffer: list[Path] = []
 
     def add_local_kernels(self, paths: list[Path]) -> None:
         """
-        Adds files to _local_buffer to be loaded when fetched.
+        Stages local kernel files to be furnished on the next fetch.
+
+        Files are held in an internal buffer and included alongside any
+        remotely downloaded kernels when fetch() is called.
         """
 
         self._local_buffer.extend(paths)
 
-    def flush_local_kernel_buffer(self) -> None:
+    def fetch(self) -> list[str]:
         """
-        Flush the local kernel buffer.
-        """
-        self._local_buffer: list[Path] = []
+        Resolves, downloads, and returns all kernel file paths.
 
-    def fetch(self, max_retries: int = 3) -> list[str]:
-        """
-        Download and fetch files in self.query_buffer and clears the buffer. If
-        files are already downloaded, fetch them.
+        Expands each configured source's filename patterns against its remote
+        directory listing, downloads any files not already cached, appends any
+        staged local kernels, and clears the remote query buffer. Returns the
+        combined list of absolute file paths ready to be furnished to SpiceyPy.
         """
 
         all_urls: list[str] = []
@@ -73,6 +93,20 @@ class ClientSPICE:
     # We want this class to be able to function as a spiceypy.KernelPool()
     @contextmanager
     def KernelPool(self):
+        """
+        Context manager that furnishes all configured kernels for the duration
+        of the block.
+
+        Calls fetch() to resolve and download kernels, then delegates to
+        spiceypy.KernelPool so that all furnished kernels are automatically
+        unloaded on exit. Use this as the standard entry point for any SPICE
+        computation that requires this client's kernel set.
+
+        Example:
+            with client.KernelPool():
+                et = spice.utc2et("2024-01-01")
+        """
+
         with spice.KernelPool(self.fetch()):
             yield
 

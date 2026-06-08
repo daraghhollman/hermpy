@@ -23,6 +23,8 @@ with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as f:
 extensions = [
     "sphinx_gallery.gen_gallery",
     "sphinx_design",
+    "sphinx.ext.autodoc",
+    "sphinx_autodoc_typehints",
 ]
 
 templates_path = ["_templates"]
