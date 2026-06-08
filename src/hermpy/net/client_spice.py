@@ -1,3 +1,4 @@
+import os
 import re
 from contextlib import contextmanager
 from fnmatch import fnmatch
@@ -6,8 +7,13 @@ from typing import Any
 from urllib.request import urlopen
 
 import spiceypy as spice
+from astropy.utils.data import conf as astropy_data_conf
 from astropy.utils.data import download_files_in_parallel
+
 from hermpy.utils.os import get_multiprocessing_start_method
+
+# Increase astropy remote timeout
+astropy_data_conf.remote_timeout = 120
 
 
 class ClientSPICE:
@@ -53,26 +59,34 @@ class ClientSPICE:
         Download and fetch files in self.query_buffer and clears the buffer. If
         files are already downloaded, fetch them.
         """
-
         all_urls: list[str] = []
-
         for cfg in self.KERNEL_LOCATIONS.values():
             base = cfg["BASE"]
             directory = cfg["DIRECTORY"]
             patterns = cfg["PATTERNS"]
-
             all_urls.extend(expand_patterns(base, directory, patterns))
-
         self._query_buffer.extend(all_urls)
 
-        data_paths = download_files_in_parallel(
-            self._query_buffer,
-            cache="update" if check_for_updates else True,
-            pkgname="hermpy",
-            multiprocessing_start_method=get_multiprocessing_start_method(),
-        )
+        cache = "update" if check_for_updates else True
+        force_serial = os.environ.get("CI") or os.environ.get("READTHEDOCS")
 
-        # Return downloaded paths and anything in the local buffer.
+        if force_serial or len(self._query_buffer) <= 1:
+            from astropy.utils.data import download_file
+
+            data_paths = [
+                str(download_file(url, cache=cache, pkgname="hermpy"))
+                for url in self._query_buffer
+            ]
+        else:
+            data_paths = list(
+                download_files_in_parallel(
+                    self._query_buffer,
+                    cache=cache,
+                    pkgname="hermpy",
+                    multiprocessing_start_method=get_multiprocessing_start_method(),
+                )
+            )
+
         return data_paths + [str(p) for p in self._local_buffer]
 
     # We want this class to be able to function as a spiceypy.KernelPool()

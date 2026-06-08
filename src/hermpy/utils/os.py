@@ -11,8 +11,9 @@ def get_multiprocessing_start_method() -> str:
     Windows -> "spawn"
 
     Unix    -> "fork"
-        Different from Python 3.14 default: "forkserver", see #12:
+        Different from Python 3.14 default: "forkserver", see #12, #18:
         https://github.com/daraghhollman/hermpy/pull/12
+        https://github.com/daraghhollman/hermpy/pull/18
     """
 
     operating_system = platform.system()
