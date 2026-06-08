@@ -4,11 +4,10 @@ from pathlib import Path
 from typing import Any
 
 from astropy.time import Time
-from astropy.utils.data import download_files_in_parallel
 from sunpy.net import Scraper
 from sunpy.time import TimeRange
 
-from hermpy.utils.os import get_multiprocessing_start_method
+from hermpy.utils import download_files
 
 
 def main():
@@ -122,11 +121,9 @@ class ClientMESSENGER:
         files are already downloaded, fetch them.
         """
 
-        data_paths = download_files_in_parallel(
+        data_paths = download_files(
             self._query_buffer,
-            cache="update" if check_for_updates else True,
-            pkgname="hermpy",
-            multiprocessing_start_method=get_multiprocessing_start_method(),
+            check_for_updates=check_for_updates,
         )
 
         # Flush query buffer

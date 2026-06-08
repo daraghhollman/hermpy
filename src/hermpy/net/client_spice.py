@@ -6,8 +6,7 @@ from typing import Any
 from urllib.request import urlopen
 
 import spiceypy as spice
-from astropy.utils.data import download_files_in_parallel
-from hermpy.utils.os import get_multiprocessing_start_method
+from hermpy.utils import download_files
 
 
 class ClientSPICE:
@@ -65,15 +64,13 @@ class ClientSPICE:
 
         self._query_buffer.extend(all_urls)
 
-        data_paths = download_files_in_parallel(
+        data_paths = download_files(
             self._query_buffer,
-            cache="update" if check_for_updates else True,
-            pkgname="hermpy",
-            multiprocessing_start_method=get_multiprocessing_start_method(),
+            check_for_updates=check_for_updates,
         )
 
         # Return downloaded paths and anything in the local buffer.
-        return data_paths + [str(p) for p in self._local_buffer]
+        return [str(p) for p in data_paths] + [str(p) for p in self._local_buffer]
 
     # We want this class to be able to function as a spiceypy.KernelPool()
     @contextmanager

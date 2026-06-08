@@ -29,7 +29,7 @@ print(client.instruments)
 # (``ClientMESSENGER._query_buffer: list[str]``). These calls extend a list of
 # queries, and so multiple queries can be made before downloading. This is
 # useful for accessing multiple instruments, or non-continous timespans.
-query = client.query(TimeRange("2011-06-01", "2011-06-02"), "MAG")
+query = client.query(TimeRange("2011-06-01", "2011-06-02"), "MAG 60s")
 print(query)
 
 # %%
