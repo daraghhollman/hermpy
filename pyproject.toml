@@ -20,6 +20,7 @@ dependencies = [
     "matplotlib>=3.10.8",
     "mpl-animators>=1.2.4",
     "pandas>=2.3.3",
+    "parfive>=2.3.1",
     "python-dateutil>=2.9.0.post0",
     "spiceypy>=8.0.0",
     "sunpy>=7.1.0",
