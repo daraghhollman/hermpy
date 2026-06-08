@@ -1,7 +1,5 @@
-from astropy.utils.data import download_file, download_files_in_parallel
-
 from hermpy.net import ClientMESSENGER
-from hermpy.utils.os import get_multiprocessing_start_method
+from hermpy.utils import download_files
 
 
 def test_messenger_instruments():
@@ -22,20 +20,8 @@ TEST_URLS = [
 ]
 
 
-def test_astropy_download_sequential():
+def test_downloads():
     """Ensure files can be fetched one at a time"""
-    paths = [download_file(url, pkgname="hermpy", cache=True) for url in TEST_URLS]
-    assert len(paths) == len(TEST_URLS)
-    assert all(paths)
-
-
-def test_astropy_download_parallel():
-    """Ensure parallel download works"""
-    paths = download_files_in_parallel(
-        TEST_URLS,
-        pkgname="hermpy",
-        cache=True,
-        multiprocessing_start_method=get_multiprocessing_start_method(),
-    )
-    assert len(paths) == len(TEST_URLS)
-    assert all(paths)
+    files = download_files(TEST_URLS)
+    assert len(files) == len(TEST_URLS)
+    assert all(files)
