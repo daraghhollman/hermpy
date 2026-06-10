@@ -10,28 +10,39 @@ from sunpy.time import TimeRange
 from hermpy.utils import download_files
 
 
-def main():
-    """
-    An example of how this class might be used in practice.
-
-    Downloads are cached in ~/.hermpy/cache
-    """
-
-    client = ClientMESSENGER()
-
-    client.query(TimeRange("2011-06-01", "2011-06-02"), "MAG")
-
-    # We can access files with this function.
-    local_paths = client.fetch()
-
-    print(local_paths)
-
-
 class ClientMESSENGER:
+    """
+    Client for querying and downloading MESSENGER spacecraft data from the
+    NASA Planetary Data System (PDS).
+
+    Supports multiple instruments and data products, including magnetometer
+    (MAG) data at various cadences and the Fast Imaging Plasma Spectrometer
+    (FIPS). Data is retrieved from the PDS Planetary Plasma Interactions
+    Node and downloaded locally on request.
+
+    :param PDS_BASE_URL: Base URL for the PDS data server.
+    :param PDS_DATA_LOCATION: Mapping from instrument name to its path
+        relative to ``PDS_BASE_URL``. Supported keys include ``"MAG"``,
+        ``"MAG 1s"``, ``"MAG 5s"``, ``"MAG 10s"``, ``"MAG 60s"``,
+        ``"MAG RTN 60s"``, and ``"FIPS"``.
+    :param FILE_PATTERN: Mapping from instrument name to the filename
+        pattern used by :class:`sunpy.net.Scraper` to resolve individual
+        files. Patterns may contain ``{subdir}``, ``{year}``,
+        ``{day_of_year}``, and ``{version}`` placeholders.
+
+    Example usage::
+
+        from sunpy.time import TimeRange
+        client = ClientMESSENGER()
+        time_range = TimeRange("2012-01-01", "2012-01-02")
+        urls = client.query(time_range, "MAG 1s")
+        files = client.fetch()
+    """
+
     def __init__(
         self,
-        PDS_BASE_URL: str = "https://pds-ppi.igpp.ucla.edu/data/",
-        PDS_DATA_LOCATION: dict[str, Any] = {
+        _PDS_BASE_URL: str = "https://pds-ppi.igpp.ucla.edu/data/",
+        _PDS_DATA_LOCATION: dict[str, Any] = {
             # MAG
             "MAG": "mess-mag-calibrated/data/mso/",
             "MAG 1s": "mess-mag-calibrated/data/mso-avg/",
@@ -42,7 +53,7 @@ class ClientMESSENGER:
             # FIPS
             "FIPS": "mess-epps-fips-calibrated/data/scan/",
         },
-        FILE_PATTERN: dict[str, str] = {
+        _FILE_PATTERN: dict[str, str] = {
             "MAG": "{{year:4d}}/{subdir}/MAGMSOSCI{{year:2d}}{{day_of_year:3d}}_V{{version}}.TAB",
             "MAG 1s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_01_V{{version}}.TAB",
             "MAG 5s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_05_V{{version}}.TAB",
@@ -54,9 +65,9 @@ class ClientMESSENGER:
         },
     ):
         # Paths defining where the data can be found
-        self.PDS_BASE_URL = PDS_BASE_URL
-        self.PDS_DATA_LOCATION = PDS_DATA_LOCATION
-        self.FILE_PATTERN = FILE_PATTERN
+        self.PDS_BASE_URL = _PDS_BASE_URL
+        self.PDS_DATA_LOCATION = _PDS_DATA_LOCATION
+        self.FILE_PATTERN = _FILE_PATTERN
 
         # We want the user to be able to query for the existance of
         # files before downloading, so we introduce a search buffer to
@@ -65,14 +76,28 @@ class ClientMESSENGER:
 
     @property
     def instruments(self) -> list[str]:
+        """
+        The instrument names supported by this client.
+
+        Derived from the keys of ``PDS_DATA_LOCATION``.
+        """
+
         return list(self.PDS_DATA_LOCATION.keys())
 
     def query(self, time_range: TimeRange, instrument: str) -> list[str]:
         """
-        Query the data locations for key <instrument>, between the times in
-        time_range.
+        Query the PDS for available files for a given instrument and time range.
 
-        Returns a list[str] of urls and extends the search buffer.
+        Resolves the appropriate monthly subdirectory structure, uses
+        :class:`sunpy.net.Scraper` to build candidate URLs, and filters
+        the results to only those matching the day-of-year values spanned
+        by ``time_range``. Matched URLs are appended to the internal query
+        buffer, making them available to :meth:`fetch`.
+
+        :param time_range: The time range over which to search for data.
+        :param instrument: The instrument to query. Must be one of the keys
+            in :attr:`instruments`.
+        :raises KeyError: If ``instrument`` is not a recognised key.
         """
 
         pattern = (
@@ -117,8 +142,12 @@ class ClientMESSENGER:
 
     def fetch(self) -> list[Path]:
         """
-        Download and fetch files in self.query_buffer and clears the buffer. If
-        files are already downloaded, fetch them.
+        Download all files currently held in the query buffer.
+
+        Files that have already been downloaded locally are retrieved from
+        disk rather than re-downloaded. Clears the query buffer after
+        completion, so subsequent calls to :meth:`fetch` without an
+        intervening :meth:`query` will return an empty list.
         """
 
         files = download_files(self._query_buffer)
@@ -176,7 +205,3 @@ def _get_timerange_doys(time_range: TimeRange) -> list[int]:
     doys = [date.strftime("%j") for date in dates]
 
     return doys
-
-
-if __name__ == "__main__":
-    main()
