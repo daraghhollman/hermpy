@@ -32,4 +32,3 @@ Developing this project is primarily a hobby.
 
    getting_started
    generated_examples/index
-   reference/index
