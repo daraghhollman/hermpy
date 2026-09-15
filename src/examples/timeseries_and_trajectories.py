@@ -113,6 +113,9 @@ upper_block, lower_block = figure.add_gridspec(2, 1, height_ratios=[2, 1.6])
 trajectory_axes = upper_block.subgridspec(1, 3).subplots()
 magnitude_axis, components_axis = lower_block.subgridspec(2, 1).subplots(sharex=True)
 
+# The figure is empty until the blocks below fill it, so hold off the capture.
+# sphinx_gallery_defer_figures
+
 # %%
 # The timeseries rows
 # -------------------
@@ -174,6 +177,8 @@ components_axis.set_ylim(
     -1.1 * max(abs(ylimits[0]), abs(ylimits[1])),
     1.1 * max(abs(ylimits[0]), abs(ylimits[1])),
 )
+
+# sphinx_gallery_defer_figures
 
 # %%
 # The trajectory row
@@ -293,6 +298,8 @@ for index, (axis, panel) in enumerate(zip(trajectory_axes, panels)):
     # showing denser, decimal ticks on one side and round ones on the other.
     axis.xaxis.set_major_locator(MultipleLocator(5))
     axis.yaxis.set_major_locator(MultipleLocator(5))
+
+# sphinx_gallery_defer_figures
 
 # %%
 # Finally, the boundary labels are collected into a single legend beneath the
