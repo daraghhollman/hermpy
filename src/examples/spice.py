@@ -57,7 +57,7 @@ spice_client.KERNEL_LOCATIONS.update(
 # Loading kernels with ``spiceypy``
 # ---------------------------------
 # We open a context in which we load kernels from ``ClientSPICE``. For more details
-# see the ``spiceypy documentation.
+# see the ``spiceypy`` documentation.
 with spice.KernelPool(spice_client.fetch()):
     et = spice.datetime2et(dt.datetime(2012, 6, 1))
     position, _ = spice.spkpos("MESSENGER", et, "BC_MSO_AB", "NONE", "Mercury")
