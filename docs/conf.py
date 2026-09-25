@@ -27,6 +27,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 autoapi_dirs = ["../src/hermpy/"]
 
+suppress_warnings = ["toc.not_included"]
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
@@ -54,5 +56,11 @@ sphinx_gallery_conf = {
     "filename_pattern": r"\.py",  # run all .py files
     "default_thumb_file": "./images/logo.png",
     "download_all_examples": False,
+    "subsection_order": [
+        "this/should/not/exist",
+        "../src/examples/acquiring-data",
+        "../src/examples/visualisations",
+        "../src/examples/misc",
+    ],
 }
 html_css_files.append("hide-download-prompt.css")
