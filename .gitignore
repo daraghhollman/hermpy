@@ -16,3 +16,4 @@ example-data/
 site/
 /docs/_build
 /docs/generated_examples
+/docs/sg_execution_times.rst
