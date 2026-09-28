@@ -36,9 +36,3 @@ or install from source (only recommended for development):
 
                 # Or make it editable with '-e'
                 pip install -e ./hermpy
-
-
-Quick Start
------------
-
-These docs are a work in progress.
