@@ -57,7 +57,6 @@ sphinx_gallery_conf = {
     "default_thumb_file": "./images/logo.png",
     "download_all_examples": False,
     "subsection_order": [
-        "this/should/not/exist",
         "../src/examples/acquiring-data",
         "../src/examples/visualisations",
         "../src/examples/misc",
