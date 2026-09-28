@@ -1,10 +1,17 @@
 Contributing
-============
+------------
 
-Contributing to hermpy
-----------------------
+.. toctree::
+   :maxdepth: 1
+   :hidden:
 
-hermpy is open source and community driven!
+   self
+   developers-guide
+   ai-usage
+
+hermpy is open source and meant to be driven by the community - therefore we want to hear from you.
+
+You can contribute in the following ways:
 
 Feature requests, bugs and other issues
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -17,6 +24,10 @@ If there is an additional feature you think should be apart of hermpy, please al
 
 Contributing Code
 ^^^^^^^^^^^^^^^^^
+
+See `here`_ for our in-depth developers guide.
+
+.. _`here`: developers-guide.html
 
 The easiest way to contribute code to hermpy is to first **fork the repository**, and then clone to your local computer:
 

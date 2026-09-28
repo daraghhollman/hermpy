@@ -24,12 +24,10 @@ my PhD. However, I've found I enjoy creating software, and continue to work on
 it to explore ways to enable easier interaction with spacecraft data, ephemeris
 (i.e. SPICE), and creating good looking figures.
 
-Developing this project is primarily a hobby.
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    getting_started
    generated_examples/index
-   contributing
+   contributing/index
