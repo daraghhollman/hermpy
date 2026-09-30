@@ -25,7 +25,7 @@ it to explore ways to enable easier interaction with spacecraft data, ephemeris
 (i.e. SPICE), and creating good looking figures.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    getting_started
