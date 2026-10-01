@@ -1,8 +1,9 @@
+from typing import Literal, get_args
+
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Literal, get_args
-from hermpy.utils.constants import Constants
 
+from hermpy.utils.constants import Constants
 
 frame_types = Literal["MSM", "MSO"]
 

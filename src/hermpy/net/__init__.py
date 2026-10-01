@@ -1,4 +1,4 @@
 from .client_messenger import ClientMESSENGER
-from .client_spice import ClientSPICE, DEFAULT_KERNEL_LOCATIONS
+from .client_spice import DEFAULT_KERNEL_LOCATIONS, ClientSPICE
 
-__all__ = ["ClientMESSENGER", "ClientSPICE", "DEFAULT_KERNEL_LOCATIONS"]
+__all__ = ["DEFAULT_KERNEL_LOCATIONS", "ClientMESSENGER", "ClientSPICE"]

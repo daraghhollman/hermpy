@@ -3,8 +3,9 @@ import datetime as dt
 import json
 import socket
 import time
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator, List, Tuple
+from typing import Any
 
 from sunpy.net import Scraper
 from sunpy.time import TimeRange
@@ -41,27 +42,8 @@ class ClientMESSENGER:
     def __init__(
         self,
         _PDS_BASE_URL: str = "https://pds-ppi.igpp.ucla.edu/data/",
-        _PDS_DATA_LOCATION: dict[str, Any] = {
-            # MAG
-            "MAG": "mess-mag-calibrated/data/mso/",
-            "MAG 1s": "mess-mag-calibrated/data/mso-avg/",
-            "MAG 5s": "mess-mag-calibrated/data/mso-avg/",
-            "MAG 10s": "mess-mag-calibrated/data/mso-avg/",
-            "MAG 60s": "mess-mag-calibrated/data/mso-avg/",
-            "MAG RTN 60s": "mess-mag-calibrated/data/rtn-avg/",
-            # FIPS
-            "FIPS": "mess-epps-fips-calibrated/data/scan/",
-        },
-        _FILE_PATTERN: dict[str, str] = {
-            "MAG": "{{year:4d}}/{subdir}/MAGMSOSCI{{year:2d}}{{day_of_year:3d}}_V{{version}}.TAB",
-            "MAG 1s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_01_V{{version}}.TAB",
-            "MAG 5s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_05_V{{version}}.TAB",
-            "MAG 10s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_10_V{{version}}.TAB",
-            "MAG 60s": "{{year:4d}}/{subdir}/MAGMSOSCIAVG{{year:2d}}{{day_of_year:3d}}_60_V{{version}}.TAB",
-            "MAG RTN 60s": "{{year:4d}}/{subdir}/MAGRTNSCIAVG{{year:2d}}{{day_of_year:3d}}_60_V{{version}}.TAB",
-            # FIPS
-            "FIPS": "{{year:4d}}/{subdir}/FIPS_R{{year:4d}}{{day_of_year:3d}}CDR_V{{version}}.TAB",
-        },
+        _PDS_DATA_LOCATION: dict[str, Any] | None = None,
+        _FILE_PATTERN: dict[str, str] | None = None,
     ):
         # Paths defining where the data can be found
         self.PDS_BASE_URL = _PDS_BASE_URL
@@ -185,7 +167,7 @@ class ClientMESSENGER:
             except (json.JSONDecodeError, OSError):
                 pass  # Corrupt cache entry, just re-query
 
-        file_list: List[str] = []
+        file_list: list[str] = []
         for attempt in range(1, retries + 1):
             try:
                 scraper = Scraper(format=pattern, subdir=subdir)
@@ -232,7 +214,7 @@ class ClientMESSENGER:
         return files
 
 
-def _get_month_chunks(time_range: TimeRange) -> Iterator[Tuple[str, TimeRange]]:
+def _get_month_chunks(time_range: TimeRange) -> Iterator[tuple[str, TimeRange]]:
     """
     Split a time range into calendar months. For each month yield the PDS
     subdirectory name (e.g. "214_244_AUG") and a TimeRange clipped to that

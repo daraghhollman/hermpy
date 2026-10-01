@@ -13,14 +13,14 @@ from .timeseries import (
 )
 
 __all__ = [
-    "parse_messenger_mag",
-    "parse_messenger_fips",
-    "add_field_magnitude",
-    "rotate_to_aberrated_coordinates",
-    "fips_energy_bin_edges",
-    "CrossingList",
     "CrossingIntervalList",
+    "CrossingList",
+    "DurationEventList",
     "EventList",
     "InstantEventList",
-    "DurationEventList",
+    "add_field_magnitude",
+    "fips_energy_bin_edges",
+    "parse_messenger_fips",
+    "parse_messenger_mag",
+    "rotate_to_aberrated_coordinates",
 ]

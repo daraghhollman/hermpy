@@ -2,7 +2,7 @@ import re
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from urllib.request import urlopen
 
 import spiceypy as spice
@@ -14,7 +14,7 @@ from hermpy.utils import download_files
 #: generic kernels for leap seconds (LSK), planetary constants (PCK), and
 #: planetary ephemerides (SPK). Each entry requires ``BASE``, ``DIRECTORY``,
 #: and ``PATTERNS`` keys — see :class:`ClientSPICE` for details.
-DEFAULT_KERNEL_LOCATIONS: Dict[str, Dict[str, Any]] = {
+DEFAULT_KERNEL_LOCATIONS: dict[str, dict[str, Any]] = {
     "Generic (tls)": {
         "BASE": "https://naif.jpl.nasa.gov/pub/naif/",
         "DIRECTORY": "generic_kernels/lsk/",
@@ -43,7 +43,7 @@ class ClientSPICE:
     """
 
     def __init__(
-        self, KERNEL_LOCATIONS: Dict[str, Dict[str, Any]] = DEFAULT_KERNEL_LOCATIONS
+        self, KERNEL_LOCATIONS: dict[str, dict[str, Any]] = DEFAULT_KERNEL_LOCATIONS
     ):
         #: Remote kernel source configurations keyed by human-readable label.
         #: Each entry requires three keys: ``BASE`` (root URL), ``DIRECTORY``
