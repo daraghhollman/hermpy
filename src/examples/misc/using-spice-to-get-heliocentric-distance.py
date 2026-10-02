@@ -8,11 +8,11 @@ query the position of MESSENGER over a long duration of time.
 
 import datetime as dt
 
-import spiceypy as spice
-import numpy as np
-from sunpy.time import TimeRange
-import matplotlib.pyplot as plt
 import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
+import spiceypy as spice
+from sunpy.time import TimeRange
 
 # %%
 # ``hermpy.net`` introduces a client to handle the caching and fetching of
