@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:20.925** total execution time for 6 files **from all galleries**:
+**00:09.899** total execution time for 7 files **from all galleries**:
 
 .. container::
 
@@ -32,11 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_generated_examples_spice.py` (``../src/examples/spice.py``)
-     - 00:12.651
-     - 0.0
-   * - :ref:`sphx_glr_generated_examples_using-spice-to-get-heliocentric-distance.py` (``../src/examples/using-spice-to-get-heliocentric-distance.py``)
-     - 00:08.274
+   * - :ref:`sphx_glr_generated_examples_messenger_orbit_overview.py` (``../src/examples/messenger_orbit_overview.py``)
+     - 00:09.899
      - 0.0
    * - :ref:`sphx_glr_generated_examples_download_data.py` (``../src/examples/download_data.py``)
      - 00:00.000
@@ -48,5 +45,11 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_generated_examples_plot_one_orbit_of_messenger_mag.py` (``../src/examples/plot_one_orbit_of_messenger_mag.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_spice.py` (``../src/examples/spice.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_using-spice-to-get-heliocentric-distance.py` (``../src/examples/using-spice-to-get-heliocentric-distance.py``)
      - 00:00.000
      - 0.0
