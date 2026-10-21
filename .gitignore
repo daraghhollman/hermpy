@@ -16,3 +16,6 @@ example-data/
 site/
 /docs/_build
 /docs/generated_examples
+
+# MacOS Metadata
+*.DS_Store

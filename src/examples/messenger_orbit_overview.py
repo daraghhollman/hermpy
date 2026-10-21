@@ -7,25 +7,33 @@ The first shows the radial distance, local time and latitude of each orbit's
 apoherm and periherm, and the heliocentric distance at the start of each
 orbit. The second colours the line from each apoherm to the following
 periherm by the region MESSENGER was in. The third follows the full
-trajectory through four consecutive orbits, coloured the same way.
+trajectory through a few consecutive orbits, coloured the same way.
 """
 
 from bisect import bisect_left, bisect_right
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import spiceypy as spice
-from astropy.table import Table
-from astropy.time import Time
 from matplotlib.collections import LineCollection
 
 from hermpy.data import CrossingList
 from hermpy.net import ClientSPICE
 from hermpy.utils import Constants as c
 from hermpy.utils import download_files
+
+# %%
+# Settings
+# --------
+# These set the last figure: the orbit it starts at, how many orbits it
+# follows, how often the trajectory is sampled, and whether it is coloured by
+# region.
+first_orbit = 410
+nr_of_consecutive_orbits = 4
+sample_step = timedelta(minutes=1)
+region_colours = True
 
 # %%
 # Orbit times
@@ -66,21 +74,13 @@ with open(orbnum_path) as orbnum_file:
 # regions either side of a crossing, so the time between two crossings is
 # given a region only where both crossings agree on it.
 #
-# The lobe intervals of Bowers et al. (2024) are not publicly available, and
-# are only drawn if a local copy of the list exists.
-#
-# The region colours follow Hollman et al. (2026a), with the lobes in the
-# pink of their crossing-interval hatching.
+# The region colours follow Hollman et al. (2026a).
 HOLLMAN_URL = "https://zenodo.org/records/21392216/files/hollman_2026_crossing_list.csv"
-LOBE_LIST = (
-    Path.home() / "Data" / "MESSENGER" / "events" / "MESSENGER_Lobe_Crossings.csv"
-)
 
 REGION_COLOURS = {
     "Solar wind": "#F0E442",
     "Magnetosheath": "#E69F00",
     "Magnetosphere": "#56B4E9",
-    "Lobe": "#CC79A7",
 }
 REGION_BEFORE = {
     "BS_IN": "Solar wind",
@@ -107,16 +107,6 @@ for i in range(len(crossings) - 1):
     if region is not None and region == REGION_BEFORE.get(crossings["Label"][i + 1]):
         intervals.append((crossing_times[i], crossing_times[i + 1], region))
 
-if LOBE_LIST.exists():
-    lobes = Table.read(LOBE_LIST, format="ascii.csv")
-    intervals.extend(
-        zip(
-            Time(lobes["lobe_start"]).to_datetime(leap_second_strict="warn"),
-            Time(lobes["lobe_end"]).to_datetime(leap_second_strict="warn"),
-            ["Lobe"] * len(lobes),
-        )
-    )
-
 # %%
 # The lines in the whole-mission figure run from apoherm to periherm, so
 # each colour interval is cut when required.
@@ -128,31 +118,6 @@ for start, end, region in intervals:
 
     for apoherm, periherm in zip(apoherm_times[first:last], periherm_times[first:last]):
         region_times[region].append((max(start, apoherm), min(end, periherm)))
-
-# %%
-# The four consecutive orbits are those of Figure 6 in Bowers et al. (2024),
-# from 8 to 9 October 2011, from one apoherm to the apoherm after the
-# fourth orbit. Each of them passes through the lobe.
-FIRST_ORBIT = 410
-SAMPLE_STEP = timedelta(minutes=1)
-
-first_index = orbit_numbers.index(FIRST_ORBIT)
-window_start = apoherm_times[first_index]
-window_end = apoherm_times[first_index + 4]
-
-sample_times = [
-    window_start + i * SAMPLE_STEP
-    for i in range(int((window_end - window_start) / SAMPLE_STEP) + 1)
-]
-
-sample_regions = np.full(len(sample_times), None)
-sample_datetimes = np.array(sample_times, dtype="datetime64[s]")
-
-for start, end, region in intervals:
-    sample_regions[
-        (sample_datetimes >= np.datetime64(start))
-        & (sample_datetimes <= np.datetime64(end))
-    ] = region
 
 # %%
 # Positions
@@ -196,7 +161,6 @@ def mso_position(times: list[datetime]):
 with spice_client.KernelPool():
     apoherm_r, apoherm_lt, apoherm_lat = mso_position(apoherm_times)
     periherm_r, periherm_lt, periherm_lat = mso_position(periherm_times)
-    sample_r, sample_lt, sample_lat = mso_position(sample_times)
 
     solar_position, _ = spice.spkpos(
         "MESSENGER", spice.datetime2et(apoherm_times), "J2000", "NONE", "SUN"
@@ -314,8 +278,7 @@ plt.show()
 # The same figure, with the regions drawn over the lines from apoherm to
 # periherm, so a line stays grey wherever the lists give no region. The solar
 # wind fills most of the first panel, so here it is drawn in a lighter yellow
-# to let the magnetosheath and magnetosphere stand out. A dashed line marks
-# the four orbits shown in the next figure.
+# to let the magnetosheath and magnetosphere stand out.
 MUTED_SOLAR_WIND = "#F8F2A0"
 
 axes = mission_figure()
@@ -327,36 +290,44 @@ for region, r in region_r.items():
 
 add_no_region_entry(axes[0])
 
-for ax in axes:
-    ax.axvline(
-        window_start,
-        color="black",
-        ls="--",
-        lw=0.8,
-        zorder=2.5,
-        label=f"Orbits {FIRST_ORBIT}–{FIRST_ORBIT + 3}" if ax is axes[0] else None,
-    )
-
 finish_figure(axes, legend_columns=4)
 
 plt.show()
 
 # %%
-# Four consecutive orbits, by region
-# ----------------------------------
-# Over a few orbits the whole trajectory can be drawn, not only apoherm and periherm,
-# so each panel follows MESSENGER through every local time it passes. The
-# trajectory is grey wherever the lists give no region. Local time is broken
-# where it wraps from 24 h back to 0 h. Dotted lines mark each apoherm, where
-# one orbit ends and the next begins.
+# Consecutive orbits
+# ------------------
+# Over a few orbits the whole trajectory can be drawn, not only apoherm and
+# periherm, so each panel follows MESSENGER through every local time it
+# passes. The orbits run from the apoherm of ``first_orbit`` to the apoherm
+# after the last of them. When coloured, the trajectory is grey wherever the
+# lists give no region. Local time is broken where it wraps from 24 h back to
+# 0 h. Dotted lines mark each apoherm, where one orbit ends and the next
+# begins.
+first_index = orbit_numbers.index(first_orbit)
+apoherms = slice(first_index, first_index + nr_of_consecutive_orbits + 1)
+periherms = slice(first_index, first_index + nr_of_consecutive_orbits)
+
+window_start = apoherm_times[first_index]
+window_end = apoherm_times[first_index + nr_of_consecutive_orbits]
+
+step = np.timedelta64(sample_step)
+sample_times = np.arange(
+    np.datetime64(window_start), np.datetime64(window_end) + step, step
+)
+
+with spice_client.KernelPool():
+    sample_r, sample_lt, sample_lat = mso_position(sample_times.astype(datetime))
+
+sample_regions = np.full(len(sample_times), None)
+
+for start, end, region in intervals:
+    sample_regions[
+        (sample_times >= np.datetime64(start)) & (sample_times <= np.datetime64(end))
+    ] = region
+
 sample_lt_wrapped = sample_lt.copy()
 sample_lt_wrapped[1:][np.abs(np.diff(sample_lt)) > 12] = np.nan
-
-window = slice(first_index, first_index + 5)
-window_apoherm_periherm_times = (
-    apoherm_times[window],
-    periherm_times[first_index : first_index + 4],
-)
 
 fig, axes = plt.subplots(3, 1, sharex=True, figsize=(10, 6.5), layout="constrained")
 r_axis, lt_axis, lat_axis = axes
@@ -368,32 +339,33 @@ for ax, values, apoherm, periherm in (
 ):
     ax.plot(sample_times, values, color="black", lw=1, alpha=0.3)
 
-    for region, colour in REGION_COLOURS.items():
-        ax.plot(
-            sample_times,
-            np.where(sample_regions == region, values, np.nan),
-            color=colour,
-            lw=2,
-            label=region,
-        )
+    if region_colours:
+        for region, colour in REGION_COLOURS.items():
+            ax.plot(
+                sample_times,
+                np.where(sample_regions == region, values, np.nan),
+                color=colour,
+                lw=2,
+                label=region,
+            )
 
     plot_apoherm_periherm(
         ax,
-        window_apoherm_periherm_times,
-        apoherm[window],
-        periherm[first_index : first_index + 4],
+        (apoherm_times[apoherms], periherm_times[periherms]),
+        apoherm[apoherms],
+        periherm[periherms],
         size=6,
     )
 
 for ax in axes:
-    for apoherm in apoherm_times[window]:
+    for apoherm in apoherm_times[apoherms]:
         ax.axvline(apoherm, color="grey", ls=":", lw=0.8, zorder=0)
 
-for i, periherm in enumerate(periherm_times[first_index : first_index + 4]):
+for periherm, orbit in zip(periherm_times[periherms], orbit_numbers[periherms]):
     r_axis.text(
         periherm,
         0.95,
-        f"Orbit {FIRST_ORBIT + i}",
+        f"Orbit {orbit}",
         transform=r_axis.get_xaxis_transform(),
         ha="center",
         va="top",
@@ -404,8 +376,11 @@ lt_axis.set(**LT_SETTINGS)
 lat_axis.set(**LAT_SETTINGS)
 
 add_reference_lines(lt_axis, lat_axis)
-add_no_region_entry(r_axis)
-finish_figure(axes, legend_columns=4, marker_scale=1.5)
+
+if region_colours:
+    add_no_region_entry(r_axis)
+
+finish_figure(axes, legend_columns=4 if region_colours else 2, marker_scale=1.5)
 
 locator = mdates.AutoDateLocator()
 lat_axis.xaxis.set_major_locator(locator)
